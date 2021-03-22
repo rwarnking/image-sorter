@@ -39,22 +39,23 @@ class Sorter:
         self.meta_info.finished = True
 
     def process_file(self, file, target_dir):
-        # Get information of file
-        year = "2020"
-        month = "01"
-        day = "01"
         is_compatible = file.endswith(".jpg") or file.endswith(".png")
         if not is_compatible:
             # TODO print name
             print(f"Found incompatible file.")
             return
 
+        # Get information of file
+        date = self.get_file_info(file)
+        if date == False:
+            return
+
         # Ask database for event using the date
-        #event = db.get_event(year, month, day)
+        #event = db.get_event(date["year"], date["month"], date["day"])
         event = "christmas"
 
         # Check if year folder for this file exists
-        year_dir = target_dir + "/" + year
+        year_dir = target_dir + "/" + date["year"]
         try:
             if not os.path.exists(year_dir):
                 os.mkdir(year_dir)
@@ -76,3 +77,27 @@ class Sorter:
         # Move file to the correct folder
 
         # Rename file with the defined template
+
+
+    # Expects a filename without path but with ending (.jpg)
+    def get_file_info(self, file):
+        # TODO improve this for example with a regex
+        SIGNATURE_1_LEN = 15 + 4
+        SIGNATURE_2_LEN = 19 + 4
+
+        date = {}
+
+        if len(file) == SIGNATURE_1_LEN:
+            date["year"] = file[:4]
+            date["month"] = file[4:6]
+            date["day"] = file[6:8]
+        elif len(file) == SIGNATURE_2_LEN:
+            date["year"] = file[:4]
+            date["month"] = file[5:7]
+            date["day"] = file[8:10]
+        else:
+            # TODO print name
+            print(f"Unsupported siganture.")
+            return False
+
+        return date
