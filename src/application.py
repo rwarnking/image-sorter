@@ -1,4 +1,4 @@
-import os  # Needed for the username
+import os
 import threading
 from tkinter import (
     END,
@@ -31,10 +31,11 @@ class MainApp:
     def __init__(self, window):
         self.meta_info = MetaInformation()
 
+        self.init_resource_folder(window)
         self.init_progressindicator(window)
 
         self.run_button = Button(window, text="Dew it", command=lambda: self.run(window))
-        self.run_button.grid(row=4, column=0, padx=PAD_X, pady=10)
+        self.run_button.grid(row=7, column=0, padx=PAD_X, pady=10)
 
     def run(self, window):
         if not self.meta_info.finished:
@@ -73,6 +74,33 @@ class MainApp:
     ###############################################################################################
     # Initialisation functions
     ###############################################################################################
+    def init_resource_folder(self, window):
+        def browse_button(dir, initial):
+            filename = filedialog.askdirectory(initialdir=initial)
+            dir.set(filename)
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self.meta_info.set_dirs(dir_path)
+
+        source_button = Button(
+            window,
+            text="Browse for source directory.",
+            command=lambda: browse_button(self.meta_info.source_dir, S_DIR),
+        )
+        source_button.grid(row=0, column=0, pady=PAD_Y)
+        lbl1 = Label(window, textvariable=self.meta_info.source_dir)
+        lbl1.grid(row=1, column=0, padx=PAD_X, pady=PAD_Y)
+
+        target_button = Button(
+            window,
+            text="Browse for target directory.",
+            command=lambda: browse_button(self.meta_info.target_dir, S_DIR + "_copy"),
+        )
+        target_button.grid(row=2, column=0, pady=PAD_Y)
+        lbl1 = Label(window, textvariable=self.meta_info.target_dir)
+        lbl1.grid(row=3, column=0, padx=PAD_X, pady=10)
+
+
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar
         window.update()
@@ -83,14 +111,14 @@ class MainApp:
         )
         self.file_progress["value"] = 0
         self.file_progress.update()
-        self.file_progress.grid(row=1, sticky="W", padx=PAD_X, pady=10)
+        self.file_progress.grid(row=4, sticky="W", padx=PAD_X, pady=10)
 
         # Progress label
         self.file_label = Label(window, text="Program is not yet running!")
-        self.file_label.grid(row=2, sticky="E", padx=PAD_X)
+        self.file_label.grid(row=5, sticky="E", padx=PAD_X)
 
         self.time_label = Label(window, text="")
-        self.time_label.grid(row=3, sticky="E", padx=PAD_X)
+        self.time_label.grid(row=6, sticky="E", padx=PAD_X)
 
 ###################################################################################################
 # Main
