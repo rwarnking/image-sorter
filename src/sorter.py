@@ -32,13 +32,13 @@ class Sorter:
 
         # Iterate the files
         for file in filelist:
-            self.process_file(file, target_dir)
+            self.process_file(file, source_dir, target_dir)
 
         print(f"Finished sorting")
 
         self.meta_info.finished = True
 
-    def process_file(self, file, target_dir):
+    def process_file(self, file, source_dir, target_dir):
         is_compatible = file.endswith(".jpg") or file.endswith(".png")
         if not is_compatible:
             # TODO print name
@@ -74,10 +74,17 @@ class Sorter:
                 message="Creation of the directory %s failed" % event_dir, title="Error"
             )
 
-        # Move file to the correct folder
-
         # Rename file with the defined template
+        new_name = file
 
+        # Move file to the correct folder
+        try:
+            os.rename(join(source_dir, file), join(event_dir, new_name))
+            print(f"Moved file.")
+        except OSError:
+            messagebox.showinfo(
+                message="Movement of file %s failed" % file, title="Error"
+            )
 
     # Expects a filename without path but with ending (.jpg)
     def get_file_info(self, file):
