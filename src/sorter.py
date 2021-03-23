@@ -28,11 +28,13 @@ class Sorter:
             return
 
         # Update the progressbar and label for the files
+        self.meta_info.file_count = 0
         self.meta_info.file_count_max = len(filelist)
 
         # Iterate the files
         for file in filelist:
             self.process_file(file, source_dir, target_dir)
+            self.meta_info.file_count += 1
 
         print(f"Finished sorting")
 
