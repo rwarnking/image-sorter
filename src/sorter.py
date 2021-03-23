@@ -1,12 +1,12 @@
 import os
 
+from database import Database
 from os.path import isfile, join
 
 
 class Sorter:
     def __init__(self, meta_info):
         self.meta_info = meta_info
-
 
     ###############################################################################################
     # Main
@@ -41,7 +41,7 @@ class Sorter:
     def process_file(self, file, source_dir, target_dir):
         is_compatible = file.endswith(".jpg") or file.endswith(".png")
         if not is_compatible:
-            # TODO print name
+            # TODO print filename
             print(f"Found incompatible file.")
             return
 
@@ -51,11 +51,22 @@ class Sorter:
             return
 
         # Ask database for event using the date
-        #event = db.get_event(date["year"], date["month"], date["day"])
-        event = "christmas"
+        db = Database()
+        result = db.get_event(date["year"], date["month"], date["day"])
+        if len(result) == 0:
+            print("No matching event found.")
+            return
+        elif len(result) > 1:
+            print("To many matching events found. Remove overlays.")
+
+        print(result)
+        print(result[0])
+        print(result[0][0])
+
+        event = result[0][0]
 
         # Check if year folder for this file exists
-        year_dir = target_dir + "/" + date["year"]
+        year_dir = join(target_dir, date["year"])
         try:
             if not os.path.exists(year_dir):
                 os.mkdir(year_dir)
@@ -65,7 +76,8 @@ class Sorter:
             )
 
         # Check if event folder for this file exists
-        event_dir = year_dir + "/" + event
+        month_id = str(date["month"]).zfill(2)
+        event_dir = join(year_dir, month_id + "_" + event)
         try:
             if not os.path.exists(event_dir):
                 os.mkdir(event_dir)
@@ -79,7 +91,7 @@ class Sorter:
 
         # Move file to the correct folder
         try:
-            os.rename(join(source_dir, file), join(event_dir, new_name))
+            #os.rename(join(source_dir, file), join(event_dir, new_name))
             print(f"Moved file.")
         except OSError:
             messagebox.showinfo(
@@ -103,7 +115,7 @@ class Sorter:
             date["month"] = file[5:7]
             date["day"] = file[8:10]
         else:
-            # TODO print name
+            # TODO print filename
             print(f"Unsupported siganture.")
             return False
 

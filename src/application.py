@@ -18,6 +18,7 @@ from tkinter.ttk import Checkbutton, Progressbar, Scrollbar
 import config as cfg
 
 # own imports
+from database import Database
 from sorter import Sorter
 from meta_information import MetaInformation
 
@@ -33,9 +34,10 @@ class MainApp:
 
         self.init_resource_folder(window)
         self.init_progressindicator(window)
+        self.init_event_system(window)
 
         self.run_button = Button(window, text="Dew it", command=lambda: self.run(window))
-        self.run_button.grid(row=7, column=0, padx=PAD_X, pady=10)
+        self.run_button.grid(row=8, column=0, padx=PAD_X, pady=10)
 
     def run(self, window):
         if not self.meta_info.finished:
@@ -43,6 +45,7 @@ class MainApp:
             window.after(50, lambda: self.listen_for_result(window))
             return
 
+        db = Database()
         s = Sorter(self.meta_info)
         self.meta_info.finished = False
         self.new_thread = threading.Thread(target=s.run)
@@ -119,6 +122,11 @@ class MainApp:
 
         self.time_label = Label(window, text="")
         self.time_label.grid(row=6, sticky="E", padx=PAD_X)
+
+    def init_event_system(self, window):
+        db = Database()
+        self.load_eventfile_button = Button(window, text="Load events from File", command=lambda: db.insert_events())
+        self.load_eventfile_button.grid(row=7, column=0, padx=PAD_X, pady=10)
 
 ###################################################################################################
 # Main
