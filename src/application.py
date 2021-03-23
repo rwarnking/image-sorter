@@ -8,6 +8,7 @@ from tkinter import (
     Entry,
     Frame,
     Label,
+    StringVar,
     Text,
     Tk,
     filedialog,
@@ -25,19 +26,29 @@ from meta_information import MetaInformation
 PAD_X = 20
 PAD_Y = (10, 0)
 
-THIS_DIR = "C:/Users/" + os.getlogin() + "/Projekte/mc-map-modifier/original"
+DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
+WIDTH_COL1 = 20
+WIDTH_COL2 = 35
+WIDTH_COL3 = 10
 
 class MainApp:
     def __init__(self, window):
         self.meta_info = MetaInformation()
 
+        self.row_idx = 0
+
         self.init_resource_folder(window)
-        self.init_progressindicator(window)
         self.init_event_system(window)
+        self.init_progressindicator(window)
+        self.init_details(window)
 
         self.run_button = Button(window, text="Dew it", command=lambda: self.run(window))
-        self.run_button.grid(row=8, column=0, padx=PAD_X, pady=10)
+        self.run_button.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
+
+    def row(self):
+        self.row_idx += 1
+        return self.row_idx - 1
 
     def run(self, window):
         if not self.meta_info.finished:
@@ -72,6 +83,7 @@ class MainApp:
             #)
 
             self.file_label.config(text=f"Finished file {f_count} of {f_count_max} files.")
+            self.time_label.config(text="")
             window.after(50, lambda: self.listen_for_result(window))
 
     ###############################################################################################
@@ -82,27 +94,112 @@ class MainApp:
             filename = filedialog.askdirectory(initialdir=initial)
             dir.set(filename)
 
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        self.meta_info.set_dirs(dir_path)
+        self.meta_info.set_dirs(DIR_PATH)
 
+        # Source directory
+        lbl1 = Label(window, text="Source directory:")
+        lbl1.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_src_dir = Label(window, textvariable=self.meta_info.source_dir)
+        lbl_src_dir.grid(row=self.row_idx, column=1, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         source_button = Button(
             window,
-            text="Browse for source directory.",
-            command=lambda: browse_button(self.meta_info.source_dir, S_DIR),
+            text="Browse",
+            width=WIDTH_COL3,
+            command=lambda: browse_button(self.meta_info.source_dir, DIR_PATH),
         )
-        source_button.grid(row=0, column=0, pady=PAD_Y)
-        lbl1 = Label(window, textvariable=self.meta_info.source_dir)
-        lbl1.grid(row=1, column=0, padx=PAD_X, pady=PAD_Y)
+        source_button.grid(row=self.row(), column=2, pady=PAD_Y)
 
+        # Target directory
+        lbl2 = Label(window, text="Target directory:")
+        lbl2.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_tgt_dir = Label(window, textvariable=self.meta_info.target_dir)
+        lbl_tgt_dir.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         target_button = Button(
             window,
-            text="Browse for target directory.",
-            command=lambda: browse_button(self.meta_info.target_dir, S_DIR + "_copy"),
+            text="Browse",
+            width=WIDTH_COL3,
+            command=lambda: browse_button(self.meta_info.target_dir, DIR_PATH),
         )
-        target_button.grid(row=2, column=0, pady=PAD_Y)
-        lbl1 = Label(window, textvariable=self.meta_info.target_dir)
-        lbl1.grid(row=3, column=0, padx=PAD_X, pady=10)
+        target_button.grid(row=self.row(), column=2, pady=PAD_Y)
 
+    def init_event_system(self, window):
+        def browse_button(dir, initial):
+            filename = filedialog.askopenfilename(initialdir=initial)
+            dir.set(filename)
+
+        db = Database()
+
+        # Load events from file
+        # TODO why src?
+        ld_event_file = StringVar()
+        ld_event_file.set("src/events.json")
+        load_eventfile_button = Button(
+            window, text="Load events from File", width=WIDTH_COL1,
+            command=lambda: db.insert_events(ld_event_file.get())
+        )
+        load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y)
+
+        lbl_load_eventfile = Label(window, textvariable=ld_event_file)
+        lbl_load_eventfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        browse_load_file_button = Button(
+            window, text="Browse", width=WIDTH_COL3,
+            command=lambda: browse_button(ld_event_file, DIR_PATH)
+        )
+        browse_load_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y)
+
+        # Save events to file
+        # TODO why src?
+        sv_event_file = StringVar()
+        sv_event_file.set("src/events.json")
+        save_eventfile_button = Button(
+            window, text="Save events to File", width=WIDTH_COL1,
+            command=lambda: db.save_events(sv_event_file)
+        )
+        save_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y)
+
+        lbl_save_eventfile = Label(window, textvariable=sv_event_file)
+        lbl_save_eventfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        browse_save_file_button = Button(
+            window, text="Browse", width=WIDTH_COL3,
+            command=lambda: browse_button(sv_event_file, DIR_PATH)
+        )
+        browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y)
+
+        # Add one event
+        # TODO https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
+        sv_event_title = StringVar()
+        sv_event_title.set("")
+        s_y = s_m = s_d = e_y = e_m = e_d = 1
+        load_eventfile_button = Button(
+            window, text="Add event", width=WIDTH_COL1,
+            command=lambda: db.insert_event(sv_event_title.get(), s_y, s_m, s_d, e_y, e_m, e_d)
+        )
+        load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y)
+        Entry(window, textvariable=sv_event_title).grid(row=self.row_idx, column=1, sticky="EW")
+        Entry(window, textvariable=sv_event_title).grid(row=self.row(), column=2, sticky="EW")
+
+        # Remove one event
+        rm_event_title = StringVar()
+        rm_event_title.set("")
+        load_eventfile_button = Button(
+            window, text="Remove event", width=WIDTH_COL1,
+            command=lambda: db.delete_event(rm_event_title.get())
+        )
+        load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y)
+        Entry(window, textvariable=rm_event_title).grid(row=self.row(), column=1, sticky="EW")
+
+        # Remove all events
+        print_events_button = Button(
+            window, text="Print event list", command=lambda: db.print_events()
+        )
+        print_events_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        clear_events_button = Button(
+            window, text="Clear event list", command=lambda: db.clean()
+        )
+        clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar
@@ -114,19 +211,42 @@ class MainApp:
         )
         self.file_progress["value"] = 0
         self.file_progress.update()
-        self.file_progress.grid(row=4, sticky="W", padx=PAD_X, pady=10)
+        self.file_progress.grid(row=self.row(), columnspan=3, sticky="EW", padx=PAD_X, pady=PAD_Y)
 
         # Progress label
         self.file_label = Label(window, text="Program is not yet running!")
-        self.file_label.grid(row=5, sticky="E", padx=PAD_X)
+        self.file_label.grid(row=self.row(), columnspan=3, sticky="E", padx=PAD_X)
 
         self.time_label = Label(window, text="")
-        self.time_label.grid(row=6, sticky="E", padx=PAD_X)
+        self.time_label.grid(row=self.row(), columnspan=3, sticky="E", padx=PAD_X)
 
-    def init_event_system(self, window):
-        db = Database()
-        self.load_eventfile_button = Button(window, text="Load events from File", command=lambda: db.insert_events())
-        self.load_eventfile_button.grid(row=7, column=0, padx=PAD_X, pady=10)
+    def init_details(self, window):
+        # Create details button
+        def details():
+            if helper_frame.hidden:
+                helper_frame.grid()
+                helper_frame.hidden = False
+                self.run_button.grid(row=self.row_idx + 1)
+            else:
+                helper_frame.grid_remove()
+                helper_frame.hidden = True
+                self.run_button.grid(row=self.row_idx)
+
+        details_button = Button(window, text="Details", command=details)
+        details_button.grid(row=self.row(), column=0, sticky="W", padx=PAD_X)
+
+        # Details Menu
+        helper_frame = Frame(window, width=window.winfo_width() - PAD_X * 2, height=100)
+        helper_frame.pack_propagate(False)
+        self.details_text = Text(helper_frame, width=0, height=0)
+        details_scroll = Scrollbar(helper_frame, command=self.details_text.yview)
+        details_scroll.pack(side=RIGHT, fill="y")
+        self.details_text.configure(yscrollcommand=details_scroll.set)
+        self.details_text.pack(fill="both", expand=True)
+        helper_frame.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=PAD_Y)
+        helper_frame.grid_remove()
+        helper_frame.hidden = True
+
 
 ###################################################################################################
 # Main
