@@ -22,8 +22,11 @@ class MetaInformation:
 
     def get_supported_signatures(self):
         return [
+            "YYYY-MM-DD_HH:MM:SS",
             "YYYY-MM-DD_HH-MM-SS",
+            "YYYY-MM-DD_HH:MM:SS.fff",
             "YYYYMMDD_HHMMSS",
             "IMG_YYYYMMDD_HHMMSS",
+            "Day Month DD HH:MM:SS YYYY",
             "MM-Month-DD_Number",
         ]

@@ -1,4 +1,5 @@
 import os
+import datetime
 
 from database import Database
 from os.path import isfile, join
@@ -54,21 +55,22 @@ class Sorter:
 
         # Ask database for event using the date
         db = Database()
-        result = db.get_event(date["year"], date["month"], date["day"])
+        result = db.get_event(date.year, date.month, date.day)
         if len(result) == 0:
             print("No matching event found.")
             return
         elif len(result) > 1:
             print("To many matching events found. Remove overlays.")
 
-        print(result)
-        print(result[0])
-        print(result[0][0])
+        # TODO
+        #print(result)
+        #print(result[0])
+        #print(result[0][0])
 
         event = result[0][0]
 
         # Check if year folder for this file exists
-        year_dir = join(target_dir, date["year"])
+        year_dir = join(target_dir, str(date.year))
         try:
             if not os.path.exists(year_dir):
                 os.mkdir(year_dir)
@@ -78,7 +80,7 @@ class Sorter:
             )
 
         # Check if event folder for this file exists
-        month_id = str(date["month"]).zfill(2)
+        month_id = str(date.month).zfill(2)
         event_dir = join(year_dir, month_id + "_" + event)
         try:
             if not os.path.exists(event_dir):
@@ -89,7 +91,9 @@ class Sorter:
             )
 
         # Rename file with the defined template
-        new_name = file
+        tmp, file_extension = os.path.splitext(file)
+        new_name = self.get_new_filename(date, file_extension)
+        print(new_name)
 
         # Move file to the correct folder
         try:
@@ -106,19 +110,38 @@ class Sorter:
         SIGNATURE_1_LEN = 15 + 4
         SIGNATURE_2_LEN = 19 + 4
 
-        date = {}
+        date = False
 
         if len(file) == SIGNATURE_1_LEN:
-            date["year"] = file[:4]
-            date["month"] = file[4:6]
-            date["day"] = file[6:8]
+            date = datetime.datetime.strptime(file, "%Y%m%d_%H%M%S.jpg")
         elif len(file) == SIGNATURE_2_LEN:
-            date["year"] = file[:4]
-            date["month"] = file[5:7]
-            date["day"] = file[8:10]
+            date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S.jpg")
         else:
             # TODO print filename
-            print(f"Unsupported siganture.")
-            return False
+            print(f"Unsupported signature.")
 
         return date
+
+    # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+    def get_new_filename(self, date, file_extension):
+        filename = ""
+        sig = self.meta_info.get_supported_signatures()
+
+        if self.meta_info.out_signature.get() == sig[0]:
+            filename = date.isoformat("_")
+        elif self.meta_info.out_signature.get() == sig[1]:
+            filename = date.strftime("%Y-%m-%d_%H-%M-%S")
+        elif self.meta_info.out_signature.get() == sig[2]:
+            filename = date.isoformat("_", "milliseconds")
+        elif self.meta_info.out_signature.get() == sig[3]:
+            filename = date.strftime("%Y%m%d_%H%M%S")
+        elif self.meta_info.out_signature.get() == sig[4]:
+            filename = date.strftime("IMG_%Y%m%d_%H%M%S")
+        elif self.meta_info.out_signature.get() == sig[5]:
+            filename = date.ctime()
+        else:
+            # TODO number must be files in folder
+            number = "001"
+            filename = date.strftime("%m-%B-%d_") + number
+
+        return filename + file_extension
