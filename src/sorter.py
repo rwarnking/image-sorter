@@ -1,5 +1,6 @@
-import os
 import datetime
+import os
+import re
 
 from database import Database
 from os.path import isfile, join
@@ -13,7 +14,7 @@ class Sorter:
     # Main
     ###############################################################################################
     def run(self):
-        print(f"Start sorting")
+        self.meta_info.text_queue.put("Start sorting\n")
 
         # Get all files in the directory
         source_dir = self.meta_info.source_dir.get()
@@ -37,19 +38,18 @@ class Sorter:
             self.process_file(file, source_dir, target_dir)
             self.meta_info.file_count += 1
 
-        print(f"Finished sorting")
-
+        self.meta_info.text_queue.put("Finished sorting\n")
         self.meta_info.finished = True
 
     def process_file(self, file, source_dir, target_dir):
         is_compatible = file.endswith(".jpg") or file.endswith(".png")
         if not is_compatible:
-            # TODO print filename
-            print(f"Found incompatible file.")
+            self.meta_info.text_queue.put(f"Found incompatible file: {file}.\n")
             return
 
         # Get information of file
-        date = self.get_file_info(file)
+        tmp, file_extension = os.path.splitext(file)
+        date = self.get_file_info(file, file_extension)
         if date == False:
             return
 
@@ -57,10 +57,10 @@ class Sorter:
         db = Database()
         result = db.get_event(date.year, date.month, date.day)
         if len(result) == 0:
-            print("No matching event found.")
+            self.meta_info.text_queue.put(f"No matching event found for file: {file}.\n")
             return
         elif len(result) > 1:
-            print("To many matching events found. Remove overlays.")
+            self.meta_info.text_queue.put(f"To many matching events found for file: {file}.\n")
 
         # TODO
         #print(result)
@@ -91,34 +91,41 @@ class Sorter:
             )
 
         # Rename file with the defined template
-        tmp, file_extension = os.path.splitext(file)
         new_name = self.get_new_filename(date, file_extension)
-        print(new_name)
 
         # Move file to the correct folder
         try:
             #os.rename(join(source_dir, file), join(event_dir, new_name))
-            print(f"Moved file.")
+            self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name}.\n")
         except OSError:
             messagebox.showinfo(
                 message="Movement of file %s failed" % file, title="Error"
             )
 
-    # Expects a filename without path but with ending (.jpg)
-    def get_file_info(self, file):
-        # TODO improve this for example with a regex
-        SIGNATURE_1_LEN = 15 + 4
-        SIGNATURE_2_LEN = 19 + 4
-
+    # https://www.w3schools.com/python/python_regex.asp#search
+    def get_file_info(self, file, file_extension):
         date = False
 
-        if len(file) == SIGNATURE_1_LEN:
-            date = datetime.datetime.strptime(file, "%Y%m%d_%H%M%S.jpg")
-        elif len(file) == SIGNATURE_2_LEN:
-            date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S.jpg")
-        else:
-            # TODO print filename
-            print(f"Unsupported signature.")
+        if self.meta_info.in_signature == "IMG-Meta-Info":
+            print(f"Unimplemented.")
+        else :
+            if re.search("^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$", file) is not None:
+                date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S" + file_extension)
+            elif re.search("^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png)$", file) is not None:
+                date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S.%f"+ file_extension)
+            elif re.search("^\d{8}_\d{6}(\.jpg|\.png)$", file) is not None:
+                date = datetime.datetime.strptime(file, "%Y%m%d_%H%M%S" + file_extension)
+            elif re.search("^IMG_\d{8}_\d{6}(\.jpg|\.png)$", file) is not None:
+                date = datetime.datetime.strptime(file, "IMG_%Y%m%d_%H%M%S" + file_extension)
+            elif re.search(
+                "^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png)$", file
+            ) is not None:
+                date = datetime.datetime.strptime(file, "%a %b %d %H-%M-%S %Y" + file_extension)
+            elif re.search("^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$", file) is not None:
+                # TODO year must be accessed somehow
+                date = datetime.datetime.strptime(file[:9], "%m-%b-%d")
+            else:
+                self.meta_info.text_queue.put(f"Unsupported signature for file: {file}.\n")
 
         return date
 
@@ -129,16 +136,17 @@ class Sorter:
 
         if self.meta_info.out_signature.get() == sig[0]:
             filename = date.isoformat("_")
+            filename = filename.replace(":", "-")
         elif self.meta_info.out_signature.get() == sig[1]:
-            filename = date.strftime("%Y-%m-%d_%H-%M-%S")
-        elif self.meta_info.out_signature.get() == sig[2]:
             filename = date.isoformat("_", "milliseconds")
-        elif self.meta_info.out_signature.get() == sig[3]:
+            filename = filename.replace(":", "-")
+        elif self.meta_info.out_signature.get() == sig[2]:
             filename = date.strftime("%Y%m%d_%H%M%S")
-        elif self.meta_info.out_signature.get() == sig[4]:
+        elif self.meta_info.out_signature.get() == sig[3]:
             filename = date.strftime("IMG_%Y%m%d_%H%M%S")
-        elif self.meta_info.out_signature.get() == sig[5]:
+        elif self.meta_info.out_signature.get() == sig[4]:
             filename = date.ctime()
+            filename = filename.replace(":", "-")
         else:
             # TODO number must be files in folder
             number = "001"

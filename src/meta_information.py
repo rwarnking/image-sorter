@@ -1,3 +1,5 @@
+import queue
+
 from tkinter import IntVar, StringVar
 
 import config as cfg
@@ -13,6 +15,8 @@ class MetaInformation:
         self.in_signature = StringVar()
         self.out_signature = StringVar()
 
+        self.text_queue = queue.Queue()
+
     def set_dirs(self, dir):
         self.source_dir = StringVar()
         self.source_dir.set(dir)
@@ -22,11 +26,10 @@ class MetaInformation:
 
     def get_supported_signatures(self):
         return [
-            "YYYY-MM-DD_HH:MM:SS",
             "YYYY-MM-DD_HH-MM-SS",
-            "YYYY-MM-DD_HH:MM:SS.fff",
+            "YYYY-MM-DD_HH-MM-SS.fff",
             "YYYYMMDD_HHMMSS",
             "IMG_YYYYMMDD_HHMMSS",
-            "Day Month DD HH:MM:SS YYYY",
+            "Day Month DD HH-MM-SS YYYY",
             "MM-Month-DD_Number",
         ]

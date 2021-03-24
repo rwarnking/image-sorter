@@ -79,9 +79,15 @@ class MainApp:
         self.file_progress["maximum"] = f_count_max
         self.file_progress.update()
 
+        if not self.meta_info.text_queue.empty():
+            self.details_text.insert(END, self.meta_info.text_queue.get(0))
+
         if self.meta_info.finished:
             self.file_label.config(text=f"Finished all {f_count_max} files.")
             self.time_label.config(text="Done.")
+
+            while not self.meta_info.text_queue.empty():
+                self.details_text.insert(END, self.meta_info.text_queue.get(0))
         else:
             #self.meta_info.update_estimated_time()
             #s = int(self.meta_info.timer.estimated_time % 60)
