@@ -10,9 +10,20 @@ class MetaInformation:
         self.file_count = 0
         self.file_count_max = 1
 
+        self.in_signature = StringVar()
+        self.out_signature = StringVar()
+
     def set_dirs(self, dir):
         self.source_dir = StringVar()
         self.source_dir.set(dir)
 
         self.target_dir = StringVar()
         self.target_dir.set(dir)
+
+    def get_supported_signatures(self):
+        return [
+            "YYYY-MM-DD_HH-MM-SS",
+            "YYYYMMDD_HHMMSS",
+            "IMG_YYYYMMDD_HHMMSS",
+            "MM-Month-DD_Number",
+        ]
