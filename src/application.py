@@ -46,6 +46,9 @@ class MainApp:
         self.init_event_system(window)
         separator = Separator(window, orient='horizontal')
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        self.init_checkboxes(window)
+        separator = Separator(window, orient='horizontal')
+        separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_progressindicator(window)
         separator = Separator(window, orient='horizontal')
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -140,7 +143,11 @@ class MainApp:
         lbl = Label(window, text="Input signature:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         in_options = OptionMenu(window, self.meta_info.in_signature, *in_choices)
-        in_options.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        in_options.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        Checkbutton(
+            window, text="Use fallback signature", variable=self.meta_info.fallback_sig
+        ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
 
         self.meta_info.out_signature.set(out_choices[0])
         lbl = Label(window, text="Output signature:")
@@ -233,6 +240,19 @@ class MainApp:
             window, text="Clear event list", command=lambda: db.clean()
         )
         clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+    def init_checkboxes(self, window):
+        Checkbutton(
+            window, text="Modify metadata", variable=self.meta_info.modify_meta
+        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        Checkbutton(
+            window, text="Recursive file/folder processing", variable=self.meta_info.recursive
+        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        Checkbutton(
+            window, text="Copy images", variable=self.meta_info.copy_files
+        ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
 
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar

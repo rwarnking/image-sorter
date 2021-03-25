@@ -12,6 +12,11 @@ class MetaInformation:
         self.file_count = 0
         self.file_count_max = 1
 
+        self.modify_meta = IntVar()
+        self.recursive = IntVar()
+        self.copy_files = IntVar()
+        self.fallback_sig = IntVar()
+
         self.in_signature = StringVar()
         self.out_signature = StringVar()
 

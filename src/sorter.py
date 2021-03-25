@@ -2,6 +2,9 @@ import datetime
 import os
 import re
 
+import piexif
+
+from PIL import ExifTags, Image
 from database import Database
 from os.path import isfile, join
 
@@ -15,6 +18,10 @@ class Sorter:
     ###############################################################################################
     def run(self):
         self.meta_info.text_queue.put("Start sorting\n")
+
+        self.copy_files = self.meta_info.copy_files.get()
+        self.modify_meta = self.meta_info.modify_meta.get()
+        self.fallback_sig = self.meta_info.fallback_sig.get()
 
         # Get all files in the directory
         source_dir = self.meta_info.source_dir.get()
@@ -95,19 +102,40 @@ class Sorter:
 
         # Move file to the correct folder
         try:
-            #os.rename(join(source_dir, file), join(event_dir, new_name))
-            self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name}.\n")
+            if self.copy_files > 0:
+                # TODO copy file
+                #os.rename(join(source_dir, file), join(event_dir, new_name))
+                self.meta_info.text_queue.put(f"Copied file: {file} with name: {new_name}.\n")
+            else:
+                #os.rename(join(source_dir, file), join(event_dir, new_name))
+                self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name}.\n")
         except OSError:
             messagebox.showinfo(
                 message="Movement of file %s failed" % file, title="Error"
             )
 
+        # TODO modify the metadata
+        if self.modify_meta > 0:
+            self.modify_metadata(join(event_dir, new_name))
+
     # https://www.w3schools.com/python/python_regex.asp#search
-    def get_file_info(self, file, file_extension):
+    def get_file_info(self, file, file_extension, fallback=False):
         date = False
 
-        if self.meta_info.in_signature == "IMG-Meta-Info":
-            print(f"Unimplemented.")
+        # TODO get()
+        if self.meta_info.in_signature.get() == "IMG-Meta-Info" or fallback:
+            if fallback:
+                self.meta_info.text_queue.put(f"Unsupported signature for file: {file} used fallback.\n")
+
+            try:
+                img = Image.open("src/" + file)
+                exif_dict = piexif.load(img.info['exif'])
+                # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
+                time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
+                date = datetime.datetime.strptime(str(time, "ascii"), "%Y:%m:%d %H:%M:%S")
+            # TODO which exceptions?
+            except:
+                self.meta_info.text_queue.put(f"Metadata not readable for file: {file}.\n")
         else :
             if re.search("^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$", file) is not None:
                 date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S" + file_extension)
@@ -124,6 +152,8 @@ class Sorter:
             elif re.search("^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$", file) is not None:
                 # TODO year must be accessed somehow
                 date = datetime.datetime.strptime(file[:9], "%m-%b-%d")
+            elif self.fallback_sig:
+                date = self.get_file_info(self, file, file_extension, True)
             else:
                 self.meta_info.text_queue.put(f"Unsupported signature for file: {file}.\n")
 
@@ -153,3 +183,49 @@ class Sorter:
             filename = date.strftime("%m-%B-%d_") + number
 
         return filename + file_extension
+
+    def modify_metadata(self, file_with_path):
+        self.debug_print_metadata(file_with_path)
+
+        img = Image.open(file_with_path)
+        exif_dict = piexif.load(img.info['exif'])
+
+
+        exif_dict["0th"][piexif.ImageIFD.Rating] = 5
+        exif_dict["0th"][piexif.ImageIFD.RatingPercent] = 100
+
+        exif_bytes = piexif.dump(exif_dict)
+        #img.save(file_with_path, exif=exif_bytes)
+        print(f"Unimplemented.")
+
+    def debug_print_metadata(self, file):
+        img = Image.open(file)
+        exif_dict = piexif.load(img.info['exif'])
+
+        m_data = exif_dict["0th"]
+        tmp_dict = piexif.ImageIFD.__dict__
+
+        for k in m_data:
+            for e in tmp_dict:
+                if k == tmp_dict[e]:
+                    print(e, m_data[k])
+
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+        m_data = exif_dict["Exif"]
+        tmp_dict = piexif.ExifIFD.__dict__
+
+        for k in m_data:
+            for e in tmp_dict:
+                if k == tmp_dict[e]:
+                    print(e, m_data[k])
+
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+        m_data = exif_dict["1st"]
+        tmp_dict = piexif.ImageIFD.__dict__
+
+        for k in m_data:
+            for e in tmp_dict:
+                if k == tmp_dict[e]:
+                    print(e, m_data[k])
