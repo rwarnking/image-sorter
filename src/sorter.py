@@ -153,7 +153,7 @@ class Sorter:
                 # TODO year must be accessed somehow
                 date = datetime.datetime.strptime(file[:9], "%m-%b-%d")
             elif self.fallback_sig:
-                date = self.get_file_info(self, file, file_extension, True)
+                date = self.get_file_info(file, file_extension, True)
             else:
                 self.meta_info.text_queue.put(f"Unsupported signature for file: {file}.\n")
 
