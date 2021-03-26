@@ -6,14 +6,16 @@ class Database:
     def __init__(self, path="database.db"):
         self.conn = sqlite3.connect(path)
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, s_day INT, e_year INT, e_month INT, e_day INTT)"
+            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
+            s_day INT, e_year INT, e_month INT, e_day INTT)"
         )
         self.conn.commit()
 
     def clean(self):
         self.conn.execute("DROP TABLE IF EXISTS events")
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, s_day INT, e_year INT, e_month INT, e_day INTT)"
+            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
+            s_day INT, e_year INT, e_month INT, e_day INTT)"
         )
         print("All table entrys were deleted.")
 
@@ -40,13 +42,14 @@ class Database:
             start_date.day,
             end_date.year,
             end_date.month,
-            end_date.day
+            end_date.day,
         )
 
     def insert_event(self, title, s_year, s_month, s_day, e_year, e_month, e_day):
         if not self.has_event(title):
             self.conn.execute(
-                "INSERT INTO events (title, s_year, s_month, s_day, e_year, e_month, e_day) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO events (title, s_year, s_month, s_day, e_year, e_month, e_day) \
+                VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (title, s_year, s_month, s_day, e_year, e_month, e_day),
             )
             self.conn.commit()
@@ -65,7 +68,7 @@ class Database:
                     event["start"]["day"],
                     event["end"]["year"],
                     event["end"]["month"],
-                    event["end"]["day"]
+                    event["end"]["day"],
                 )
 
     def save_events(self, file):
@@ -108,7 +111,8 @@ class Database:
 
     def get_event(self, year, month, day):
         cur = self.conn.execute(
-            "SELECT title FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? AND e_month>=? AND e_day>=?",
+            "SELECT title FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? \
+            AND e_month>=? AND e_day>=?",
             (year, month, day, year, month, day),
         )
         result = cur.fetchall()

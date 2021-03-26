@@ -1,7 +1,6 @@
 import datetime
 import os
 import re
-
 from os.path import isfile, join
 from tkinter import messagebox
 
