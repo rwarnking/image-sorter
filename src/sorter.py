@@ -2,12 +2,12 @@ import datetime
 import os
 import re
 
-import piexif
-
-from PIL import ExifTags, Image
-from database import Database
 from os.path import isfile, join
 from tkinter import messagebox
+
+import piexif
+from database import Database
+from PIL import Image
 
 
 class Sorter:
@@ -58,7 +58,7 @@ class Sorter:
         # Get information of file
         tmp, file_extension = os.path.splitext(file)
         date = self.get_file_info(file, file_extension)
-        if date == False:
+        if date is False:
             return
         if self.meta_info.shift_timedata.get() > 0:
             try:
@@ -75,6 +75,7 @@ class Sorter:
                 messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
 
         # Ask database for event using the date
+        # TODO dont create database for every file
         db = Database()
         result = db.get_event(date.year, date.month, date.day)
         if len(result) == 0:
@@ -84,9 +85,9 @@ class Sorter:
             self.meta_info.text_queue.put(f"To many matching events found for file: {file}.\n")
 
         # TODO
-        #print(result)
-        #print(result[0])
-        #print(result[0][0])
+        # print(result)
+        # print(result[0])
+        # print(result[0][0])
 
         event = result[0][0]
 
@@ -118,15 +119,13 @@ class Sorter:
         try:
             if self.copy_files > 0:
                 # TODO copy file
-                #os.rename(join(source_dir, file), join(event_dir, new_name))
+                # os.rename(join(source_dir, file), join(event_dir, new_name))
                 self.meta_info.text_queue.put(f"Copied file: {file} with name: {new_name}.\n")
             else:
-                #os.rename(join(source_dir, file), join(event_dir, new_name))
+                # os.rename(join(source_dir, file), join(event_dir, new_name))
                 self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name}.\n")
         except OSError:
-            messagebox.showinfo(
-                message="Movement of file %s failed" % file, title="Error"
-            )
+            messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
         # TODO modify the metadata
         if self.modify_meta > 0:
@@ -139,7 +138,9 @@ class Sorter:
         # TODO get()
         if self.meta_info.in_signature.get() == "IMG-Meta-Info" or fallback:
             if fallback:
-                self.meta_info.text_queue.put(f"Unsupported signature for file: {file} used fallback.\n")
+                self.meta_info.text_queue.put(
+                    f"Unsupported signature for file: {file} used fallback.\n"
+                )
 
             try:
                 img = Image.open("src/" + file)
@@ -155,17 +156,19 @@ class Sorter:
             except ValueError:
                 self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
 
-        else :
+        else:
             regex_list = self.meta_info.get_signature_regex()
             strptime_list = self.meta_info.get_signature_strptime()
-            assert(len(regex_list) == len(strptime_list))
+            assert len(regex_list) == len(strptime_list)
 
             for regex, strptime in zip(regex_list, strptime_list):
                 if re.search(regex, file) is not None:
                     try:
                         date = datetime.datetime.strptime(file, strptime + file_extension)
                     except ValueError:
-                        self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
+                        self.meta_info.text_queue.put(
+                            f"Time data not readable for file: {file}.\n"
+                        )
                     return date
 
             if self.fallback_sig:
@@ -204,19 +207,19 @@ class Sorter:
         self.debug_print_metadata(file_with_path)
 
         img = Image.open(file_with_path)
-        exif_dict = piexif.load(img.info['exif'])
-
+        exif_dict = piexif.load(img.info["exif"])
 
         exif_dict["0th"][piexif.ImageIFD.Rating] = 5
         exif_dict["0th"][piexif.ImageIFD.RatingPercent] = 100
 
         exif_bytes = piexif.dump(exif_dict)
-        #img.save(file_with_path, exif=exif_bytes)
-        print(f"Unimplemented.")
+        # img.save(file_with_path, exif=exif_bytes)
+        print(exif_bytes)
+        print("Unimplemented.")
 
     def debug_print_metadata(self, file):
         img = Image.open(file)
-        exif_dict = piexif.load(img.info['exif'])
+        exif_dict = piexif.load(img.info["exif"])
 
         m_data = exif_dict["0th"]
         tmp_dict = piexif.ImageIFD.__dict__

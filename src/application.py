@@ -13,16 +13,15 @@ from tkinter import (
     Text,
     Tk,
     filedialog,
+    messagebox,
 )
 from tkinter.ttk import Checkbutton, Progressbar, Scrollbar, Separator
-from tkcalendar import Calendar, DateEntry
-
-import config as cfg
 
 # own imports
 from database import Database
-from sorter import Sorter
 from meta_information import MetaInformation
+from sorter import Sorter
+from tkcalendar import DateEntry
 
 PAD_X = 20
 PAD_Y = (10, 0)
@@ -37,19 +36,19 @@ class MainApp:
         self.row_idx = 0
 
         self.init_resource_folder(window)
-        separator = Separator(window, orient='horizontal')
+        separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_signatures(window)
-        separator = Separator(window, orient='horizontal')
+        separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_event_system(window)
-        separator = Separator(window, orient='horizontal')
+        separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_checkboxes(window)
-        separator = Separator(window, orient='horizontal')
+        separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_progressindicator(window)
-        separator = Separator(window, orient='horizontal')
+        separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_details(window)
 
@@ -66,7 +65,6 @@ class MainApp:
             window.after(50, lambda: self.listen_for_result(window))
             return
 
-        db = Database()
         s = Sorter(self.meta_info)
         self.meta_info.finished = False
         self.new_thread = threading.Thread(target=s.run)
@@ -91,12 +89,12 @@ class MainApp:
             while not self.meta_info.text_queue.empty():
                 self.details_text.insert(END, self.meta_info.text_queue.get(0))
         else:
-            #self.meta_info.update_estimated_time()
-            #s = int(self.meta_info.timer.estimated_time % 60)
-            #m = int(self.meta_info.timer.estimated_time / 60)
-            #self.time_label.config(
-            #    text=f"Processing Data. Estimated rest time: {m} minutes and {s} seconds."
-            #)
+            # self.meta_info.update_estimated_time()
+            # s = int(self.meta_info.timer.estimated_time % 60)
+            # m = int(self.meta_info.timer.estimated_time / 60)
+            # self.time_label.config(
+            #     text=f"Processing Data. Estimated rest time: {m} minutes and {s} seconds."
+            # )
 
             self.file_label.config(text=f"Finished file {f_count} of {f_count_max} files.")
             self.time_label.config(text="")
@@ -116,9 +114,12 @@ class MainApp:
         lbl1 = Label(window, text="Source directory:")
         lbl1.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         lbl_src_dir = Label(window, textvariable=self.meta_info.source_dir)
-        lbl_src_dir.grid(row=self.row_idx, column=1, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_src_dir.grid(
+            row=self.row_idx, column=1, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
         source_button = Button(
-            window, text="Browse",
+            window,
+            text="Browse",
             command=lambda: browse_button(self.meta_info.source_dir, DIR_PATH),
         )
         source_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -129,7 +130,8 @@ class MainApp:
         lbl_tgt_dir = Label(window, textvariable=self.meta_info.target_dir)
         lbl_tgt_dir.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         target_button = Button(
-            window, text="Browse",
+            window,
+            text="Browse",
             command=lambda: browse_button(self.meta_info.target_dir, DIR_PATH),
         )
         target_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -166,8 +168,9 @@ class MainApp:
         ld_event_file = StringVar()
         ld_event_file.set("src/events.json")
         load_eventfile_button = Button(
-            window, text="Load events from File",
-            command=lambda: db.insert_events(ld_event_file.get())
+            window,
+            text="Load events from File",
+            command=lambda: db.insert_events(ld_event_file.get()),
         )
         load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -175,8 +178,7 @@ class MainApp:
         lbl_load_eventfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         browse_load_file_button = Button(
-            window, text="Browse",
-            command=lambda: browse_button(ld_event_file, DIR_PATH)
+            window, text="Browse", command=lambda: browse_button(ld_event_file, DIR_PATH)
         )
         browse_load_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -185,8 +187,7 @@ class MainApp:
         sv_event_file = StringVar()
         sv_event_file.set("src/events.json")
         save_eventfile_button = Button(
-            window, text="Save events to File",
-            command=lambda: db.save_events(sv_event_file.get())
+            window, text="Save events to File", command=lambda: db.save_events(sv_event_file.get())
         )
         save_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -194,8 +195,7 @@ class MainApp:
         lbl_save_eventfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         browse_save_file_button = Button(
-            window, text="Browse",
-            command=lambda: browse_button(sv_event_file, DIR_PATH)
+            window, text="Browse", command=lambda: browse_button(sv_event_file, DIR_PATH)
         )
         browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -207,14 +207,12 @@ class MainApp:
         lbl_date = Label(date_frame, text="Start: ")
         lbl_date.pack(side="left")
         start_entry = DateEntry(
-            date_frame, width=12, background='darkblue',
-            foreground='white', borderwidth=2
+            date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
         )
         start_entry.pack(side="left")
 
         end_entry = DateEntry(
-            date_frame, width=12, background='darkblue',
-            foreground='white', borderwidth=2
+            date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
         )
         end_entry.pack(side="right")
         lbl_date = Label(date_frame, text="End: ")
@@ -229,10 +227,11 @@ class MainApp:
         Entry(date_frame, textvariable=sv_event_title).pack(side="right")
 
         load_eventfile_button = Button(
-            window, text="Add event",
+            window,
+            text="Add event",
             command=lambda: db.insert_event_from_date(
                 sv_event_title.get(), start_entry.get_date(), end_entry.get_date()
-            )
+            ),
         )
         load_eventfile_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -240,8 +239,7 @@ class MainApp:
         rm_event_title = StringVar()
         rm_event_title.set("")
         load_eventfile_button = Button(
-            window, text="Remove event",
-            command=lambda: db.delete_event(rm_event_title.get())
+            window, text="Remove event", command=lambda: db.delete_event(rm_event_title.get())
         )
         load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -253,20 +251,17 @@ class MainApp:
 
         # Remove all events
         print_events_button = Button(
-            window, text="Print event list",
-            command=lambda: db.print_events()
+            window, text="Print event list", command=lambda: db.print_events()
         )
         print_events_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        clear_events_button = Button(
-            window, text="Clear event list", command=lambda: db.clean()
-        )
+        clear_events_button = Button(window, text="Clear event list", command=lambda: db.clean())
         clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_checkboxes(self, window):
-        Checkbutton(
-            window, text="Shift timedata", variable=self.meta_info.shift_timedata
-        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Checkbutton(window, text="Shift timedata", variable=self.meta_info.shift_timedata).grid(
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
 
         vcmd = window.register(lambda P: str.isdigit(P) or P == "")
         time_frame = Frame(window)
@@ -310,17 +305,17 @@ class MainApp:
         time_options = OptionMenu(window, self.meta_info.time_option, *time_choices)
         time_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        Checkbutton(
-            window, text="Modify metadata", variable=self.meta_info.modify_meta
-        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
 
         Checkbutton(
             window, text="Recursive file/folder processing", variable=self.meta_info.recursive
         ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
 
-        Checkbutton(
-            window, text="Copy images", variable=self.meta_info.copy_files
-        ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(
+            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
 
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar

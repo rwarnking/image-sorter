@@ -1,8 +1,5 @@
 import queue
-
 from tkinter import IntVar, StringVar
-
-import config as cfg
 
 
 class MetaInformation:
@@ -52,12 +49,12 @@ class MetaInformation:
     # in the filename which should just be ignored
     def get_signature_regex(self):
         return [
-            "^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$",
-            "^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png)$",
-            "^\d{8}_\d{6}(\.jpg|\.png)$",
-            "^IMG_\d{8}_\d{6}(\.jpg|\.png)$",
-            "^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png)$",
-            "^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$",
+            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$",
+            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png)$",
+            r"^\d{8}_\d{6}(\.jpg|\.png)$",
+            r"^IMG_\d{8}_\d{6}(\.jpg|\.png)$",
+            r"^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png)$",
+            r"^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$",
         ]
 
     def get_signature_strptime(self):
