@@ -20,6 +20,17 @@ class Database:
 
         return len(result) > 0
 
+    def insert_event_from_date(self, title, start_date, end_date):
+        if title == "":
+            print("Could not add Event: Missing titel!")
+            return
+
+        self.insert_event(
+            title,
+            start_date.year, start_date.month, start_date.day,
+            end_date.year, end_date.month, end_date.day
+        )
+
     def insert_event(self, title, s_year, s_month, s_day, e_year, e_month, e_day):
         if not self.has_event(title):
             self.conn.execute(

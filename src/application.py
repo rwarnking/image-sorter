@@ -15,6 +15,7 @@ from tkinter import (
     filedialog,
 )
 from tkinter.ttk import Checkbutton, Progressbar, Scrollbar, Separator
+from tkcalendar import Calendar, DateEntry
 
 import config as cfg
 
@@ -28,7 +29,6 @@ PAD_Y = (10, 0)
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-WIDTH_COL3 = 10
 
 class MainApp:
     def __init__(self, window):
@@ -186,7 +186,7 @@ class MainApp:
         sv_event_file.set("src/events.json")
         save_eventfile_button = Button(
             window, text="Save events to File",
-            command=lambda: db.save_events(sv_event_file)
+            command=lambda: db.save_events(sv_event_file.get())
         )
         save_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -200,21 +200,41 @@ class MainApp:
         browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Add one event
-        # TODO https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
+        # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
+        date_frame = Frame(window)
+        date_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_date = Label(date_frame, text="Start: ")
+        lbl_date.pack(side="left")
+        start_entry = DateEntry(
+            date_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2
+        )
+        start_entry.pack(side="left")
+
+        end_entry = DateEntry(
+            date_frame, width=12, background='darkblue',
+            foreground='white', borderwidth=2
+        )
+        end_entry.pack(side="right")
+        lbl_date = Label(date_frame, text="End: ")
+        lbl_date.pack(side="right")
+
         sv_event_title = StringVar()
         sv_event_title.set("")
-        s_y = s_m = s_d = e_y = e_m = e_d = 1
+        date_frame = Frame(window)
+        date_frame.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_date = Label(date_frame, text="Titel: ")
+        lbl_date.pack(side="left")
+        Entry(date_frame, textvariable=sv_event_title).pack(side="right")
+
         load_eventfile_button = Button(
             window, text="Add event",
-            command=lambda: db.insert_event(sv_event_title.get(), s_y, s_m, s_d, e_y, e_m, e_d)
+            command=lambda: db.insert_event_from_date(
+                sv_event_title.get(), start_entry.get_date(), end_entry.get_date()
+            )
         )
-        load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(window, textvariable=sv_event_title).grid(
-            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
-        Entry(window, textvariable=sv_event_title).grid(
-            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        load_eventfile_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Remove one event
         rm_event_title = StringVar()
@@ -224,9 +244,12 @@ class MainApp:
             command=lambda: db.delete_event(rm_event_title.get())
         )
         load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(window, textvariable=rm_event_title).grid(
-            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+
+        date_frame = Frame(window)
+        date_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_date = Label(date_frame, text="Titel: ")
+        lbl_date.pack(side="left")
+        Entry(date_frame, textvariable=rm_event_title).pack(side="right")
 
         # Remove all events
         print_events_button = Button(
