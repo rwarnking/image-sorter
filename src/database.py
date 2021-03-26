@@ -21,6 +21,10 @@ class Database:
         return len(result) > 0
 
     def insert_event_from_date(self, title, start_date, end_date):
+        # TODO
+        if end_date < start_date:
+            print("Could not add Event: end date < start date!")
+            return
         if title == "":
             print("Could not add Event: Missing titel!")
             return
