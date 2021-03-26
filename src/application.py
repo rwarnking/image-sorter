@@ -13,7 +13,6 @@ from tkinter import (
     Text,
     Tk,
     filedialog,
-    messagebox,
 )
 from tkinter.ttk import Checkbutton, Progressbar, Scrollbar, Separator
 
@@ -242,6 +241,52 @@ class MainApp:
         clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_checkboxes(self, window):
+        Checkbutton(
+            window, text="Shift timedata", variable=self.meta_info.shift_timedata
+        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        vcmd = window.register(lambda P: str.isdigit(P) or P == "")
+        time_frame = Frame(window)
+        time_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_time = Label(time_frame, text="Days: ")
+        lbl_time.pack(side="left")
+        Entry(
+            time_frame,
+            textvariable=self.meta_info.shift_days,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+
+        lbl_time = Label(time_frame, text="Hours: ")
+        lbl_time.pack(side="left")
+        Entry(
+            time_frame,
+            textvariable=self.meta_info.shift_hours,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+
+        lbl_time = Label(time_frame, text="Minutes: ")
+        lbl_time.pack(side="left")
+        Entry(
+            time_frame,
+            textvariable=self.meta_info.shift_minutes,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+
+        time_choices = ["Forward", "Backward"]
+        self.meta_info.time_option.set(time_choices[0])
+        time_options = OptionMenu(window, self.meta_info.time_option, *time_choices)
+        time_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
         Checkbutton(
             window, text="Modify metadata", variable=self.meta_info.modify_meta
         ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")

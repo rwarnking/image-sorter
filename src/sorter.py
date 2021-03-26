@@ -7,6 +7,7 @@ import piexif
 from PIL import ExifTags, Image
 from database import Database
 from os.path import isfile, join
+from tkinter import messagebox
 
 
 class Sorter:
@@ -59,6 +60,19 @@ class Sorter:
         date = self.get_file_info(file, file_extension)
         if date == False:
             return
+        if self.meta_info.shift_timedata.get() > 0:
+            try:
+                date_shift = datetime.timedelta(
+                    days=int(self.meta_info.shift_days.get()),
+                    minutes=int(self.meta_info.shift_minutes.get()),
+                    hours=int(self.meta_info.shift_hours.get()),
+                )
+                if self.meta_info.time_option.get() == "Forward":
+                    date = date + date_shift
+                else:
+                    date = date - date_shift
+            except ValueError:
+                messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
 
         # Ask database for event using the date
         db = Database()
@@ -129,30 +143,33 @@ class Sorter:
 
             try:
                 img = Image.open("src/" + file)
-                exif_dict = piexif.load(img.info['exif'])
+                exif_dict = piexif.load(img.info["exif"])
                 # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
                 date = datetime.datetime.strptime(str(time, "ascii"), "%Y:%m:%d %H:%M:%S")
             # TODO which exceptions?
-            except:
+            except FileNotFoundError:
+                self.meta_info.text_queue.put(f"File {file} could not be found.\n")
+            except KeyError:
                 self.meta_info.text_queue.put(f"Metadata not readable for file: {file}.\n")
+            except ValueError:
+                self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
+
         else :
-            if re.search("^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$", file) is not None:
-                date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S" + file_extension)
-            elif re.search("^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png)$", file) is not None:
-                date = datetime.datetime.strptime(file, "%Y-%m-%d_%H-%M-%S.%f"+ file_extension)
-            elif re.search("^\d{8}_\d{6}(\.jpg|\.png)$", file) is not None:
-                date = datetime.datetime.strptime(file, "%Y%m%d_%H%M%S" + file_extension)
-            elif re.search("^IMG_\d{8}_\d{6}(\.jpg|\.png)$", file) is not None:
-                date = datetime.datetime.strptime(file, "IMG_%Y%m%d_%H%M%S" + file_extension)
-            elif re.search(
-                "^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png)$", file
-            ) is not None:
-                date = datetime.datetime.strptime(file, "%a %b %d %H-%M-%S %Y" + file_extension)
-            elif re.search("^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$", file) is not None:
-                # TODO year must be accessed somehow
-                date = datetime.datetime.strptime(file[:9], "%m-%b-%d")
-            elif self.fallback_sig:
+            regex_list = self.meta_info.get_signature_regex()
+            strptime_list = self.meta_info.get_signature_strptime()
+            assert(len(regex_list) == len(strptime_list))
+
+            for regex, strptime in zip(regex_list, strptime_list):
+                if re.search(regex, file) is not None:
+                    try:
+                        date = datetime.datetime.strptime(file, strptime + file_extension)
+                    except ValueError:
+                        self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
+                    print(date)
+                    return date
+
+            if self.fallback_sig:
                 date = self.get_file_info(file, file_extension, True)
             else:
                 self.meta_info.text_queue.put(f"Unsupported signature for file: {file}.\n")

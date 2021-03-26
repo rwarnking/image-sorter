@@ -12,6 +12,7 @@ class MetaInformation:
         self.file_count = 0
         self.file_count_max = 1
 
+        self.shift_timedata = IntVar()
         self.modify_meta = IntVar()
         self.recursive = IntVar()
         self.copy_files = IntVar()
@@ -19,6 +20,14 @@ class MetaInformation:
 
         self.in_signature = StringVar()
         self.out_signature = StringVar()
+
+        self.shift_days = StringVar()
+        self.shift_days.set("0")
+        self.shift_hours = StringVar()
+        self.shift_hours.set("0")
+        self.shift_minutes = StringVar()
+        self.shift_minutes.set("0")
+        self.time_option = StringVar()
 
         self.text_queue = queue.Queue()
 
@@ -37,4 +46,27 @@ class MetaInformation:
             "IMG_YYYYMMDD_HHMMSS",
             "Day Month DD HH-MM-SS YYYY",
             "MM-Month-DD_Number",
+        ]
+
+    # TODO remove file extension and dollar sign since there could be more information
+    # in the filename which should just be ignored
+    def get_signature_regex(self):
+        return [
+            "^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$",
+            "^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png)$",
+            "^\d{8}_\d{6}(\.jpg|\.png)$",
+            "^IMG_\d{8}_\d{6}(\.jpg|\.png)$",
+            "^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png)$",
+            "^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$",
+        ]
+
+    def get_signature_strptime(self):
+        return [
+            "%Y-%m-%d_%H-%M-%S",
+            "%Y-%m-%d_%H-%M-%S.%f",
+            "%Y%m%d_%H%M%S",
+            "IMG_%Y%m%d_%H%M%S",
+            "%a %b %d %H-%M-%S %Y",
+            # TODO year must be accessed somehow
+            "%m-%b-%d_%f",
         ]
