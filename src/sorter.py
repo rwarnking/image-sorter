@@ -166,7 +166,6 @@ class Sorter:
                         date = datetime.datetime.strptime(file, strptime + file_extension)
                     except ValueError:
                         self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
-                    print(date)
                     return date
 
             if self.fallback_sig:

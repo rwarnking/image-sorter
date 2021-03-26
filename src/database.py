@@ -41,8 +41,29 @@ class Database:
                     event["end"]["year"], event["end"]["month"], event["end"]["day"]
                 )
 
-    # TODO dump events to file
+    # TODO improve formatting of output file
     def save_events(self, file):
+        data = self.get_all_events()
+        json_data = { "events": [] }
+        for elem in data:
+            json_data["events"].append(
+                {
+                    "title": elem[0],
+                    "start": {
+                        "year": elem[1],
+                        "month": elem[2],
+                        "day": elem[3],
+                    },
+                    "end": {
+                        "year": elem[4],
+                        "month": elem[5],
+                        "day": elem[6],
+                    }
+                }
+            )
+
+        with open(file, "w") as outfile:
+            json.dump(json_data, outfile, indent=4)
         print("Events were saved to file " + file + ".")
 
     def print_events(self):
@@ -64,6 +85,12 @@ class Database:
             "SELECT title FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? AND e_month>=? AND e_day>=?",
             (year, month, day, year, month, day)
         )
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def get_all_events(self):
+        cur = self.conn.execute("SELECT * FROM events")
         result = cur.fetchall()
         cur.close()
         return result
