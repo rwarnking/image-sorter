@@ -143,10 +143,9 @@ class MainApp:
         target_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_signatures(self, window):
-        in_choices = ["IMG-Meta-Info", "IMG-File-Name"]
+        in_choices = self.meta_info.get_read_choices()
         out_choices = self.meta_info.get_supported_signatures()
 
-        self.meta_info.in_signature.set(in_choices[0])
         lbl = Label(window, text="Input signature:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         in_options = OptionMenu(window, self.meta_info.in_signature, *in_choices)
@@ -156,7 +155,6 @@ class MainApp:
             window, text="Use fallback signature", variable=self.meta_info.fallback_sig
         ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
 
-        self.meta_info.out_signature.set(out_choices[0])
         lbl = Label(window, text="Output signature:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         out_options = OptionMenu(window, self.meta_info.out_signature, *out_choices)
@@ -301,7 +299,7 @@ class MainApp:
         save_artistfile_button = Button(
             window,
             text="Save artists to File",
-            command=lambda: db.save_artists(sv_artist_file.get())
+            command=lambda: db.save_artists(sv_artist_file.get()),
         )
         save_artistfile_button.grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -356,7 +354,9 @@ class MainApp:
         load_artistfile_button = Button(
             window, text="Remove artist", command=lambda: db.delete_artist(rm_artist_name.get())
         )
-        load_artistfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        load_artistfile_button.grid(
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
 
         device_frame = Frame(window)
         device_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")

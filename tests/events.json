@@ -1,0 +1,82 @@
+{
+    "events": [
+        {
+            "title": "Ostern",
+            "start": {
+                "year": 2020,
+                "month": 4,
+                "day": 12
+            },
+            "end": {
+                "year": 2020,
+                "month": 4,
+                "day": 13
+            }
+        },
+        {
+            "title": "UmzugStuttgart",
+            "start": {
+                "year": 2020,
+                "month": 7,
+                "day": 1
+            },
+            "end": {
+                "year": 2020,
+                "month": 7,
+                "day": 10
+            }
+        },
+        {
+            "title": "BesuchStuttgart",
+            "start": {
+                "year": 2020,
+                "month": 7,
+                "day": 19
+            },
+            "end": {
+                "year": 2020,
+                "month": 7,
+                "day": 27
+            }
+        },
+        {
+            "title": "DiePlatte",
+            "start": {
+                "year": 2020,
+                "month": 8,
+                "day": 7
+            },
+            "end": {
+                "year": 2020,
+                "month": 8,
+                "day": 15
+            }
+        },
+        {
+            "title": "September",
+            "start": {
+                "year": 2020,
+                "month": 9,
+                "day": 1
+            },
+            "end": {
+                "year": 2020,
+                "month": 9,
+                "day": 30
+            }
+        },
+        {
+            "title": "Weihnachten",
+            "start": {
+                "year": 2020,
+                "month": 12,
+                "day": 24
+            },
+            "end": {
+                "year": 2020,
+                "month": 12,
+                "day": 26
+            }
+        }
+    ]
+}

@@ -13,10 +13,13 @@ class MetaInformation:
         self.modify_meta = IntVar()
         self.recursive = IntVar()
         self.copy_files = IntVar()
+        self.copy_files.set(1)
         self.fallback_sig = IntVar()
 
         self.in_signature = StringVar()
+        self.in_signature.set(self.get_read_choices()[0])
         self.out_signature = StringVar()
+        self.out_signature.set(self.get_supported_signatures()[0])
 
         self.shift_days = StringVar()
         self.shift_days.set("0")
@@ -44,6 +47,9 @@ class MetaInformation:
             "Day Month DD HH-MM-SS YYYY",
             "MM-Month-DD_Number",
         ]
+
+    def get_read_choices(self):
+        return ["IMG-Meta-Info", "IMG-File-Name"]
 
     # TODO remove file extension and dollar sign since there could be more information
     # in the filename which should just be ignored

@@ -1,0 +1,19 @@
+{
+    "artists": [
+        {
+            "name": "artist1",
+            "make": "samsung",
+            "model": "SM-G800F"
+        },
+        {
+            "name": "artist2",
+            "make": "Motorola",
+            "model": "Moto G (4)"
+        },
+        {
+            "name": "artist3",
+            "make": "HUAWEI",
+            "model": "HMA-L29"
+        }
+    ]
+}
