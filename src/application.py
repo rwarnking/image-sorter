@@ -67,6 +67,9 @@ class MainApp:
 
         s = Sorter(self.meta_info)
         self.meta_info.finished = False
+        self.meta_info.file_count = 0
+        self.listen_for_result(window)
+
         self.new_thread = threading.Thread(target=s.run)
         self.new_thread.start()
         window.after(50, lambda: self.listen_for_result(window))
