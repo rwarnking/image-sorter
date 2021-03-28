@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+import shutil
 from os.path import isfile, join
 from tkinter import messagebox
 
@@ -129,16 +130,15 @@ class Sorter:
         # Move file to the correct folder
         try:
             if self.copy_files > 0:
-                # TODO copy file
-                # os.rename(join(source_dir, file), join(event_dir, new_name))
+                # TODO check if already exists
+                shutil.copy(join(source_dir, file), join(event_dir, new_name))
                 self.meta_info.text_queue.put(f"Copied file: {file} with name: {new_name}.\n")
             else:
-                # os.rename(join(source_dir, file), join(event_dir, new_name))
+                shutil.move(join(source_dir, file), join(event_dir, new_name))
                 self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name}.\n")
         except OSError:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
-        # TODO modify the metadata
         if self.modify_meta > 0:
             self.modify_metadata(join(event_dir, new_name))
 
