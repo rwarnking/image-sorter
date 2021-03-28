@@ -19,9 +19,22 @@ class Sorter:
     def run(self):
         self.meta_info.text_queue.put("Start sorting\n")
 
+        # These variables are duplicates of the metadata vars.
+        # This is done to improve the performance since these get() functions can get expensive
+        # and should therefore not be called for each processed file
         self.copy_files = self.meta_info.copy_files.get()
         self.modify_meta = self.meta_info.modify_meta.get()
         self.fallback_sig = self.meta_info.fallback_sig.get()
+
+        self.shift_timedata = self.meta_info.shift_timedata.get()
+        self.time_option = self.meta_info.time_option.get()
+        self.shift_days = int(self.meta_info.shift_days.get())
+        self.shift_minutes = int(self.meta_info.shift_minutes.get())
+        self.shift_hours = int(self.meta_info.shift_hours.get())
+
+        self.in_signature = self.meta_info.in_signature.get()
+        self.out_signature = self.meta_info.out_signature.get()
+
 
         # Get all files in the directory
         source_dir = self.meta_info.source_dir.get()
@@ -37,7 +50,6 @@ class Sorter:
             return
 
         # Update the progressbar and label for the files
-        self.meta_info.file_count = 0
         self.meta_info.file_count_max = len(filelist)
 
         # Iterate the files
@@ -59,14 +71,14 @@ class Sorter:
         date = self.get_file_info(file, file_extension)
         if date is False:
             return
-        if self.meta_info.shift_timedata.get() > 0:
+        if self.shift_timedata > 0:
             try:
                 date_shift = datetime.timedelta(
-                    days=int(self.meta_info.shift_days.get()),
-                    minutes=int(self.meta_info.shift_minutes.get()),
-                    hours=int(self.meta_info.shift_hours.get()),
+                    days=self.shift_days,
+                    minutes=self.shift_minutes,
+                    hours=self.shift_hours,
                 )
-                if self.meta_info.time_option.get() == "Forward":
+                if self.time_option == "Forward":
                     date = date + date_shift
                 else:
                     date = date - date_shift
@@ -134,8 +146,7 @@ class Sorter:
     def get_file_info(self, file, file_extension, fallback=False):
         date = False
 
-        # TODO get()
-        if self.meta_info.in_signature.get() == "IMG-Meta-Info" or fallback:
+        if self.in_signature == "IMG-Meta-Info" or fallback:
             if fallback:
                 self.meta_info.text_queue.put(
                     f"Unsupported signature for file: {file} used fallback.\n"
@@ -182,17 +193,17 @@ class Sorter:
         filename = ""
         sig = self.meta_info.get_supported_signatures()
 
-        if self.meta_info.out_signature.get() == sig[0]:
+        if self.out_signature == sig[0]:
             filename = date.isoformat("_")
             filename = filename.replace(":", "-")
-        elif self.meta_info.out_signature.get() == sig[1]:
+        elif self.out_signature == sig[1]:
             filename = date.isoformat("_", "milliseconds")
             filename = filename.replace(":", "-")
-        elif self.meta_info.out_signature.get() == sig[2]:
+        elif self.out_signature == sig[2]:
             filename = date.strftime("%Y%m%d_%H%M%S")
-        elif self.meta_info.out_signature.get() == sig[3]:
+        elif self.out_signature == sig[3]:
             filename = date.strftime("IMG_%Y%m%d_%H%M%S")
-        elif self.meta_info.out_signature.get() == sig[4]:
+        elif self.out_signature == sig[4]:
             filename = date.ctime()
             filename = filename.replace(":", "-")
         else:
