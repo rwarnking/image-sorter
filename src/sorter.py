@@ -214,7 +214,6 @@ class Sorter:
         return filename + file_extension
 
     def modify_metadata(self, file_with_path, title=""):
-        #self.debug_print_metadata(file_with_path)
         try:
             img = Image.open(file_with_path)
             exif_dict = piexif.load(img.info["exif"])

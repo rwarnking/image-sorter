@@ -282,7 +282,9 @@ class MainApp:
             text="Load artists from File",
             command=lambda: db.insert_artists(ld_artist_file.get()),
         )
-        load_artistfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        load_artistfile_button.grid(
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
 
         lbl_load_artistfile = Label(window, textvariable=ld_artist_file)
         lbl_load_artistfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -297,9 +299,13 @@ class MainApp:
         sv_artist_file = StringVar()
         sv_artist_file.set("src/artists.json")
         save_artistfile_button = Button(
-            window, text="Save artists to File", command=lambda: db.save_artists(sv_artist_file.get())
+            window,
+            text="Save artists to File",
+            command=lambda: db.save_artists(sv_artist_file.get())
         )
-        save_artistfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        save_artistfile_button.grid(
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
 
         lbl_save_artistfile = Label(window, textvariable=sv_artist_file)
         lbl_save_artistfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")

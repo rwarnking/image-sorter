@@ -214,9 +214,7 @@ class Database:
         print("Artists were saved to file " + file + ".")
 
     def get_artist(self, make, model):
-        cur = self.conn.execute(
-            "SELECT name FROM artists WHERE make=? AND model=?", (make, model)
-        )
+        cur = self.conn.execute("SELECT name FROM artists WHERE make=? AND model=?", (make, model))
         result = cur.fetchall()
         cur.close()
         return result
