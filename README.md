@@ -3,9 +3,9 @@
 [![GitHub Super-Linter](https://github.com/rwarnking/image-sorter/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 ## Description
-This is a webpage designed to present information about a medical facility like
-a hospital or a doctors office. Of course it should be possible to alter the page to
-present information not releated to medicine.
+This is a small python application to sort images into folder.
+For the sorting proccess either the image name or the image meta data can be used.
+All functionalities are accesseable via a simple GUI.
 
 ## Table of Contents
 1. [Installation](#installation)

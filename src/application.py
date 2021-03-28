@@ -44,6 +44,9 @@ class MainApp:
         self.init_event_system(window)
         separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        self.init_artist_system(window)
+        separator = Separator(window, orient="horizontal")
+        separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_checkboxes(window)
         separator = Separator(window, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -225,7 +228,7 @@ class MainApp:
         sv_event_title.set("")
         date_frame = Frame(window)
         date_frame.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_date = Label(date_frame, text="Titel: ")
+        lbl_date = Label(date_frame, text="Title: ")
         lbl_date.pack(side="left")
         Entry(date_frame, textvariable=sv_event_title).pack(side="right")
 
@@ -248,7 +251,7 @@ class MainApp:
 
         date_frame = Frame(window)
         date_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_date = Label(date_frame, text="Titel: ")
+        lbl_date = Label(date_frame, text="Title: ")
         lbl_date.pack(side="left")
         Entry(date_frame, textvariable=rm_event_title).pack(side="right")
 
@@ -258,8 +261,113 @@ class MainApp:
         )
         print_events_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        clear_events_button = Button(window, text="Clear event list", command=lambda: db.clean())
+        clear_events_button = Button(
+            window, text="Clear event list", command=lambda: db.clean_events()
+        )
         clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+    def init_artist_system(self, window):
+        def browse_button(dir, initial):
+            filename = filedialog.askopenfilename(initialdir=initial)
+            dir.set(filename)
+
+        db = Database()
+
+        # Load artists from file
+        # TODO why src?
+        ld_artist_file = StringVar()
+        ld_artist_file.set("src/artists.json")
+        load_artistfile_button = Button(
+            window,
+            text="Load artists from File",
+            command=lambda: db.insert_artists(ld_artist_file.get()),
+        )
+        load_artistfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_load_artistfile = Label(window, textvariable=ld_artist_file)
+        lbl_load_artistfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        browse_load_file_button = Button(
+            window, text="Browse", command=lambda: browse_button(ld_artist_file, DIR_PATH)
+        )
+        browse_load_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        # Save artists to file
+        # TODO why src?
+        sv_artist_file = StringVar()
+        sv_artist_file.set("src/artists.json")
+        save_artistfile_button = Button(
+            window, text="Save artists to File", command=lambda: db.save_artists(sv_artist_file.get())
+        )
+        save_artistfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_save_artistfile = Label(window, textvariable=sv_artist_file)
+        lbl_save_artistfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        browse_save_file_button = Button(
+            window, text="Browse", command=lambda: browse_button(sv_artist_file, DIR_PATH)
+        )
+        browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        # Add one artist
+        # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
+        device_frame = Frame(window)
+        device_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        sv_artist_name = StringVar()
+        sv_artist_name.set("")
+        sv_artist_make = StringVar()
+        sv_artist_make.set("")
+        sv_artist_model = StringVar()
+        sv_artist_model.set("")
+
+        lbl_date = Label(device_frame, text="Make: ")
+        lbl_date.pack(side="left")
+        Entry(device_frame, textvariable=sv_artist_make).pack(side="left")
+
+        Entry(device_frame, textvariable=sv_artist_model).pack(side="right")
+        lbl_date = Label(device_frame, text="Model: ")
+        lbl_date.pack(side="right")
+
+        device_frame = Frame(window)
+        device_frame.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_date = Label(device_frame, text="Name: ")
+        lbl_date.pack(side="left")
+        Entry(device_frame, textvariable=sv_artist_name).pack(side="right")
+
+        load_artistfile_button = Button(
+            window,
+            text="Add artist",
+            command=lambda: db.insert_artist(
+                sv_artist_name.get(), sv_artist_make.get(), sv_artist_model.get()
+            ),
+        )
+        load_artistfile_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        # Remove one artist
+        rm_artist_name = StringVar()
+        rm_artist_name.set("")
+        load_artistfile_button = Button(
+            window, text="Remove artist", command=lambda: db.delete_artist(rm_artist_name.get())
+        )
+        load_artistfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        device_frame = Frame(window)
+        device_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_date = Label(device_frame, text="Name: ")
+        lbl_date.pack(side="left")
+        Entry(device_frame, textvariable=rm_artist_name).pack(side="right")
+
+        # Remove all artists
+        print_artists_button = Button(
+            window, text="Print artist list", command=lambda: db.print_artists()
+        )
+        print_artists_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        clear_artists_button = Button(
+            window, text="Clear artist list", command=lambda: db.clean_artists()
+        )
+        clear_artists_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_checkboxes(self, window):
         Checkbutton(window, text="Shift timedata", variable=self.meta_info.shift_timedata).grid(

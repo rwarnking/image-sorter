@@ -20,6 +20,9 @@ class Sorter:
     def run(self):
         self.meta_info.text_queue.put("Start sorting\n")
 
+        # create database
+        self.db = Database()
+
         # These variables are duplicates of the metadata vars.
         # This is done to improve the performance since these get() functions can get expensive
         # and should therefore not be called for each processed file
@@ -35,7 +38,6 @@ class Sorter:
 
         self.in_signature = self.meta_info.in_signature.get()
         self.out_signature = self.meta_info.out_signature.get()
-
 
         # Get all files in the directory
         source_dir = self.meta_info.source_dir.get()
@@ -87,9 +89,7 @@ class Sorter:
                 messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
 
         # Ask database for event using the date
-        # TODO dont create database for every file
-        db = Database()
-        result = db.get_event(date.year, date.month, date.day)
+        result = self.db.get_event(date.year, date.month, date.day)
         if len(result) == 0:
             self.meta_info.text_queue.put(f"No matching event found for file: {file}.\n")
             return
@@ -140,7 +140,7 @@ class Sorter:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
         if self.modify_meta > 0:
-            self.modify_metadata(join(event_dir, new_name))
+            self.modify_metadata(join(event_dir, new_name), event)
 
     # https://www.w3schools.com/python/python_regex.asp#search
     def get_file_info(self, file, file_extension, fallback=False):
@@ -213,22 +213,36 @@ class Sorter:
 
         return filename + file_extension
 
-    def modify_metadata(self, file_with_path):
+    def modify_metadata(self, file_with_path, title=""):
         #self.debug_print_metadata(file_with_path)
-
-        print(file_with_path)
         try:
             img = Image.open(file_with_path)
             exif_dict = piexif.load(img.info["exif"])
 
-            exif_dict["0th"][piexif.ImageIFD.Rating] = 5
-            exif_dict["0th"][piexif.ImageIFD.RatingPercent] = 100
+            if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
+                exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
+
+            if piexif.ImageIFD.Artist not in exif_dict["0th"]:
+                make = exif_dict["0th"][piexif.ImageIFD.Make]
+                model = exif_dict["0th"][piexif.ImageIFD.Model]
+                artist = self.db.get_artist(str(make, "ascii"), str(model, "ascii"))
+                if len(artist) == 1:
+                    # TODO [0][0]
+                    exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
 
             exif_bytes = piexif.dump(exif_dict)
-            #img.save(file_with_path, exif=exif_bytes, quality=95, subsampling="keep", icc_profile=img.info.get("icc_profile"), optimize=False)
-            img.save(file_with_path, exif=exif_bytes, quality="keep", subsampling="keep", icc_profile=img.info.get("icc_profile"), optimize=False)
+            img.save(
+                file_with_path,
+                exif=exif_bytes,
+                quality="keep",
+                subsampling="keep",
+                icc_profile=img.info.get("icc_profile"),
+                optimize=False,
+            )
         except FileNotFoundError:
-            self.meta_info.text_queue.put(f"File {file} could not be found in modify metadata.\n")
+            self.meta_info.text_queue.put(
+                f"File {file_with_path} could not be found in modify metadata.\n"
+            )
 
     def debug_print_metadata(self, file):
         img = Image.open(file)
