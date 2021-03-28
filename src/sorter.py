@@ -214,18 +214,21 @@ class Sorter:
         return filename + file_extension
 
     def modify_metadata(self, file_with_path):
-        self.debug_print_metadata(file_with_path)
+        #self.debug_print_metadata(file_with_path)
 
-        img = Image.open(file_with_path)
-        exif_dict = piexif.load(img.info["exif"])
+        print(file_with_path)
+        try:
+            img = Image.open(file_with_path)
+            exif_dict = piexif.load(img.info["exif"])
 
-        exif_dict["0th"][piexif.ImageIFD.Rating] = 5
-        exif_dict["0th"][piexif.ImageIFD.RatingPercent] = 100
+            exif_dict["0th"][piexif.ImageIFD.Rating] = 5
+            exif_dict["0th"][piexif.ImageIFD.RatingPercent] = 100
 
-        exif_bytes = piexif.dump(exif_dict)
-        # img.save(file_with_path, exif=exif_bytes)
-        print(exif_bytes)
-        print("Unimplemented.")
+            exif_bytes = piexif.dump(exif_dict)
+            #img.save(file_with_path, exif=exif_bytes, quality=95, subsampling="keep", icc_profile=img.info.get("icc_profile"), optimize=False)
+            img.save(file_with_path, exif=exif_bytes, quality="keep", subsampling="keep", icc_profile=img.info.get("icc_profile"), optimize=False)
+        except FileNotFoundError:
+            self.meta_info.text_queue.put(f"File {file} could not be found in modify metadata.\n")
 
     def debug_print_metadata(self, file):
         img = Image.open(file)
