@@ -71,7 +71,7 @@ class Sorter:
 
         # Get information of file
         tmp, file_extension = os.path.splitext(file)
-        date = self.get_file_info(file, file_extension)
+        date = self.get_file_info(file, source_dir, file_extension)
         if date is False:
             return
         if self.shift_timedata > 0:
@@ -95,6 +95,7 @@ class Sorter:
             return
         elif len(result) > 1:
             self.meta_info.text_queue.put(f"To many matching events found for file: {file}.\n")
+            return
 
         # TODO
         # print(result)
@@ -143,7 +144,7 @@ class Sorter:
             self.modify_metadata(join(event_dir, new_name), event)
 
     # https://www.w3schools.com/python/python_regex.asp#search
-    def get_file_info(self, file, file_extension, fallback=False):
+    def get_file_info(self, file, source_dir, file_extension, fallback=False):
         date = False
 
         if self.in_signature == "IMG-Meta-Info" or fallback:
@@ -153,7 +154,7 @@ class Sorter:
                 )
 
             try:
-                img = Image.open("src/" + file)
+                img = Image.open(join(source_dir, file))
                 exif_dict = piexif.load(img.info["exif"])
                 # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
@@ -182,7 +183,7 @@ class Sorter:
                     return date
 
             if self.fallback_sig:
-                date = self.get_file_info(file, file_extension, True)
+                date = self.get_file_info(file, source_dir, file_extension, True)
             else:
                 self.meta_info.text_queue.put(f"Unsupported signature for file: {file}.\n")
 
