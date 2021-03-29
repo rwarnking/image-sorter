@@ -1,6 +1,7 @@
 # Image Sorter
 
 [![GitHub Super-Linter](https://github.com/rwarnking/image-sorter/workflows/Lint%20Code%20Base/badge.svg)](https://github.com/marketplace/actions/super-linter)
+![Python Tests](https://github.com/rwarnking/image-sorter/workflows/Run%20Python%20Tests/badge.svg)
 
 ## Description
 This is a small python application to sort images into folder.

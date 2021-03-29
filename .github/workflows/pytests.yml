@@ -29,7 +29,11 @@ jobs:
           pip install tkcalendar
           pip install pillow
           pip install piexif
-      - name: Run test with pytest
+      - name: Run db test with pytest
+        run: |
+          # Run TestSuites
+          python3 -m pytest tests/test_db.py
+      - name: Run sort test with pytest
         run: |
           # Start virtual display driver
           disp=:12
@@ -38,4 +42,4 @@ jobs:
           exec Xvfb $disp -screen $screen $geom 2>/tmp/Xvfb.log &
           export DISPLAY=:12
           # Run TestSuites
-          python3 -m pytest tests/test_all.py
+          python3 -m pytest tests/test_sort.py
