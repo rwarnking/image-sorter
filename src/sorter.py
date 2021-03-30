@@ -136,22 +136,36 @@ class Sorter:
             )
 
         # Rename file with the defined template
-        new_name = self.get_new_filename(date, file_extension)
+        new_name = self.get_new_filename(date)
+        new_name_ext = self.get_new_filename(date) + file_extension
 
-        # Move file to the correct folder
+        if os.path.exists(os.path.join(event_dir, new_name_ext)):
+            confirm = messagebox.askyesno(
+                title="Warning",
+                message="Filename already taken! Override file? Adding number to name otherwise.",
+                default="no",
+            )
+            if not confirm:
+                i = 1
+                new_name_ext = f"{new_name}_{i}{file_extension}"
+                while os.path.exists(os.path.join(event_dir, new_name_ext)):
+                    new_name_ext = f"{new_name}_{i}{file_extension}"
+                    i += 1
+
         try:
             if self.copy_files > 0:
-                # TODO check if already exists
-                shutil.copy(join(source_dir, file), join(event_dir, new_name))
-                self.meta_info.text_queue.put(f"Copied file: {file} with name: {new_name}.\n")
+                # Copy file
+                shutil.copy2(join(source_dir, file), join(event_dir, new_name_ext))
+                self.meta_info.text_queue.put(f"Copied file: {file} with name: {new_name_ext}.\n")
             else:
-                shutil.move(join(source_dir, file), join(event_dir, new_name))
-                self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name}.\n")
+                # Move file to the correct folder
+                shutil.move(join(source_dir, file), join(event_dir, new_name_ext))
+                self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name_ext}.\n")
         except OSError:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
         if self.modify_meta > 0:
-            self.modify_metadata(join(event_dir, new_name), event)
+            self.modify_metadata(join(event_dir, new_name_ext), event)
 
     # https://www.w3schools.com/python/python_regex.asp#search
     def get_file_info(self, file, source_dir, file_extension, fallback=False):
@@ -200,7 +214,7 @@ class Sorter:
         return date
 
     # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
-    def get_new_filename(self, date, file_extension):
+    def get_new_filename(self, date):
         filename = ""
         sig = self.meta_info.get_supported_signatures()
 
@@ -222,7 +236,7 @@ class Sorter:
             number = "001"
             filename = date.strftime("%m-%B-%d_") + number
 
-        return filename + file_extension
+        return filename
 
     def modify_metadata(self, file_with_path, title=""):
         try:
