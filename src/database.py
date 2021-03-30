@@ -88,6 +88,7 @@ class Database:
 
     def insert_event(self, title, s_year, s_month, s_day, e_year, e_month, e_day):
         if not self.has_elem("events", "title", title):
+            title = title.replace(" ", "")
             self.conn.execute(
                 "INSERT INTO events (title, s_year, s_month, s_day, e_year, e_month, e_day) \
                 VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -113,6 +114,7 @@ class Database:
                 )
 
     def delete_event(self, title):
+        title = title.replace(" ", "")
         self.delete_one("events", "title", title)
 
     def clean_events(self):

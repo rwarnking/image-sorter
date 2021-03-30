@@ -44,9 +44,7 @@ class Sorter:
         target_dir = self.meta_info.target_dir.get()
 
         if not os.path.exists(source_dir):
-            messagebox.showinfo(
-                message="Source path could not be found.", title="Error"
-            )
+            messagebox.showinfo(message="Source path could not be found.", title="Error")
             return
 
         dir_info = [(len(files), cur_path) for cur_path, d, files in os.walk(source_dir)]
@@ -65,9 +63,7 @@ class Sorter:
             filelist = [f for f in os.listdir(file_dir) if isfile(join(file_dir, f))]
 
             if len(filelist) == 0:
-                messagebox.showinfo(
-                    message=f"Found empty folder: {file_dir}!", title="Error"
-                )
+                messagebox.showinfo(message=f"Found empty folder: {file_dir}!", title="Error")
 
             # Iterate the files
             for file in filelist:
