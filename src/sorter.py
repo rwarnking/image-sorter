@@ -42,23 +42,37 @@ class Sorter:
         # Get all files in the directory
         source_dir = self.meta_info.source_dir.get()
         target_dir = self.meta_info.target_dir.get()
-        filelist = None
-        if os.path.exists(source_dir):
-            filelist = [f for f in os.listdir(source_dir) if isfile(join(source_dir, f))]
 
-        if filelist is None or len(filelist) == 0:
+        if not os.path.exists(source_dir):
+            messagebox.showinfo(
+                message="Source path could not be found.", title="Error"
+            )
+            return
+
+        dir_info = [(len(files), cur_path) for cur_path, d, files in os.walk(source_dir)]
+        file_counts, file_dirs = zip(*dir_info)
+
+        # Update the progressbar and label for the files
+        self.meta_info.file_count_max = sum(file_counts)
+
+        if sum(file_counts) == 0:
             messagebox.showinfo(
                 message="No files found! Select a different source path.", title="Error"
             )
             return
 
-        # Update the progressbar and label for the files
-        self.meta_info.file_count_max = len(filelist)
+        for file_dir in file_dirs:
+            filelist = [f for f in os.listdir(file_dir) if isfile(join(file_dir, f))]
 
-        # Iterate the files
-        for file in filelist:
-            self.process_file(file, source_dir, target_dir)
-            self.meta_info.file_count += 1
+            if len(filelist) == 0:
+                messagebox.showinfo(
+                    message=f"Found empty folder: {file_dir}!", title="Error"
+                )
+
+            # Iterate the files
+            for file in filelist:
+                self.process_file(file, file_dir, target_dir)
+                self.meta_info.file_count += 1
 
         self.meta_info.text_queue.put("Finished sorting\n")
         self.meta_info.finished = True
