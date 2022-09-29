@@ -19,6 +19,7 @@ from tkinter.ttk import Checkbutton, Progressbar, Scrollbar, Separator
 
 # own imports
 from database import Database
+from helper import center_window
 from meta_information import MetaInformation
 from sorter import Sorter
 from tkcalendar import DateEntry
@@ -29,6 +30,7 @@ PAD_Y = (10, 0)
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 SRC_PATH = os.path.dirname(os.path.realpath(__file__))
 TGT_PATH = os.path.dirname(os.path.realpath(__file__))
+
 
 class MainApp:
     def __init__(self, window):
@@ -59,6 +61,8 @@ class MainApp:
         self.run_button = Button(window, text="Dew it", command=lambda: self.run(window))
         self.run_button.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
 
+        center_window(window)
+
     def row(self):
         self.row_idx += 1
         return self.row_idx - 1
@@ -72,6 +76,7 @@ class MainApp:
         s = Sorter(self.meta_info)
         self.meta_info.finished = False
         self.meta_info.file_count = 0
+        self.meta_info.dont_ask_again.set(False)
         self.listen_for_result(window)
 
         self.new_thread = threading.Thread(target=s.run)
@@ -427,16 +432,16 @@ class MainApp:
         time_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
+            row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
+
+        Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
         )
 
         Checkbutton(
             window, text="Recursive file/folder processing", variable=self.meta_info.recursive
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
-
-        Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(
-            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
+        ).grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
 
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar

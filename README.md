@@ -17,7 +17,6 @@ All functionalities are accesseable via a simple GUI.
     - [Dependencies](#dependencies)
   - [Usage](#usage)
     - [GUI](#gui)
-    - [Supported Versions](#supported-versions)
   - [Contributing](#contributing)
   - [Credits](#credits)
   - [License](#license)

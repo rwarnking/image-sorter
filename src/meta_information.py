@@ -1,5 +1,5 @@
 import queue
-from tkinter import IntVar, StringVar
+from tkinter import IntVar, StringVar, BooleanVar
 
 
 class MetaInformation:
@@ -14,6 +14,8 @@ class MetaInformation:
         self.recursive = IntVar()
         self.copy_files = IntVar()
         self.copy_files.set(1)
+        self.dont_ask_again = BooleanVar()
+        self.dont_ask_again.set(False)
         self.fallback_sig = IntVar()
 
         self.in_signature = StringVar()

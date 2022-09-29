@@ -27,7 +27,7 @@ class TestSort(unittest.TestCase):
 
         # Set the meta_info data
         meta_info = MetaInformation()
-        meta_info.set_dirs(TEST_DIR)
+        meta_info.set_dirs(TEST_DIR, TEST_DIR)
         meta_info.source_dir.set(TEST_DIR + "/test_images")
 
         for idx, settings in enumerate(self.get_settings_list(meta_info)):

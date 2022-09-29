@@ -1,19 +1,24 @@
 import datetime
+import imp
 import os
 import re
 import shutil
 from os.path import isfile, join
 from tkinter import messagebox
+from messagebox import MessageBox
 
 import piexif
 from database import Database
+
 # from PIL import Image
 # from exif import Image as Image2
 # from pyexiv2 import Image as ImgMeta
 
+
 class Sorter:
     def __init__(self, meta_info):
         self.meta_info = meta_info
+        self.confirm = False
 
     ###############################################################################################
     # Main
@@ -141,12 +146,14 @@ class Sorter:
         new_name_ext = self.get_new_filename(date) + file_extension
 
         if os.path.exists(os.path.join(event_dir, new_name_ext)):
-            confirm = messagebox.askyesno(
-                title="Warning",
-                message="Filename already taken! Override file? Adding number to name otherwise.",
-                default="no",
-            )
-            if not confirm:
+            if not self.meta_info.dont_ask_again.get():
+                box = MessageBox(
+                    title="Warning",
+                    message="Filename already taken! Override file? Adding number to name otherwise.",
+                    meta_info=self.meta_info,
+                )
+                self.confirm = box.choice
+            if not self.confirm:
                 i = 1
                 new_name_ext = f"{new_name}_{i}{file_extension}"
                 while os.path.exists(os.path.join(event_dir, new_name_ext)):
@@ -267,9 +274,7 @@ class Sorter:
             piexif.insert(exif_bytes, file_with_path)
 
         except FileNotFoundError:
-            self.meta_info.text_queue.put(
-                f"File {file_with_path} could not modify metadata.\n"
-            )
+            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
 
     def modify_metadata_pyexiv2(self, file_with_path, title=""):
         """
@@ -297,9 +302,7 @@ class Sorter:
                     img_meta.modify_exif({A_KEY: artist[0][0]})
 
         except FileNotFoundError:
-            self.meta_info.text_queue.put(
-                f"File {file_with_path} could not modify metadata.\n"
-            )
+            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
 
     def modify_metadata_exif(self, file_with_path, title=""):
         """
@@ -330,9 +333,7 @@ class Sorter:
                 new_image_file.write(img.get_file())
 
         except FileNotFoundError:
-            self.meta_info.text_queue.put(
-                f"File {file_with_path} could not modify metadata.\n"
-            )
+            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
 
     def modify_metadata_pil(self, file_with_path, title=""):
         """
@@ -373,9 +374,7 @@ class Sorter:
             )
 
         except FileNotFoundError:
-            self.meta_info.text_queue.put(
-                f"File {file_with_path} could not modify metadata.\n"
-            )
+            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
 
     def debug_print_metadata(self, file):
         img = Image.open(file)

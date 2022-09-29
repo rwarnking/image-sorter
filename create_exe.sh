@@ -1,3 +1,4 @@
+#!/bin/bash
 pyinstaller -F --hidden-import "babel.numbers" src/application.py
 for entry in "dist"/*
 do
