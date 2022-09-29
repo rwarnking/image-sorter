@@ -7,18 +7,14 @@ name: Lint Code Base
 
 #
 # Documentation:
+# https://github.com/github/super-linter
 # https://help.github.com/en/articles/workflow-syntax-for-github-actions
 #
 
 #############################
 # Start the job on all push #
 #############################
-on:
-  push:
-    branches-ignore: []
-    # Remove the line above to run when pushing to master
-  pull_request:
-    branches: [main]
+on: [push, pull_request]
 
 ###############
 # Set the Job #
@@ -38,13 +34,13 @@ jobs:
       # Checkout the code base #
       ##########################
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       ################################
       # Run Linter against code base #
       ################################
       - name: Lint Code Base
-        uses: github/super-linter@v3
+        uses: docker://ghcr.io/github/super-linter:slim-v4
         env:
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_JSON : true
@@ -53,6 +49,9 @@ jobs:
           VALIDATE_PYTHON_ISORT: true
           VALIDATE_PYTHON_PYLINT: true
           VALIDATE_PYTHON_MYPY: true
+          VALIDATE_BASH : true
+          VALIDATE_GITHUB_ACTIONS : true
+          VALIDATE_MARKDOWN : true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHON_BLACK_CONFIG_FILE: .python-black

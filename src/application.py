@@ -27,7 +27,8 @@ PAD_X = 20
 PAD_Y = (10, 0)
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-
+SRC_PATH = os.path.dirname(os.path.realpath(__file__))
+TGT_PATH = os.path.dirname(os.path.realpath(__file__))
 
 class MainApp:
     def __init__(self, window):
@@ -112,9 +113,10 @@ class MainApp:
     def init_resource_folder(self, window):
         def browse_button(dir, initial):
             filename = filedialog.askdirectory(initialdir=initial)
-            dir.set(filename)
+            if filename != "":
+                dir.set(filename)
 
-        self.meta_info.set_dirs(DIR_PATH)
+        self.meta_info.set_dirs(SRC_PATH, TGT_PATH)
 
         # Source directory
         lbl1 = Label(window, text="Source directory:")
@@ -126,7 +128,7 @@ class MainApp:
         source_button = Button(
             window,
             text="Browse",
-            command=lambda: browse_button(self.meta_info.source_dir, DIR_PATH),
+            command=lambda: browse_button(self.meta_info.source_dir, SRC_PATH),
         )
         source_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -138,7 +140,7 @@ class MainApp:
         target_button = Button(
             window,
             text="Browse",
-            command=lambda: browse_button(self.meta_info.target_dir, DIR_PATH),
+            command=lambda: browse_button(self.meta_info.target_dir, TGT_PATH),
         )
         target_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -163,7 +165,8 @@ class MainApp:
     def init_event_system(self, window):
         def browse_button(dir, initial):
             filename = filedialog.askopenfilename(initialdir=initial)
-            dir.set(filename)
+            if filename != "":
+                dir.set(filename)
 
         db = Database()
 
@@ -267,7 +270,8 @@ class MainApp:
     def init_artist_system(self, window):
         def browse_button(dir, initial):
             filename = filedialog.askopenfilename(initialdir=initial)
-            dir.set(filename)
+            if filename != "":
+                dir.set(filename)
 
         db = Database()
 

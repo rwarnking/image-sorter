@@ -7,8 +7,9 @@ from tkinter import messagebox
 
 import piexif
 from database import Database
-from PIL import Image
-
+# from PIL import Image
+# from exif import Image as Image2
+# from pyexiv2 import Image as ImgMeta
 
 class Sorter:
     def __init__(self, meta_info):
@@ -165,7 +166,10 @@ class Sorter:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
         if self.modify_meta > 0:
-            self.modify_metadata(join(event_dir, new_name_ext), event)
+            self.modify_metadata_piexif(join(event_dir, new_name_ext), event)
+            # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event)
+            # self.modify_metadata_exif(join(event_dir, new_name_ext), event)
+            # self.modify_metadata_pil(join(event_dir, new_name_ext), event)
 
     # https://www.w3schools.com/python/python_regex.asp#search
     def get_file_info(self, file, source_dir, file_extension, fallback=False):
@@ -178,8 +182,7 @@ class Sorter:
                 )
 
             try:
-                img = Image.open(join(source_dir, file))
-                exif_dict = piexif.load(img.info["exif"])
+                exif_dict = piexif.load(join(source_dir, file))
                 # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
                 date = datetime.datetime.strptime(str(time, "ascii"), "%Y:%m:%d %H:%M:%S")
@@ -238,9 +241,110 @@ class Sorter:
 
         return filename
 
-    def modify_metadata(self, file_with_path, title=""):
+    def modify_metadata_piexif(self, file_with_path, title=""):
+        """
+        Use piexif to load the exif metadata from the image and store it in the copy by using insert.
+        This method prevents the image data from being decompressed and potentially altered.
+        Documentation: https://github.com/hMatoba/Piexif
+        Source: https://stackoverflow.com/questions/53543549/
+        Since piexif is only sparsely maintained an alternate function is implemented using pyexiv2.
+        """
+        try:
+            exif_dict = piexif.load(file_with_path)
+
+            if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
+                exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
+
+            if piexif.ImageIFD.Artist not in exif_dict["0th"]:
+                make = exif_dict["0th"][piexif.ImageIFD.Make]
+                model = exif_dict["0th"][piexif.ImageIFD.Model]
+                artist = self.db.get_artist(str(make, "ascii"), str(model, "ascii"))
+                if len(artist) == 1:
+                    # TODO [0][0]
+                    exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
+
+            exif_bytes = piexif.dump(exif_dict)
+            piexif.insert(exif_bytes, file_with_path)
+
+        except FileNotFoundError:
+            self.meta_info.text_queue.put(
+                f"File {file_with_path} could not modify metadata.\n"
+            )
+
+    def modify_metadata_pyexiv2(self, file_with_path, title=""):
+        """
+        This function uses pyexiv2 to modify the exif metadata.
+        This method prevents the image data from being decompressed and potentially altered.
+        Documentation: https://github.com/LeoHsiao1/pyexiv2
+        Source: https://stackoverflow.com/questions/53543549/
+        """
+        try:
+            with ImgMeta(file_with_path) as img_meta:
+
+                T_KEY = "Exif.Image.ImageDescription"
+                img_meta.modify_exif({T_KEY: title})
+
+                exif = img_meta.read_exif()
+                try:
+                    make = exif["Exif.Image.Make"]
+                    model = exif["Exif.Image.Model"]
+                except KeyError:
+                    raise
+
+                artist = self.db.get_artist(make, model)
+                if len(artist) == 1:
+                    A_KEY = "Exif.Image.Artist"
+                    img_meta.modify_exif({A_KEY: artist[0][0]})
+
+        except FileNotFoundError:
+            self.meta_info.text_queue.put(
+                f"File {file_with_path} could not modify metadata.\n"
+            )
+
+    def modify_metadata_exif(self, file_with_path, title=""):
+        """
+        This function uses exif to modify the exif metadata.
+        This method prevents the image data from being decompressed and potentially altered.
+        Sadly the lib is only sparsely maintained and using it might leed to corrupted data
+        when adding metadata, similar to this issue: https://gitlab.com/TNThieding/exif/-/issues/68
+        Therefore it is discuraged to use this function.
+        Documentation: https://gitlab.com/TNThieding/exif
+        """
+        try:
+            with open(file_with_path, "rb") as img_file:
+                img = Image2(img_file)
+
+            # Add description and title
+            img.image_description = title
+
+            # Add artist information
+            make = img.make
+            model = img.model
+            artist = self.db.get_artist(make, model)
+            if len(artist) == 1:
+                # TODO [0][0]
+                img.artist = artist[0][0]
+
+            # Overwrite image with modified EXIF metadata to an image file
+            with open(file_with_path, "wb") as new_image_file:
+                new_image_file.write(img.get_file())
+
+        except FileNotFoundError:
+            self.meta_info.text_queue.put(
+                f"File {file_with_path} could not modify metadata.\n"
+            )
+
+    def modify_metadata_pil(self, file_with_path, title=""):
+        """
+        This function uses piexif in combination with pillow to modify the exif metadata.
+        Sadly the pillow lib does decompress the image even though we only want to change the metadata.
+        Therefore it is discuraged to use this function.
+        Documentation: https://pillow.readthedocs.io/en/stable/index.html
+        Example: https://towardsdatascience.com/read-and-edit-image-metadata-with-python-f635398cd991
+        """
         try:
             img = Image.open(file_with_path)
+
             exif_dict = piexif.load(img.info["exif"])
 
             if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
@@ -255,17 +359,22 @@ class Sorter:
                     exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
 
             exif_bytes = piexif.dump(exif_dict)
+
+            # https://jdhao.github.io/2019/07/20/pil_jpeg_image_quality/
             img.save(
                 file_with_path,
                 exif=exif_bytes,
                 quality="keep",
+                dpi=img.info["dpi"],
                 subsampling="keep",
+                qtables="keep",
                 icc_profile=img.info.get("icc_profile"),
                 optimize=False,
             )
+
         except FileNotFoundError:
             self.meta_info.text_queue.put(
-                f"File {file_with_path} could not be found in modify metadata.\n"
+                f"File {file_with_path} could not modify metadata.\n"
             )
 
     def debug_print_metadata(self, file):

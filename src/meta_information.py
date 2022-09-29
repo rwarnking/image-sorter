@@ -31,12 +31,12 @@ class MetaInformation:
 
         self.text_queue = queue.Queue()
 
-    def set_dirs(self, dir):
+    def set_dirs(self, scr_dir, tgt_dir):
         self.source_dir = StringVar()
-        self.source_dir.set(dir)
+        self.source_dir.set(scr_dir)
 
         self.target_dir = StringVar()
-        self.target_dir.set(dir)
+        self.target_dir.set(tgt_dir)
 
     def get_supported_signatures(self):
         return [
