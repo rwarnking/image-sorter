@@ -12,6 +12,7 @@ class MetaInformation:
         self.shift_timedata = IntVar()
         self.modify_meta = IntVar()
         self.recursive = IntVar()
+        self.recursive.set(1)
         self.copy_files = IntVar()
         self.copy_files.set(1)
         self.dont_ask_again = BooleanVar()

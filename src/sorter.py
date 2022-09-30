@@ -51,24 +51,32 @@ class Sorter:
 
         if not os.path.exists(source_dir):
             messagebox.showinfo(message="Source path could not be found.", title="Error")
+            self.meta_info.finished = True
             return
 
-        dir_info = [(len(files), cur_path) for cur_path, d, files in os.walk(source_dir)]
-        file_counts, file_dirs = zip(*dir_info)
+        # If only the root directory should be processed
+        file_dirs = [source_dir]
+        file_counts = len([1 for f in os.listdir(source_dir) if isfile(join(source_dir, f))])
+        # Override if the folder should be processed recursive
+        if self.meta_info.recursive.get() == 1:
+            dir_info = [(len(files), cur_path) for cur_path, d, files in os.walk(source_dir)]
+            file_counts, file_dirs = zip(*dir_info)
+            file_counts = sum(file_counts)
 
         # Update the progressbar and label for the files
-        self.meta_info.file_count_max = sum(file_counts)
+        self.meta_info.file_count_max = file_counts
 
-        if sum(file_counts) == 0:
+        if file_counts == 0:
             messagebox.showinfo(
                 message="No files found! Select a different source path.", title="Error"
             )
+            self.meta_info.finished = True
             return
 
         for file_dir in file_dirs:
             filelist = [f for f in os.listdir(file_dir) if isfile(join(file_dir, f))]
 
-            if len(filelist) == 0:
+            if len(os.listdir(file_dir)) == 0:
                 messagebox.showinfo(message=f"Found empty folder: {file_dir}!", title="Error")
 
             # Iterate the files
@@ -80,7 +88,7 @@ class Sorter:
         self.meta_info.finished = True
 
     def process_file(self, file, source_dir, target_dir):
-        is_compatible = file.endswith(".jpg") or file.endswith(".png")
+        is_compatible = file.lower().endswith(".jpg") or file.lower().endswith(".png")
         if not is_compatible:
             self.meta_info.text_queue.put(f"Found incompatible file: {file}.\n")
             return
@@ -117,10 +125,7 @@ class Sorter:
         # print(event_list)
         # print(event_list[0])
         # print(event_list[0][0])
-
         event_name = event_list[0][0]
-
-        print(event_list[0])
 
         # Check if year folder for this file exists
         year_dir = join(target_dir, str(date.year))
@@ -315,7 +320,10 @@ class Sorter:
             if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
                 exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
 
-            if piexif.ImageIFD.Artist not in exif_dict["0th"]:
+            if (
+                piexif.ImageIFD.Artist not in exif_dict["0th"]
+                or len((exif_dict["0th"][piexif.ImageIFD.Artist]).decode("ascii")) < 1
+            ):
                 make = exif_dict["0th"][piexif.ImageIFD.Make]
                 model = exif_dict["0th"][piexif.ImageIFD.Model]
                 artist = self.db.get_artist(str(make, "ascii"), str(model, "ascii"))

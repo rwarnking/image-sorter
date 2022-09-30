@@ -216,14 +216,16 @@ class Database:
             self.out_text.insert(END, "Could not add Artist: Missing model!\n")
             return
 
-        if not self.has_elem("artists", "name", name):
-            self.conn.execute(
-                "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
-            )
-            self.conn.commit()
-            self.out_text.insert(END, f"Artist {name} was added.\n")
-        else:
-            self.out_text.insert(END, f"Artist {name} was already there, could NOT add.\n")
+        # TODO Artist can have multiple cameras, so a different check is needed
+        # TODO have cameras be time dependend on artist, maybe the person did change the camera
+        # if not self.has_elem("artists", "name", name):
+        self.conn.execute(
+            "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
+        )
+        self.conn.commit()
+        self.out_text.insert(END, f"Artist {name} was added.\n")
+        # else:
+        #     self.out_text.insert(END, f"Artist {name} was already there, could NOT add.\n")
 
     def insert_artists(self, file):
         with open(file) as json_file:
