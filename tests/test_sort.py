@@ -7,7 +7,7 @@ import pathmagic  # noqa isort:skip
 import os
 import shutil
 import unittest
-from tkinter import Tk
+from tkinter import Text, Tk
 
 from database import Database
 from meta_information import MetaInformation
@@ -18,17 +18,18 @@ class TestSort(unittest.TestCase):
     def test_run(self):
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
-        # load database
-        self.db = Database()
-        self.db.insert_events(TEST_DIR + "/events.json")
-        self.db.insert_artists(TEST_DIR + "/artists.json")
-
-        Tk()
+        window = Tk()
+        details_text = Text(window, width=0, height=0)
 
         # Set the meta_info data
         meta_info = MetaInformation()
         meta_info.set_dirs(TEST_DIR, TEST_DIR)
         meta_info.source_dir.set(TEST_DIR + "/test_images")
+
+        # load database
+        self.db = Database(details_text)
+        self.db.insert_events(TEST_DIR + "/events.json")
+        self.db.insert_artists(TEST_DIR + "/artists.json")
 
         for idx, settings in enumerate(self.get_settings_list(meta_info)):
             print(idx)
@@ -78,23 +79,31 @@ class TestSort(unittest.TestCase):
     def run_checks(self, idx, TEST_DIR):
         if idx == 0:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli/2020-07-01_21-15-34.jpg"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(
+                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/2020-07-01_21-15-34.jpg")
+            )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
         elif idx == 1:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli/2020-07-02_22-16-34.jpg"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(
+                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/2020-07-02_22-16-34.jpg")
+            )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
         elif idx == 2:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli/IMG_20200701_211534.jpg"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(
+                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/IMG_20200701_211534.jpg")
+            )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
         elif idx == 3:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/07_Juli/2020-07-01_21-15-34.jpg"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(
+                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/2020-07-01_21-15-34.jpg")
+            )
             self.assertFalse(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
 
     def set_meta_info(self, meta_info, settings):

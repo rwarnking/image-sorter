@@ -3,6 +3,7 @@ import pathmagic  # noqa isort:skip
 import datetime
 import os
 import unittest
+from tkinter import Text, Tk
 
 from database import Database
 
@@ -11,7 +12,9 @@ class TestDB(unittest.TestCase):
     def test_run(self):
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
-        self.db = Database()
+        window = Tk()
+        details_text = Text(window, width=0, height=0)
+        self.db = Database(details_text)
 
         EVENT_COUNT = 4
         ARTIST_COUNT = 3

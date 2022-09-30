@@ -8,7 +8,6 @@ PAD_Y = (10, 0)
 
 # Source: https://stackoverflow.com/questions/29619418/
 class MessageBox(object):
-
     def __init__(self, title, message, meta_info):
 
         # Return value
@@ -51,7 +50,7 @@ class MessageBox(object):
     def closed(self):
         self.root.destroy()
         self.choice = False
-    
+
     # Function on pressing Yes
     def clickYes(self):
         self.root.destroy()

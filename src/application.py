@@ -62,7 +62,7 @@ class MainApp:
         self.run_button.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
 
         self.db = Database(self.details_text)
-        
+
         lt_window(window)
 
     def row(self):
@@ -199,7 +199,9 @@ class MainApp:
         sv_event_file = StringVar()
         sv_event_file.set("src/events.json")
         save_eventfile_button = Button(
-            window, text="Save events to File", command=lambda: self.db.save_events(sv_event_file.get())
+            window,
+            text="Save events to File",
+            command=lambda: self.db.save_events(sv_event_file.get()),
         )
         save_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -398,7 +400,9 @@ class MainApp:
         rm_artist_name = StringVar()
         rm_artist_name.set("")
         load_artistfile_button = Button(
-            window, text="Remove artist", command=lambda: self.db.delete_artist(rm_artist_name.get())
+            window,
+            text="Remove artist",
+            command=lambda: self.db.delete_artist(rm_artist_name.get()),
         )
         load_artistfile_button.grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"

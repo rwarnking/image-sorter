@@ -10,10 +10,11 @@ def center_window(window):
 
     # Creates a geometric string argument
     window_geometry = (
-        str(window_width) + 'x' + str(window_height) + '+' + str(window_x) + '+' + str(window_y)
+        str(window_width) + "x" + str(window_height) + "+" + str(window_x) + "+" + str(window_y)
     )
     # Sets the geometry accordingly
     window.geometry(window_geometry)
+
 
 def lt_window(window):
     window.update()
@@ -21,6 +22,6 @@ def lt_window(window):
     window_height = window.winfo_height()
 
     # Creates a geometric string argument
-    window_geometry = str(window_width) + 'x' + str(window_height) + '+' + str(20) + '+' + str(20) 
+    window_geometry = str(window_width) + "x" + str(window_height) + "+" + str(20) + "+" + str(20)
     # Sets the geometry accordingly
     window.geometry(window_geometry)

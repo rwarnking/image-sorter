@@ -31,6 +31,12 @@ jobs:
           pip install piexif
       - name: Run db test with pytest
         run: |
+          # Start virtual display driver
+          disp=:12
+          screen=0
+          geom=640x480x24
+          exec Xvfb $disp -screen $screen $geom 2>/tmp/Xvfb.log &
+          export DISPLAY=:12
           # Run TestSuites
           python3 -m pytest tests/test_db.py
       - name: Run sort test with pytest

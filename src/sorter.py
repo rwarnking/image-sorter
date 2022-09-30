@@ -253,12 +253,12 @@ class Sorter:
 
     def modify_metadata_piexif(self, file_with_path, title=""):
         """
-        Use piexif to load the exif metadata from the image 
+        Use piexif to load the exif metadata from the image
         and store it in the copy by using insert.
         This method prevents the image data from being decompressed and potentially altered.
         Documentation: https://github.com/hMatoba/Piexif
         Source: https://stackoverflow.com/questions/53543549/
-        Since piexif is only sparsely maintained 
+        Since piexif is only sparsely maintained
         an alternate function is implemented using pyexiv2.
         """
         try:
@@ -289,7 +289,9 @@ class Sorter:
         Source: https://stackoverflow.com/questions/53543549/
         """
         try:
-            with ImgMeta(file_with_path) as img_meta: # noqa: F821 # pylint: disable=undefined-variable
+            with ImgMeta(  # noqa: F821 # pylint: disable=undefined-variable
+                file_with_path
+            ) as img_meta:
 
                 T_KEY = "Exif.Image.ImageDescription"
                 img_meta.modify_exif({T_KEY: title})
@@ -320,7 +322,7 @@ class Sorter:
         """
         try:
             with open(file_with_path, "rb") as img_file:
-                img = Image2(img_file) # noqa: F821 # pylint: disable=undefined-variable
+                img = Image2(img_file)  # noqa: F821 # pylint: disable=undefined-variable
 
             # Add description and title
             img.image_description = title
@@ -343,14 +345,14 @@ class Sorter:
     def modify_metadata_pil(self, file_with_path, title=""):
         """
         This function uses piexif in combination with pillow to modify the exif metadata.
-        Sadly the pillow lib does decompress the image 
+        Sadly the pillow lib does decompress the image
         even though we only want to change the metadata.
         Therefore it is discuraged to use this function.
         Documentation: https://pillow.readthedocs.io/en/stable/index.html
         Expl: https://towardsdatascience.com/read-and-edit-image-metadata-with-python-f635398cd991
         """
         try:
-            img = Image.open(file_with_path) # noqa: F821 # pylint: disable=undefined-variable
+            img = Image.open(file_with_path)  # noqa: F821 # pylint: disable=undefined-variable
 
             exif_dict = piexif.load(img.info["exif"])
 
@@ -383,7 +385,7 @@ class Sorter:
             self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
 
     def debug_print_metadata(self, file):
-        img = Image.open(file) # noqa: F821 # pylint: disable=undefined-variable
+        img = Image.open(file)  # noqa: F821 # pylint: disable=undefined-variable
         exif_dict = piexif.load(img.info["exif"])
 
         m_data = exif_dict["0th"]

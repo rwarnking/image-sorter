@@ -1,6 +1,5 @@
 import json
 import sqlite3
-
 from tkinter import END
 
 
@@ -87,8 +86,8 @@ class Database:
 
         s_event = self.get_event(start_date.year, start_date.month, start_date.day, subevent)
         e_event = self.get_event(end_date.year, end_date.month, end_date.day, subevent)
-        if len(s_event) > 0 or len(e_event) > 0: 
-            self.out_text.insert(END, f"Event was not added. Overlapping event found.\n")
+        if len(s_event) > 0 or len(e_event) > 0:
+            self.out_text.insert(END, "Event was not added. Overlapping event found.\n")
             return
 
         # Remove unwanted characters
@@ -104,18 +103,18 @@ class Database:
             end_date.year,
             end_date.month,
             end_date.day,
-            subevent
+            subevent,
         )
 
     def insert_subevent_from_date(self, title, start_date, end_date):
         s_main = self.get_event(start_date.year, start_date.month, start_date.day)
         e_main = self.get_event(end_date.year, end_date.month, end_date.day)
-        if len(s_main) == 0 or len(e_main) == 0: 
-            self.out_text.insert(END, f"Subevent could not be added. Missing main event.\n")
+        if len(s_main) == 0 or len(e_main) == 0:
+            self.out_text.insert(END, "Subevent could not be added. Missing main event.\n")
             return
         if s_main[0][0] != e_main[0][0]:
             self.out_text.insert(
-                END, f"Subevent could not be added. Two matching main events found.\n"
+                END, "Subevent could not be added. Two matching main events found.\n"
             )
             return
 
@@ -181,7 +180,7 @@ class Database:
                         "month": elem[5],
                         "day": elem[6],
                     },
-                    "subevent": elem[7]
+                    "subevent": elem[7],
                 }
             )
 
