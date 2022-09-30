@@ -65,7 +65,7 @@ class TestSort(unittest.TestCase):
         settings.append(obj)
 
         obj = self.create_settings_obj(meta_info)
-        obj["out_signature"] = meta_info.get_supported_signatures()[3]
+        obj["file_signature"] = meta_info.get_supported_file_signatures()[3]
         settings.append(obj)
 
         obj = self.create_settings_obj(meta_info)
@@ -79,30 +79,30 @@ class TestSort(unittest.TestCase):
     def run_checks(self, idx, TEST_DIR):
         if idx == 0:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
             self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/2020-07-01_21-15-34.jpg")
+                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-01_21-15-34.jpg")
             )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
         elif idx == 1:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
             self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/2020-07-02_22-16-34.jpg")
+                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-02_22-16-34.jpg")
             )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
         elif idx == 2:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
             self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/IMG_20200701_211534.jpg")
+                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/IMG_20200701_211534.jpg")
             )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
         elif idx == 3:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_07_Juli"))
+            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
             self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_07_Juli/2020-07-01_21-15-34.jpg")
+                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-01_21-15-34.jpg")
             )
             self.assertFalse(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
 
@@ -114,7 +114,8 @@ class TestSort(unittest.TestCase):
         meta_info.fallback_sig.set(settings["fallback_sig"])
 
         meta_info.in_signature.set(settings["in_signature"])
-        meta_info.out_signature.set(settings["out_signature"])
+        meta_info.file_signature.set(settings["file_signature"])
+        meta_info.folder_signature.set(settings["folder_signature"])
 
         meta_info.shift_days.set(settings["shift_days"])
         meta_info.shift_hours.set(settings["shift_hours"])
@@ -129,7 +130,8 @@ class TestSort(unittest.TestCase):
             "copy_files": 1,
             "fallback_sig": 0,
             "in_signature": meta_info.get_read_choices()[0],
-            "out_signature": meta_info.get_supported_signatures()[0],
+            "file_signature": meta_info.get_supported_file_signatures()[0],
+            "folder_signature": meta_info.get_supported_folder_signatures()[0],
             "shift_days": "0",
             "shift_hours": "0",
             "shift_minutes": "0",

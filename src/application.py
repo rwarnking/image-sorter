@@ -153,21 +153,25 @@ class MainApp:
 
     def init_signatures(self, window):
         in_choices = self.meta_info.get_read_choices()
-        out_choices = self.meta_info.get_supported_signatures()
+        file_choices = self.meta_info.get_supported_file_signatures()
+        folder_choices = self.meta_info.get_supported_folder_signatures()
 
-        lbl = Label(window, text="Input signature:")
+        lbl = Label(window, text="Input data:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         in_options = OptionMenu(window, self.meta_info.in_signature, *in_choices)
         in_options.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        Checkbutton(
-            window, text="Use fallback signature", variable=self.meta_info.fallback_sig
-        ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Checkbutton(window, text="Use fallback data", variable=self.meta_info.fallback_sig).grid(
+            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
 
-        lbl = Label(window, text="Output signature:")
+        lbl = Label(window, text="Output file/folder:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        out_options = OptionMenu(window, self.meta_info.out_signature, *out_choices)
-        out_options.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        file_options = OptionMenu(window, self.meta_info.file_signature, *file_choices)
+        file_options.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        folder_options = OptionMenu(window, self.meta_info.folder_signature, *folder_choices)
+        folder_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_event_system(self, window):
         def browse_button(dir, initial):

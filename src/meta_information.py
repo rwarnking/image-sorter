@@ -20,8 +20,10 @@ class MetaInformation:
 
         self.in_signature = StringVar()
         self.in_signature.set(self.get_read_choices()[0])
-        self.out_signature = StringVar()
-        self.out_signature.set(self.get_supported_signatures()[0])
+        self.file_signature = StringVar()
+        self.file_signature.set(self.get_supported_file_signatures()[0])
+        self.folder_signature = StringVar()
+        self.folder_signature.set(self.get_supported_folder_signatures()[0])
 
         self.shift_days = StringVar()
         self.shift_days.set("0")
@@ -40,7 +42,7 @@ class MetaInformation:
         self.target_dir = StringVar()
         self.target_dir.set(tgt_dir)
 
-    def get_supported_signatures(self):
+    def get_supported_file_signatures(self):
         return [
             "YYYY-MM-DD_HH-MM-SS",
             "YYYY-MM-DD_HH-MM-SS.fff",
@@ -48,6 +50,20 @@ class MetaInformation:
             "IMG_YYYYMMDD_HHMMSS",
             "Day Month DD HH-MM-SS YYYY",
             "MM-Month-DD_Number",
+        ]
+
+    def get_supported_folder_signatures(self):
+        return [
+            "YYYY_[MM_DD-MM_DD]_Event-Subevent",
+            "YYYY[MM_DD-MM_DD]_Event-Subevent",
+            "[YYYY][MM_DD-MM_DD][Event-Subevent]",
+            "[YYYY][MM_DD]-[MM_DD][Event-Subevent]",
+            "YYYY[MM_DD-MM_DD]Event-Subevent",
+            "YYYY_MM_DD-MM_DD_Event-Subevent",
+            "YYYY'MM_DD-MM_DD'Event-Subevent",
+            "YYYY_MM-MM_Event-Subevent",
+            "YYYY_Event-Subevent",
+            "Event-Subevent",
         ]
 
     def get_read_choices(self):

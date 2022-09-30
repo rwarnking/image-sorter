@@ -190,7 +190,8 @@ class Database:
 
     def get_event(self, year, month, day, sub=0):
         cur = self.conn.execute(
-            "SELECT title FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? \
+            "SELECT title, s_year, s_month, s_day, e_year, e_month, e_day \
+            FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? \
             AND e_month>=? AND e_day>=? AND sub=?",
             (year, month, day, year, month, day, sub),
         )

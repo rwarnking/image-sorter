@@ -42,7 +42,8 @@ class Sorter:
         self.shift_hours = int(self.meta_info.shift_hours.get())
 
         self.in_signature = self.meta_info.in_signature.get()
-        self.out_signature = self.meta_info.out_signature.get()
+        self.file_signature = self.meta_info.file_signature.get()
+        self.folder_signature = self.meta_info.folder_signature.get()
 
         # Get all files in the directory
         source_dir = self.meta_info.source_dir.get()
@@ -117,11 +118,9 @@ class Sorter:
         # print(event_list[0])
         # print(event_list[0][0])
 
-        subevent = ""
-        subevent_list = self.db.get_event(date.year, date.month, date.day, 1)
-        if len(subevent_list) == 1:
-            subevent = "-" + subevent_list[0][0]
-        event = event_list[0][0]
+        event_name = event_list[0][0]
+
+        print(event_list[0])
 
         # Check if year folder for this file exists
         year_dir = join(target_dir, str(date.year))
@@ -134,8 +133,7 @@ class Sorter:
             )
 
         # Check if event folder for this file exists
-        month_id = str(date.month).zfill(2)
-        event_dir = join(year_dir, str(date.year) + "_" + month_id + "_" + event + subevent)
+        event_dir = join(year_dir, self.get_new_foldername(event_list[0], date))
         try:
             if not os.path.exists(event_dir):
                 os.mkdir(event_dir)
@@ -176,10 +174,10 @@ class Sorter:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
         if self.modify_meta > 0:
-            self.modify_metadata_piexif(join(event_dir, new_name_ext), event)
-            # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event)
-            # self.modify_metadata_exif(join(event_dir, new_name_ext), event)
-            # self.modify_metadata_pil(join(event_dir, new_name_ext), event)
+            self.modify_metadata_piexif(join(event_dir, new_name_ext), event_name)
+            # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event_name)
+            # self.modify_metadata_exif(join(event_dir, new_name_ext), event_name)
+            # self.modify_metadata_pil(join(event_dir, new_name_ext), event_name)
 
     # https://www.w3schools.com/python/python_regex.asp#search
     def get_file_info(self, file, source_dir, file_extension, fallback=False):
@@ -226,22 +224,72 @@ class Sorter:
 
         return date
 
+    def get_new_foldername(self, event, date):
+        event_name = event[0]
+        e = event
+
+        subevent_name = ""
+        subevent_list = self.db.get_event(date.year, date.month, date.day, 1)
+        if len(subevent_list) == 1:
+            e = subevent_list[0]
+            subevent_name = "-" + e[0]
+
+        year = e[1]
+        s_month_id = str(e[2]).zfill(2)
+        e_month_id = str(e[5]).zfill(2)
+
+        s_day_id = str(e[3]).zfill(2)
+        e_day_id = str(e[6]).zfill(2)
+
+        span = s_month_id + "_" + s_day_id
+        if s_day_id != e_day_id or s_month_id != e_month_id:
+            span = s_month_id + "_" + s_day_id + "-" + e_month_id + "_" + e_day_id
+
+        foldername = ""
+        sig = self.meta_info.get_supported_folder_signatures()
+
+        if self.folder_signature == sig[0]:
+            foldername = str(year) + "_[" + span + "]_" + event_name + subevent_name
+        elif self.folder_signature == sig[1]:
+            foldername = str(year) + "[" + span + "]_" + event_name + subevent_name
+        elif self.folder_signature == sig[2]:
+            foldername = "[" + str(year) + "][" + span + "][" + event_name + subevent_name + "]"
+        elif self.folder_signature == sig[3]:
+            lst = span.split("-")
+            center = "[" + lst[0] + "]-[" + lst[1] + "]" if len(lst) == 2 else "[" + lst[0] + "]"
+            foldername = "[" + str(year) + "]" + center + "[" + event_name + subevent_name + "]"
+        elif self.folder_signature == sig[4]:
+            foldername = str(year) + "[" + span + "]" + event_name + subevent_name
+        elif self.folder_signature == sig[5]:
+            foldername = str(year) + "_" + span + "_" + event_name + subevent_name
+        elif self.folder_signature == sig[6]:
+            foldername = str(year) + "'" + span + "'" + event_name + subevent_name
+        elif self.folder_signature == sig[7]:
+            month = s_month_id if s_month_id == e_month_id else s_month_id + "-" + e_month_id
+            foldername = str(year) + "_" + month + "_" + event_name + subevent_name
+        elif self.folder_signature == sig[8]:
+            foldername = str(year) + "_" + event_name + subevent_name
+        elif self.folder_signature == sig[9]:
+            foldername = event_name + subevent_name
+
+        return foldername
+
     # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
     def get_new_filename(self, date):
         filename = ""
-        sig = self.meta_info.get_supported_signatures()
+        sig = self.meta_info.get_supported_file_signatures()
 
-        if self.out_signature == sig[0]:
+        if self.file_signature == sig[0]:
             filename = date.isoformat("_")
             filename = filename.replace(":", "-")
-        elif self.out_signature == sig[1]:
+        elif self.file_signature == sig[1]:
             filename = date.isoformat("_", "milliseconds")
             filename = filename.replace(":", "-")
-        elif self.out_signature == sig[2]:
+        elif self.file_signature == sig[2]:
             filename = date.strftime("%Y%m%d_%H%M%S")
-        elif self.out_signature == sig[3]:
+        elif self.file_signature == sig[3]:
             filename = date.strftime("IMG_%Y%m%d_%H%M%S")
-        elif self.out_signature == sig[4]:
+        elif self.file_signature == sig[4]:
             filename = date.ctime()
             filename = filename.replace(":", "-")
         else:
