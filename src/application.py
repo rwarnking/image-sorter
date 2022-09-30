@@ -19,7 +19,7 @@ from tkinter.ttk import Checkbutton, Progressbar, Scrollbar, Separator
 
 # own imports
 from database import Database
-from helper import center_window
+from helper import lt_window
 from meta_information import MetaInformation
 from sorter import Sorter
 from tkcalendar import DateEntry
@@ -61,7 +61,9 @@ class MainApp:
         self.run_button = Button(window, text="Dew it", command=lambda: self.run(window))
         self.run_button.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
 
-        center_window(window)
+        self.db = Database(self.details_text)
+        
+        lt_window(window)
 
     def row(self):
         self.row_idx += 1
@@ -173,8 +175,6 @@ class MainApp:
             if filename != "":
                 dir.set(filename)
 
-        db = Database()
-
         # Load events from file
         # TODO why src?
         ld_event_file = StringVar()
@@ -182,7 +182,7 @@ class MainApp:
         load_eventfile_button = Button(
             window,
             text="Load events from File",
-            command=lambda: db.insert_events(ld_event_file.get()),
+            command=lambda: self.db.insert_events(ld_event_file.get()),
         )
         load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -199,7 +199,7 @@ class MainApp:
         sv_event_file = StringVar()
         sv_event_file.set("src/events.json")
         save_eventfile_button = Button(
-            window, text="Save events to File", command=lambda: db.save_events(sv_event_file.get())
+            window, text="Save events to File", command=lambda: self.db.save_events(sv_event_file.get())
         )
         save_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -211,7 +211,9 @@ class MainApp:
         )
         browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        # Add one event
+        #################
+        # Add one event #
+        #################
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
         date_frame = Frame(window)
         date_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -238,22 +240,59 @@ class MainApp:
         lbl_date.pack(side="left")
         Entry(date_frame, textvariable=sv_event_title).pack(side="right")
 
-        load_eventfile_button = Button(
+        add_event_button = Button(
             window,
             text="Add event",
-            command=lambda: db.insert_event_from_date(
+            command=lambda: self.db.insert_event_from_date(
                 sv_event_title.get(), start_entry.get_date(), end_entry.get_date()
             ),
         )
-        load_eventfile_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        add_event_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        ############
+        # Subevent #
+        ############
+        date_frame = Frame(window)
+        date_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_date = Label(date_frame, text="Start: ")
+        lbl_date.pack(side="left")
+        start_entry2 = DateEntry(
+            date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
+        )
+        start_entry2.pack(side="left")
+
+        end_entry2 = DateEntry(
+            date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
+        )
+        end_entry2.pack(side="right")
+        lbl_date = Label(date_frame, text="End: ")
+        lbl_date.pack(side="right")
+
+        sv_subevent_title = StringVar()
+        sv_subevent_title.set("")
+        date_frame = Frame(window)
+        date_frame.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_date = Label(date_frame, text="Title: ")
+        lbl_date.pack(side="left")
+        Entry(date_frame, textvariable=sv_subevent_title).pack(side="right")
+
+        add_subevent_button = Button(
+            window,
+            text="Add subevent",
+            command=lambda: self.db.insert_subevent_from_date(
+                sv_subevent_title.get(), start_entry2.get_date(), end_entry2.get_date()
+            ),
+        )
+        add_subevent_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Remove one event
         rm_event_title = StringVar()
         rm_event_title.set("")
-        load_eventfile_button = Button(
-            window, text="Remove event", command=lambda: db.delete_event(rm_event_title.get())
+        remove_event_button = Button(
+            window, text="Remove event", command=lambda: self.db.delete_event(rm_event_title.get())
         )
-        load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        remove_event_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         date_frame = Frame(window)
         date_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -263,12 +302,12 @@ class MainApp:
 
         # Remove all events
         print_events_button = Button(
-            window, text="Print event list", command=lambda: db.print_events()
+            window, text="Print event list", command=lambda: self.db.print_events()
         )
         print_events_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         clear_events_button = Button(
-            window, text="Clear event list", command=lambda: db.clean_events()
+            window, text="Clear event list", command=lambda: self.db.clean_events()
         )
         clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -278,8 +317,6 @@ class MainApp:
             if filename != "":
                 dir.set(filename)
 
-        db = Database()
-
         # Load artists from file
         # TODO why src?
         ld_artist_file = StringVar()
@@ -287,7 +324,7 @@ class MainApp:
         load_artistfile_button = Button(
             window,
             text="Load artists from File",
-            command=lambda: db.insert_artists(ld_artist_file.get()),
+            command=lambda: self.db.insert_artists(ld_artist_file.get()),
         )
         load_artistfile_button.grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -308,7 +345,7 @@ class MainApp:
         save_artistfile_button = Button(
             window,
             text="Save artists to File",
-            command=lambda: db.save_artists(sv_artist_file.get()),
+            command=lambda: self.db.save_artists(sv_artist_file.get()),
         )
         save_artistfile_button.grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -351,7 +388,7 @@ class MainApp:
         load_artistfile_button = Button(
             window,
             text="Add artist",
-            command=lambda: db.insert_artist(
+            command=lambda: self.db.insert_artist(
                 sv_artist_name.get(), sv_artist_make.get(), sv_artist_model.get()
             ),
         )
@@ -361,7 +398,7 @@ class MainApp:
         rm_artist_name = StringVar()
         rm_artist_name.set("")
         load_artistfile_button = Button(
-            window, text="Remove artist", command=lambda: db.delete_artist(rm_artist_name.get())
+            window, text="Remove artist", command=lambda: self.db.delete_artist(rm_artist_name.get())
         )
         load_artistfile_button.grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -375,12 +412,12 @@ class MainApp:
 
         # Remove all artists
         print_artists_button = Button(
-            window, text="Print artist list", command=lambda: db.print_artists()
+            window, text="Print artist list", command=lambda: self.db.print_artists()
         )
         print_artists_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         clear_artists_button = Button(
-            window, text="Clear artist list", command=lambda: db.clean_artists()
+            window, text="Clear artist list", command=lambda: self.db.clean_artists()
         )
         clear_artists_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 

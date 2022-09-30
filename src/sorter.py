@@ -1,14 +1,13 @@
 import datetime
-import imp
 import os
 import re
 import shutil
 from os.path import isfile, join
 from tkinter import messagebox
-from messagebox import MessageBox
 
 import piexif
 from database import Database
+from messagebox import MessageBox
 
 # from PIL import Image
 # from exif import Image as Image2
@@ -27,7 +26,7 @@ class Sorter:
         self.meta_info.text_queue.put("Start sorting\n")
 
         # create database
-        self.db = Database()
+        self.db = Database(self.meta_info)
 
         # These variables are duplicates of the metadata vars.
         # This is done to improve the performance since these get() functions can get expensive
@@ -105,20 +104,24 @@ class Sorter:
                 messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
 
         # Ask database for event using the date
-        result = self.db.get_event(date.year, date.month, date.day)
-        if len(result) == 0:
+        event_list = self.db.get_event(date.year, date.month, date.day)
+        if len(event_list) == 0:
             self.meta_info.text_queue.put(f"No matching event found for file: {file}.\n")
             return
-        elif len(result) > 1:
+        elif len(event_list) > 1:
             self.meta_info.text_queue.put(f"To many matching events found for file: {file}.\n")
             return
 
         # TODO
-        # print(result)
-        # print(result[0])
-        # print(result[0][0])
+        # print(event_list)
+        # print(event_list[0])
+        # print(event_list[0][0])
 
-        event = result[0][0]
+        subevent = ""
+        subevent_list = self.db.get_event(date.year, date.month, date.day, 1)
+        if len(subevent_list) == 1:
+            subevent = "-" + subevent_list[0][0]
+        event = event_list[0][0]
 
         # Check if year folder for this file exists
         year_dir = join(target_dir, str(date.year))
@@ -132,7 +135,7 @@ class Sorter:
 
         # Check if event folder for this file exists
         month_id = str(date.month).zfill(2)
-        event_dir = join(year_dir, month_id + "_" + event)
+        event_dir = join(year_dir, str(date.year) + "_" + month_id + "_" + event + subevent)
         try:
             if not os.path.exists(event_dir):
                 os.mkdir(event_dir)
@@ -148,8 +151,8 @@ class Sorter:
         if os.path.exists(os.path.join(event_dir, new_name_ext)):
             if not self.meta_info.dont_ask_again.get():
                 box = MessageBox(
-                    title="Warning",
-                    message="Filename already taken! Override file? Adding number to name otherwise.",
+                    title="Warning: Filename already taken!",
+                    message="Override file? Adding number to name otherwise.",
                     meta_info=self.meta_info,
                 )
                 self.confirm = box.choice
@@ -250,11 +253,13 @@ class Sorter:
 
     def modify_metadata_piexif(self, file_with_path, title=""):
         """
-        Use piexif to load the exif metadata from the image and store it in the copy by using insert.
+        Use piexif to load the exif metadata from the image 
+        and store it in the copy by using insert.
         This method prevents the image data from being decompressed and potentially altered.
         Documentation: https://github.com/hMatoba/Piexif
         Source: https://stackoverflow.com/questions/53543549/
-        Since piexif is only sparsely maintained an alternate function is implemented using pyexiv2.
+        Since piexif is only sparsely maintained 
+        an alternate function is implemented using pyexiv2.
         """
         try:
             exif_dict = piexif.load(file_with_path)
@@ -284,7 +289,7 @@ class Sorter:
         Source: https://stackoverflow.com/questions/53543549/
         """
         try:
-            with ImgMeta(file_with_path) as img_meta:
+            with ImgMeta(file_with_path) as img_meta: # noqa: F821 # pylint: disable=undefined-variable
 
                 T_KEY = "Exif.Image.ImageDescription"
                 img_meta.modify_exif({T_KEY: title})
@@ -315,7 +320,7 @@ class Sorter:
         """
         try:
             with open(file_with_path, "rb") as img_file:
-                img = Image2(img_file)
+                img = Image2(img_file) # noqa: F821 # pylint: disable=undefined-variable
 
             # Add description and title
             img.image_description = title
@@ -338,13 +343,14 @@ class Sorter:
     def modify_metadata_pil(self, file_with_path, title=""):
         """
         This function uses piexif in combination with pillow to modify the exif metadata.
-        Sadly the pillow lib does decompress the image even though we only want to change the metadata.
+        Sadly the pillow lib does decompress the image 
+        even though we only want to change the metadata.
         Therefore it is discuraged to use this function.
         Documentation: https://pillow.readthedocs.io/en/stable/index.html
-        Example: https://towardsdatascience.com/read-and-edit-image-metadata-with-python-f635398cd991
+        Expl: https://towardsdatascience.com/read-and-edit-image-metadata-with-python-f635398cd991
         """
         try:
-            img = Image.open(file_with_path)
+            img = Image.open(file_with_path) # noqa: F821 # pylint: disable=undefined-variable
 
             exif_dict = piexif.load(img.info["exif"])
 
@@ -377,7 +383,7 @@ class Sorter:
             self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
 
     def debug_print_metadata(self, file):
-        img = Image.open(file)
+        img = Image.open(file) # noqa: F821 # pylint: disable=undefined-variable
         exif_dict = piexif.load(img.info["exif"])
 
         m_data = exif_dict["0th"]

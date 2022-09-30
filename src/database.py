@@ -1,13 +1,16 @@
 import json
 import sqlite3
 
+from tkinter import END
+
 
 class Database:
-    def __init__(self, path="database.db"):
+    def __init__(self, out_text, path="database.db"):
+        self.out_text = out_text
         self.conn = sqlite3.connect(path)
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
-            s_day INT, e_year INT, e_month INT, e_day INTT)"
+            s_day INT, e_year INT, e_month INT, e_day INT, sub INT)"
         )
 
         self.conn.execute(
@@ -23,13 +26,13 @@ class Database:
 
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
-            s_day INT, e_year INT, e_month INT, e_day INTT)"
+            s_day INT, e_year INT, e_month INT, e_day INT, sub INT)"
         )
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
         )
 
-        print("All table entrys were deleted.")
+        self.out_text.insert(END, "All table entrys were deleted.\n")
 
     ######################
     # Generell functions #
@@ -43,13 +46,17 @@ class Database:
         return len(result) > 0
 
     def delete_one(self, table, attr, var):
+        if var == "":
+            self.out_text.insert(END, "Could not delete: Missing value!\n")
+            return
+
         if self.has_elem(table, attr, var):
             query = f"DELETE FROM {table} WHERE {attr}=?"
             self.conn.execute(query, (var,))
             self.conn.commit()
-            print("From table " + table + ", " + var + " was deleted.")
+            self.out_text.insert(END, f"From table {table}, {var} was deleted.\n")
         else:
-            print("In table " + table + ", " + var + " was not found.")
+            self.out_text.insert(END, f"In table {table}, {var} was not found.\n")
 
     def get_all_from_table(self, table):
         cur = self.conn.execute(f"SELECT * FROM {table}")
@@ -62,19 +69,32 @@ class Database:
         result = cur.fetchall()
         cur.close()
         for r in result:
-            print(r)
+            self.out_text.insert(END, str(r) + "\n")
+
+        if len(result) == 0:
+            self.out_text.insert(END, "Table empty.\n")
 
     #################
     # Event related #
     #################
-    def insert_event_from_date(self, title, start_date, end_date):
-        # TODO
+    def insert_event_from_date(self, title, start_date, end_date, subevent=0):
         if end_date < start_date:
-            print("Could not add Event: end date < start date!")
+            self.out_text.insert(END, "Could not add Event: end date < start date!\n")
             return
         if title == "":
-            print("Could not add Event: Missing titel!")
+            self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return
+
+        s_event = self.get_event(start_date.year, start_date.month, start_date.day, subevent)
+        e_event = self.get_event(end_date.year, end_date.month, end_date.day, subevent)
+        if len(s_event) > 0 or len(e_event) > 0: 
+            self.out_text.insert(END, f"Event was not added. Overlapping event found.\n")
+            return
+
+        # Remove unwanted characters
+        str(title).replace(" ", "")
+        str(title).replace("-", "")
+        str(title).replace("_", "")
 
         self.insert_event(
             title,
@@ -84,20 +104,36 @@ class Database:
             end_date.year,
             end_date.month,
             end_date.day,
+            subevent
         )
 
-    def insert_event(self, title, s_year, s_month, s_day, e_year, e_month, e_day):
+    def insert_subevent_from_date(self, title, start_date, end_date):
+        s_main = self.get_event(start_date.year, start_date.month, start_date.day)
+        e_main = self.get_event(end_date.year, end_date.month, end_date.day)
+        if len(s_main) == 0 or len(e_main) == 0: 
+            self.out_text.insert(END, f"Subevent could not be added. Missing main event.\n")
+            return
+        if s_main[0][0] != e_main[0][0]:
+            self.out_text.insert(
+                END, f"Subevent could not be added. Two matching main events found.\n"
+            )
+            return
+
+        self.insert_event_from_date(title, start_date, end_date, 1)
+
+    def insert_event(self, title, s_year, s_month, s_day, e_year, e_month, e_day, sub_event):
+        # TODO Add check that the new events do not overlap
         if not self.has_elem("events", "title", title):
-            title = title.replace(" ", "")
+            title = str(title).replace(" ", "")
             self.conn.execute(
-                "INSERT INTO events (title, s_year, s_month, s_day, e_year, e_month, e_day) \
-                VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (title, s_year, s_month, s_day, e_year, e_month, e_day),
+                "INSERT INTO events (title, s_year, s_month, s_day, e_year, e_month, e_day, sub) \
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (title, s_year, s_month, s_day, e_year, e_month, e_day, sub_event),
             )
             self.conn.commit()
-            print("Event " + title + " was added.")
+            self.out_text.insert(END, f"Event {title} was added.\n")
         else:
-            print("Event " + title + " was already there, could NOT add.")
+            self.out_text.insert(END, f"Event {title} was already there, could NOT add.\n")
 
     def insert_events(self, file):
         with open(file) as json_file:
@@ -111,10 +147,11 @@ class Database:
                     event["end"]["year"],
                     event["end"]["month"],
                     event["end"]["day"],
+                    event["subevent"],
                 )
 
     def delete_event(self, title):
-        title = title.replace(" ", "")
+        title = str(title).replace(" ", "")
         self.delete_one("events", "title", title)
 
     def clean_events(self):
@@ -122,10 +159,10 @@ class Database:
 
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
-            s_day INT, e_year INT, e_month INT, e_day INTT)"
+            s_day INT, e_year INT, e_month INT, e_day INT, sub INT)"
         )
 
-        print("All event entrys were deleted.")
+        self.out_text.insert(END, "All event entrys were deleted.\n")
 
     def save_events(self, file):
         data = self.get_all_from_table("events")
@@ -144,18 +181,19 @@ class Database:
                         "month": elem[5],
                         "day": elem[6],
                     },
+                    "subevent": elem[7]
                 }
             )
 
         with open(file, "w") as outfile:
             json.dump(json_data, outfile, indent=4)
-        print("Events were saved to file " + file + ".")
+        self.out_text.insert(END, f"Events were saved to file {file}.\n")
 
-    def get_event(self, year, month, day):
+    def get_event(self, year, month, day, sub=0):
         cur = self.conn.execute(
             "SELECT title FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? \
-            AND e_month>=? AND e_day>=?",
-            (year, month, day, year, month, day),
+            AND e_month>=? AND e_day>=? AND sub=?",
+            (year, month, day, year, month, day, sub),
         )
         result = cur.fetchall()
         cur.close()
@@ -168,14 +206,24 @@ class Database:
     # Artist related #
     ##################
     def insert_artist(self, name, make, model):
+        if name == "":
+            self.out_text.insert(END, "Could not add Artist: Missing name!\n")
+            return
+        if make == "":
+            self.out_text.insert(END, "Could not add Artist: Missing make!\n")
+            return
+        if model == "":
+            self.out_text.insert(END, "Could not add Artist: Missing model!\n")
+            return
+
         if not self.has_elem("artists", "name", name):
             self.conn.execute(
                 "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
             )
             self.conn.commit()
-            print("Artist " + name + " was added.")
+            self.out_text.insert(END, f"Artist {name} was added.\n")
         else:
-            print("Artist " + name + " was already there, could NOT add.")
+            self.out_text.insert(END, f"Artist {name} was already there, could NOT add.\n")
 
     def insert_artists(self, file):
         with open(file) as json_file:
@@ -197,7 +245,7 @@ class Database:
             "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
         )
 
-        print("All artist entrys were deleted.")
+        self.out_text.insert(END, "All artist entrys were deleted.\n")
 
     def save_artists(self, file):
         data = self.get_all_from_table("artists")
@@ -213,7 +261,7 @@ class Database:
 
         with open(file, "w") as outfile:
             json.dump(json_data, outfile, indent=4)
-        print("Artists were saved to file " + file + ".")
+        self.out_text.insert(END, f"Artists were saved to file {file}.\n")
 
     def get_artist(self, make, model):
         cur = self.conn.execute("SELECT name FROM artists WHERE make=? AND model=?", (make, model))

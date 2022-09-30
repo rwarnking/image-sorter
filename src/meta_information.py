@@ -1,5 +1,5 @@
 import queue
-from tkinter import IntVar, StringVar, BooleanVar
+from tkinter import BooleanVar, IntVar, StringVar
 
 
 class MetaInformation:

@@ -9,13 +9,13 @@ Use your best judgment, and feel free to propose changes to this document in a p
 ## Table Of Contents
 
 1. [How Can I Contribute?](#how-can-i-contribute)
-  * [Reporting Bugs](#reporting-bugs)
-  * [Suggesting Enhancements](#suggesting-enhancements)
-  * [Pull Requests](#pull-requests)
+    * [Reporting Bugs](#reporting-bugs)
+    * [Suggesting Enhancements](#suggesting-enhancements)
+    * [Pull Requests](#pull-requests)
 
 2. [Styleguides](#styleguides)
-  * [Git Commit Messages](#git-commit-messages)
-  * [Python3 Styleguide](#python3-styleguide)
+    * [Git Commit Messages](#git-commit-messages)
+    * [Python3 Styleguide](#python3-styleguide)
 
 ## How Can I Contribute?
 
