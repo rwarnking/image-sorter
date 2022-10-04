@@ -74,12 +74,22 @@ class MetaInformation:
     # in the filename which should just be ignored
     def get_signature_regex(self):
         return [
-            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png)$",
-            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png)$",
-            r"^\d{8}_\d{6}(\.jpg|\.png)$",
-            r"^IMG_\d{8}_\d{6}(\.jpg|\.png)$",
-            r"^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png)$",
-            r"^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png)$",
+            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\d{8}_\d{6}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^IMG_\d{8}_\d{6}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+        ]
+
+    def get_num_signature_regex(self):
+        return [
+            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\d{8}_\d{6}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^IMG_\d{8}_\d{6}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^\d{2}-\w*-\d{2}_\d{3}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
         ]
 
     def get_signature_strptime(self):

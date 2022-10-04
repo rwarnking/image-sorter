@@ -88,14 +88,20 @@ class Sorter:
         self.meta_info.finished = True
 
     def process_file(self, file, source_dir, target_dir):
-        is_compatible = file.lower().endswith(".jpg") or file.lower().endswith(".png")
+        is_compatible = (
+            file.lower().endswith(".jpg") 
+            or file.lower().endswith(".png")
+            or file.lower().endswith(".mp4")
+            or file.lower().endswith(".gif")
+            or file.lower().endswith(".svg")
+        )
         if not is_compatible:
             self.meta_info.text_queue.put(f"Found incompatible file: {file}.\n")
             return
 
         # Get information of file
         tmp, file_extension = os.path.splitext(file)
-        date = self.get_file_info(file, source_dir, file_extension)
+        date = self.get_file_info(file, source_dir, file_extension) # TODO check for mp4 and stuff
         if date is False:
             return
         if self.shift_timedata > 0:
@@ -178,7 +184,7 @@ class Sorter:
         except OSError:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
-        if self.modify_meta > 0:
+        if file.lower().endswith(".jpg") and self.modify_meta > 0:
             self.modify_metadata_piexif(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_exif(join(event_dir, new_name_ext), event_name)
@@ -188,7 +194,7 @@ class Sorter:
     def get_file_info(self, file, source_dir, file_extension, fallback=False):
         date = False
 
-        if self.in_signature == "IMG-Meta-Info" or fallback:
+        if ((self.in_signature == "IMG-Meta-Info" or fallback) and file_extension == ".jpg"):
             if fallback:
                 self.meta_info.text_queue.put(
                     f"Unsupported signature for file: {file} used fallback.\n"
@@ -198,8 +204,11 @@ class Sorter:
                 exif_dict = piexif.load(join(source_dir, file))
                 # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
-                ms = exif_dict["Exif"][piexif.ExifIFD.SubSecTimeOriginal]
-                date = datetime.datetime.strptime(str(time, "ascii") + str(ms, "ascii"), "%Y:%m:%d %H:%M:%S%f")
+                val = str(time, "ascii")
+                if hasattr(exif_dict["Exif"], "piexif.ExifIFD.SubSecTimeOriginal"):
+                    ms = exif_dict["Exif"][piexif.ExifIFD.SubSecTimeOriginal]
+                    val += str(ms, "ascii")
+                date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S%f")
             # TODO which exceptions?
             except FileNotFoundError:
                 self.meta_info.text_queue.put(f"File {file} could not be found.\n")
@@ -210,10 +219,14 @@ class Sorter:
 
         else:
             regex_list = self.meta_info.get_signature_regex()
+            regex_num_list = self.meta_info.get_num_signature_regex()
             strptime_list = self.meta_info.get_signature_strptime()
             assert len(regex_list) == len(strptime_list)
 
-            for regex, strptime in zip(regex_list, strptime_list):
+            for regex, regex_num, strptime in zip(regex_list, regex_num_list, strptime_list):
+                if re.search(regex_num, file) is not None:
+                    file = file.rsplit("_", 1)[0] + file_extension
+
                 if re.search(regex, file) is not None:
                     try:
                         date = datetime.datetime.strptime(file, strptime + file_extension)
