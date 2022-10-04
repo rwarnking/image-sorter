@@ -148,8 +148,8 @@ class Sorter:
             )
 
         # Rename file with the defined template
-        new_name = self.get_new_filename(date)
-        new_name_ext = self.get_new_filename(date) + file_extension
+        new_name = self.get_new_filename(date, event_dir)
+        new_name_ext = self.get_new_filename(date, event_dir) + file_extension
 
         if os.path.exists(os.path.join(event_dir, new_name_ext)):
             if not self.meta_info.dont_ask_again.get():
@@ -198,7 +198,8 @@ class Sorter:
                 exif_dict = piexif.load(join(source_dir, file))
                 # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
-                date = datetime.datetime.strptime(str(time, "ascii"), "%Y:%m:%d %H:%M:%S")
+                ms = exif_dict["Exif"][piexif.ExifIFD.SubSecTimeOriginal]
+                date = datetime.datetime.strptime(str(time, "ascii") + str(ms, "ascii"), "%Y:%m:%d %H:%M:%S%f")
             # TODO which exceptions?
             except FileNotFoundError:
                 self.meta_info.text_queue.put(f"File {file} could not be found.\n")
@@ -280,12 +281,12 @@ class Sorter:
         return foldername
 
     # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
-    def get_new_filename(self, date):
+    def get_new_filename(self, date, event_dir):
         filename = ""
         sig = self.meta_info.get_supported_file_signatures()
 
         if self.file_signature == sig[0]:
-            filename = date.isoformat("_")
+            filename = date.isoformat("_", "seconds")
             filename = filename.replace(":", "-")
         elif self.file_signature == sig[1]:
             filename = date.isoformat("_", "milliseconds")
@@ -298,8 +299,7 @@ class Sorter:
             filename = date.ctime()
             filename = filename.replace(":", "-")
         else:
-            # TODO number must be files in folder
-            number = "001"
+            number = str(len([name for name in os.listdir(event_dir) if os.path.isfile(join(event_dir, name))]) + 1)
             filename = date.strftime("%m-%B-%d_") + number
 
         return filename
@@ -318,7 +318,8 @@ class Sorter:
             exif_dict = piexif.load(file_with_path)
 
             if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
-                exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
+                t = re.sub(r"(\w)([A-Z])", r"\1 \2", title)
+                exif_dict["0th"][piexif.ImageIFD.ImageDescription] = t
 
             if (
                 piexif.ImageIFD.Artist not in exif_dict["0th"]
