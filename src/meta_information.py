@@ -77,7 +77,9 @@ class MetaInformation:
             r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
             r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
             r"^\d{8}_\d{6}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
-            r"^IMG_\d{8}_\d{6}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^IMG_\d{8}_\d{6}(\.jpg|\.png|\.gif|\.svg)$",
+            r"^MVI_\d{8}_\d{6}(\.mp4)$",
+            r"^VID_\d{8}_\d{6}(\.mp4)$",
             r"^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
             r"^\d{2}-\w*-\d{2}_\d{3}(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
         ]
@@ -87,7 +89,9 @@ class MetaInformation:
             r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
             r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
             r"^\d{8}_\d{6}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
-            r"^IMG_\d{8}_\d{6}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
+            r"^IMG_\d{8}_\d{6}_\d+(\.jpg|\.png|\.gif|\.svg)$",
+            r"^MVI_\d{8}_\d{6}_\d+(\.mp4)$",
+            r"^VID_\d{8}_\d{6}_\d+(\.mp4)$",
             r"^\w{3}\s\w{3}\s\d{2}\s\d{2}-\d{2}-\d{2}\s\d{4}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
             r"^\d{2}-\w*-\d{2}_\d{3}_\d+(\.jpg|\.png|\.gif|\.svg|\.mp4)$",
         ]
@@ -98,6 +102,8 @@ class MetaInformation:
             "%Y-%m-%d_%H-%M-%S.%f",
             "%Y%m%d_%H%M%S",
             "IMG_%Y%m%d_%H%M%S",
+            "MVI_%Y%m%d_%H%M%S",
+            "VID_%Y%m%d_%H%M%S",
             "%a %b %d %H-%M-%S %Y",
             # TODO year must be accessed somehow
             "%m-%b-%d_%f",

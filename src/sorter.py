@@ -13,6 +13,9 @@ from messagebox import MessageBox
 # from exif import Image as Image2
 # from pyexiv2 import Image as ImgMeta
 
+META = 1
+NAME = 2
+
 
 class Sorter:
     def __init__(self, meta_info):
@@ -89,7 +92,7 @@ class Sorter:
 
     def process_file(self, file, source_dir, target_dir):
         is_compatible = (
-            file.lower().endswith(".jpg") 
+            file.lower().endswith(".jpg")
             or file.lower().endswith(".png")
             or file.lower().endswith(".mp4")
             or file.lower().endswith(".gif")
@@ -101,7 +104,8 @@ class Sorter:
 
         # Get information of file
         tmp, file_extension = os.path.splitext(file)
-        date = self.get_file_info(file, source_dir, file_extension) # TODO check for mp4 and stuff
+        file_extension = file_extension.lower()
+        date = self.get_file_info(file, source_dir, file_extension)
         if date is False:
             return
         if self.shift_timedata > 0:
@@ -119,7 +123,7 @@ class Sorter:
                 messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
 
         # Ask database for event using the date
-        event_list = self.db.get_event(date.year, date.month, date.day)
+        event_list = self.db.get_event(date)
         if len(event_list) == 0:
             self.meta_info.text_queue.put(f"No matching event found for file: {file}.\n")
             return
@@ -184,40 +188,56 @@ class Sorter:
         except OSError:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
-        if file.lower().endswith(".jpg") and self.modify_meta > 0:
+        if file_extension == ".jpg" and self.modify_meta > 0:
             self.modify_metadata_piexif(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_exif(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_pil(join(event_dir, new_name_ext), event_name)
 
     # https://www.w3schools.com/python/python_regex.asp#search
-    def get_file_info(self, file, source_dir, file_extension, fallback=False):
+    def get_file_info(self, file, source_dir, file_extension, fallback=0):
+        """
+        Obtains the creation date of the image by either accessing the meta data,
+        or using the filename to parse the correct date.
+        It is possible to specify which approach should be used,
+        while using the other one as fallback if the first one does not succeed.
+        """
         date = False
 
-        if ((self.in_signature == "IMG-Meta-Info" or fallback) and file_extension == ".jpg"):
-            if fallback:
+        # Check if meta data should be used
+        if (self.in_signature == "IMG-Meta-Info" and fallback == 0) or fallback == META:
+            # Check if the file has metadata that can be parsed
+            # TODO add support for .mp4 exif
+            if file_extension == ".jpg":
+                try:
+                    exif_dict = piexif.load(join(source_dir, file))
+                    # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
+                    time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
+                    val = str(time, "ascii")
+                    date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S")
+                    # Check if millisecounds are present and parse them if so
+                    if piexif.ExifIFD.SubSecTimeOriginal in exif_dict["Exif"]:
+                        ms = exif_dict["Exif"][piexif.ExifIFD.SubSecTimeOriginal]
+                        val += "." + str(ms, "ascii")
+                        date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S.%f")
+                # TODO which exceptions?
+                except FileNotFoundError:
+                    self.meta_info.text_queue.put(f"File {file} could not be found.\n")
+                except KeyError:
+                    self.meta_info.text_queue.put(f"Metadata not readable for file: {file}.\n")
+                except ValueError:
+                    self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
+
+            else:
                 self.meta_info.text_queue.put(
-                    f"Unsupported signature for file: {file} used fallback.\n"
+                    f"Unsupported! Could not read metadata for file: {file}.\n"
                 )
+                if self.fallback_sig and fallback == 0:
+                    self.meta_info.text_queue.put(f"Invoking fallback (Name) for file: {file}.\n")
+                    date = self.get_file_info(file, source_dir, file_extension, NAME)
 
-            try:
-                exif_dict = piexif.load(join(source_dir, file))
-                # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
-                time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
-                val = str(time, "ascii")
-                if hasattr(exif_dict["Exif"], "piexif.ExifIFD.SubSecTimeOriginal"):
-                    ms = exif_dict["Exif"][piexif.ExifIFD.SubSecTimeOriginal]
-                    val += str(ms, "ascii")
-                date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S%f")
-            # TODO which exceptions?
-            except FileNotFoundError:
-                self.meta_info.text_queue.put(f"File {file} could not be found.\n")
-            except KeyError:
-                self.meta_info.text_queue.put(f"Metadata not readable for file: {file}.\n")
-            except ValueError:
-                self.meta_info.text_queue.put(f"Time data not readable for file: {file}.\n")
-
-        else:
+        # Since the file has no metadata the filename is used
+        elif (self.in_signature == "IMG-File-Name" and fallback == 0) or fallback == NAME:
             regex_list = self.meta_info.get_signature_regex()
             regex_num_list = self.meta_info.get_num_signature_regex()
             strptime_list = self.meta_info.get_signature_strptime()
@@ -236,29 +256,34 @@ class Sorter:
                         )
                     return date
 
-            if self.fallback_sig:
-                date = self.get_file_info(file, source_dir, file_extension, True)
-            else:
-                self.meta_info.text_queue.put(f"Unsupported signature for file: {file}.\n")
+            # If this is reached no matching signature was found
+            self.meta_info.text_queue.put(
+                f"Unsupported! Name signature not found for file: {file}.\n"
+            )
+            if self.fallback_sig and fallback == 0:
+                date = self.get_file_info(file, source_dir, file_extension, META)
+                self.meta_info.text_queue.put(f"Invoking fallback (Metadata) for file: {file}.\n")
 
         return date
 
     def get_new_foldername(self, event, date):
         event_name = event[0]
-        e = event
+        start_date = datetime.datetime.strptime(event[1], "%Y-%m-%d %H:%M:%S")
+        end_date = datetime.datetime.strptime(event[2], "%Y-%m-%d %H:%M:%S")
 
         subevent_name = ""
-        subevent_list = self.db.get_event(date.year, date.month, date.day, 1)
+        subevent_list = self.db.get_event(date, 1)
         if len(subevent_list) == 1:
-            e = subevent_list[0]
-            subevent_name = "-" + e[0]
+            start_date = datetime.datetime.strptime(subevent_list[0][1], "%Y-%m-%d %H:%M:%S")
+            end_date = datetime.datetime.strptime(subevent_list[0][2], "%Y-%m-%d %H:%M:%S")
+            subevent_name = "-" + subevent_list[0][0]
 
-        year = e[1]
-        s_month_id = str(e[2]).zfill(2)
-        e_month_id = str(e[5]).zfill(2)
+        year = str(start_date.year)
+        s_month_id = str(start_date.month)
+        e_month_id = str(end_date.month)
 
-        s_day_id = str(e[3]).zfill(2)
-        e_day_id = str(e[6]).zfill(2)
+        s_day_id = str(start_date.day)
+        e_day_id = str(end_date.day)
 
         span = s_month_id + "_" + s_day_id
         if s_day_id != e_day_id or s_month_id != e_month_id:
@@ -268,26 +293,26 @@ class Sorter:
         sig = self.meta_info.get_supported_folder_signatures()
 
         if self.folder_signature == sig[0]:
-            foldername = str(year) + "_[" + span + "]_" + event_name + subevent_name
+            foldername = year + "_[" + span + "]_" + event_name + subevent_name
         elif self.folder_signature == sig[1]:
-            foldername = str(year) + "[" + span + "]_" + event_name + subevent_name
+            foldername = year + "[" + span + "]_" + event_name + subevent_name
         elif self.folder_signature == sig[2]:
-            foldername = "[" + str(year) + "][" + span + "][" + event_name + subevent_name + "]"
+            foldername = "[" + year + "][" + span + "][" + event_name + subevent_name + "]"
         elif self.folder_signature == sig[3]:
             lst = span.split("-")
             center = "[" + lst[0] + "]-[" + lst[1] + "]" if len(lst) == 2 else "[" + lst[0] + "]"
-            foldername = "[" + str(year) + "]" + center + "[" + event_name + subevent_name + "]"
+            foldername = "[" + year + "]" + center + "[" + event_name + subevent_name + "]"
         elif self.folder_signature == sig[4]:
-            foldername = str(year) + "[" + span + "]" + event_name + subevent_name
+            foldername = year + "[" + span + "]" + event_name + subevent_name
         elif self.folder_signature == sig[5]:
-            foldername = str(year) + "_" + span + "_" + event_name + subevent_name
+            foldername = year + "_" + span + "_" + event_name + subevent_name
         elif self.folder_signature == sig[6]:
-            foldername = str(year) + "'" + span + "'" + event_name + subevent_name
+            foldername = year + "'" + span + "'" + event_name + subevent_name
         elif self.folder_signature == sig[7]:
             month = s_month_id if s_month_id == e_month_id else s_month_id + "-" + e_month_id
-            foldername = str(year) + "_" + month + "_" + event_name + subevent_name
+            foldername = year + "_" + month + "_" + event_name + subevent_name
         elif self.folder_signature == sig[8]:
-            foldername = str(year) + "_" + event_name + subevent_name
+            foldername = year + "_" + event_name + subevent_name
         elif self.folder_signature == sig[9]:
             foldername = event_name + subevent_name
 
@@ -312,7 +337,16 @@ class Sorter:
             filename = date.ctime()
             filename = filename.replace(":", "-")
         else:
-            number = str(len([name for name in os.listdir(event_dir) if os.path.isfile(join(event_dir, name))]) + 1)
+            number = str(
+                len(
+                    [
+                        name
+                        for name in os.listdir(event_dir)
+                        if os.path.isfile(join(event_dir, name))
+                    ]
+                )
+                + 1
+            )
             filename = date.strftime("%m-%B-%d_") + number
 
         return filename
@@ -331,6 +365,7 @@ class Sorter:
             exif_dict = piexif.load(file_with_path)
 
             if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
+                # TODO add subevent to the title
                 t = re.sub(r"(\w)([A-Z])", r"\1 \2", title)
                 exif_dict["0th"][piexif.ImageIFD.ImageDescription] = t
 

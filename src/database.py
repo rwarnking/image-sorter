@@ -1,3 +1,4 @@
+import datetime
 import json
 import sqlite3
 from tkinter import END
@@ -8,8 +9,8 @@ class Database:
         self.out_text = out_text
         self.conn = sqlite3.connect(path)
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
-            s_day INT, e_year INT, e_month INT, e_day INT, sub INT)"
+            "CREATE TABLE IF NOT EXISTS events \
+            (title STRING, start_date DATE, end_date DATE, sub INT)"
         )
 
         self.conn.execute(
@@ -24,8 +25,8 @@ class Database:
         self.conn.execute("DROP TABLE IF EXISTS artists")
 
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
-            s_day INT, e_year INT, e_month INT, e_day INT, sub INT)"
+            "CREATE TABLE IF NOT EXISTS events \
+            (title STRING, start_date DATE, end_date DATE, sub INT)"
         )
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
@@ -76,7 +77,14 @@ class Database:
     #################
     # Event related #
     #################
-    def insert_event_from_date(self, title, start_date, end_date, subevent=0):
+    def insert_event_from_date(self, title, start_day, start_hour, end_day, end_hour, subevent=0):
+        start_date = datetime.datetime.combine(
+            start_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=start_hour)
+        end_date = datetime.datetime.combine(
+            end_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=end_hour)
+
         if end_date < start_date:
             self.out_text.insert(END, "Could not add Event: end date < start date!\n")
             return
@@ -84,8 +92,8 @@ class Database:
             self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return
 
-        s_event = self.get_event(start_date.year, start_date.month, start_date.day, subevent)
-        e_event = self.get_event(end_date.year, end_date.month, end_date.day, subevent)
+        s_event = self.get_event(start_date, subevent)
+        e_event = self.get_event(end_date, subevent)
         if len(s_event) > 0 or len(e_event) > 0:
             self.out_text.insert(END, "Event was not added. Overlapping event found.\n")
             return
@@ -97,18 +105,21 @@ class Database:
 
         self.insert_event(
             title,
-            start_date.year,
-            start_date.month,
-            start_date.day,
-            end_date.year,
-            end_date.month,
-            end_date.day,
+            start_date,
+            end_date,
             subevent,
         )
 
-    def insert_subevent_from_date(self, title, start_date, end_date):
-        s_main = self.get_event(start_date.year, start_date.month, start_date.day)
-        e_main = self.get_event(end_date.year, end_date.month, end_date.day)
+    def insert_subevent_from_date(self, title, start_day, start_hour, end_day, end_hour):
+        start_date = datetime.datetime.combine(
+            start_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=start_hour)
+        end_date = datetime.datetime.combine(
+            end_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=end_hour)
+
+        s_main = self.get_event(start_date)
+        e_main = self.get_event(end_date)
         if len(s_main) == 0 or len(e_main) == 0:
             self.out_text.insert(END, "Subevent could not be added. Missing main event.\n")
             return
@@ -118,16 +129,17 @@ class Database:
             )
             return
 
-        self.insert_event_from_date(title, start_date, end_date, 1)
+        self.insert_event_from_date(title, start_date, start_hour, end_date, end_hour, 1)
 
-    def insert_event(self, title, s_year, s_month, s_day, e_year, e_month, e_day, sub_event):
+    def insert_event(self, title, start_date, end_date, sub_event):
         # TODO Add check that the new events do not overlap
         if not self.has_elem("events", "title", title):
             title = str(title).replace(" ", "")
             self.conn.execute(
-                "INSERT INTO events (title, s_year, s_month, s_day, e_year, e_month, e_day, sub) \
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (title, s_year, s_month, s_day, e_year, e_month, e_day, sub_event),
+                "INSERT INTO events \
+                (title, start_date, end_date, sub) \
+                VALUES (?, ?, ?, ?)",
+                (title, start_date, end_date, sub_event),
             )
             self.conn.commit()
             self.out_text.insert(END, f"Event {title} was added.\n")
@@ -140,12 +152,8 @@ class Database:
             for event in data["events"]:
                 self.insert_event(
                     event["title"],
-                    event["start"]["year"],
-                    event["start"]["month"],
-                    event["start"]["day"],
-                    event["end"]["year"],
-                    event["end"]["month"],
-                    event["end"]["day"],
+                    datetime.datetime.strptime(event["start"]["date"], "%Y-%m-%d %H:%M:%S"),
+                    datetime.datetime.strptime(event["end"]["date"], "%Y-%m-%d %H:%M:%S"),
                     event["subevent"],
                 )
 
@@ -157,8 +165,8 @@ class Database:
         self.conn.execute("DROP TABLE IF EXISTS events")
 
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events (title STRING, s_year INT, s_month INT, \
-            s_day INT, e_year INT, e_month INT, e_day INT, sub INT)"
+            "CREATE TABLE IF NOT EXISTS events \
+            (title STRING, start_date DATE, end_date Date INT, sub INT)"
         )
 
         self.out_text.insert(END, "All event entrys were deleted.\n")
@@ -171,16 +179,12 @@ class Database:
                 {
                     "title": elem[0],
                     "start": {
-                        "year": elem[1],
-                        "month": elem[2],
-                        "day": elem[3],
+                        "date": elem[1],
                     },
                     "end": {
-                        "year": elem[4],
-                        "month": elem[5],
-                        "day": elem[6],
+                        "date": elem[2],
                     },
-                    "subevent": elem[7],
+                    "subevent": elem[3],
                 }
             )
 
@@ -188,12 +192,15 @@ class Database:
             json.dump(json_data, outfile, indent=4)
         self.out_text.insert(END, f"Events were saved to file {file}.\n")
 
-    def get_event(self, year, month, day, sub=0):
+    def get_event(self, date, sub=0):
         cur = self.conn.execute(
-            "SELECT title, s_year, s_month, s_day, e_year, e_month, e_day \
-            FROM events WHERE s_year<=? AND s_month<=? AND s_day<=? AND e_year>=? \
-            AND e_month>=? AND e_day>=? AND sub=?",
-            (year, month, day, year, month, day, sub),
+            "SELECT title, start_date, end_date \
+            FROM events WHERE start_date<? AND end_date>? AND sub=?",
+            # (year, month, day,
+            # year, month, day, hour,
+            # year, month, day,
+            # year, month, day, hour,
+            (date, date, sub),
         )
         result = cur.fetchall()
         cur.close()

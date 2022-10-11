@@ -226,15 +226,42 @@ class MainApp:
 
         lbl_date = Label(date_frame, text="Start: ")
         lbl_date.pack(side="left")
-        start_entry = DateEntry(
+        e_start_entry = DateEntry(
             date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
         )
-        start_entry.pack(side="left")
+        e_start_entry.pack(side="left")
+        # Hour selector
+        e_start_hour = StringVar()
+        e_start_hour.set("0")
+        e_end_hour = StringVar()
+        e_end_hour.set("24")
+        vcmd = window.register(lambda P: str.isdigit(P) and int(P) > -1 and int(P) < 25)
 
-        end_entry = DateEntry(
+        Label(date_frame, text=":").pack(side="left")
+        Entry(
+            date_frame,
+            textvariable=e_start_hour,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+        Label(date_frame, text="h").pack(side="left")
+
+        Label(date_frame, text="h").pack(side="right")
+        Entry(
+            date_frame,
+            textvariable=e_end_hour,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="right")
+        Label(date_frame, text=":").pack(side="right")
+        e_end_entry = DateEntry(
             date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
         )
-        end_entry.pack(side="right")
+        e_end_entry.pack(side="right")
         lbl_date = Label(date_frame, text="End: ")
         lbl_date.pack(side="right")
 
@@ -250,7 +277,11 @@ class MainApp:
             window,
             text="Add event",
             command=lambda: self.db.insert_event_from_date(
-                sv_event_title.get(), start_entry.get_date(), end_entry.get_date()
+                sv_event_title.get(),
+                e_start_entry.get_date(),
+                int(e_start_hour.get()),
+                e_end_entry.get_date(),
+                int(e_end_hour.get()),
             ),
         )
         add_event_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -258,20 +289,46 @@ class MainApp:
         ############
         # Subevent #
         ############
+        # Hour selector
+        se_start_hour = StringVar()
+        se_start_hour.set("0")
+        se_end_hour = StringVar()
+        se_end_hour.set("24")
+
         date_frame = Frame(window)
         date_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         lbl_date = Label(date_frame, text="Start: ")
         lbl_date.pack(side="left")
-        start_entry2 = DateEntry(
+        se_start_entry = DateEntry(
             date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
         )
-        start_entry2.pack(side="left")
+        se_start_entry.pack(side="left")
+        Label(date_frame, text=":").pack(side="left")
+        Entry(
+            date_frame,
+            textvariable=se_start_hour,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+        Label(date_frame, text="h").pack(side="left")
 
-        end_entry2 = DateEntry(
+        Label(date_frame, text="h").pack(side="right")
+        Entry(
+            date_frame,
+            textvariable=se_end_hour,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="right")
+        Label(date_frame, text=":").pack(side="right")
+        se_end_entry = DateEntry(
             date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
         )
-        end_entry2.pack(side="right")
+        se_end_entry.pack(side="right")
         lbl_date = Label(date_frame, text="End: ")
         lbl_date.pack(side="right")
 
@@ -287,7 +344,11 @@ class MainApp:
             window,
             text="Add subevent",
             command=lambda: self.db.insert_subevent_from_date(
-                sv_subevent_title.get(), start_entry2.get_date(), end_entry2.get_date()
+                sv_subevent_title.get(),
+                se_start_entry.get_date(),
+                int(se_start_hour.get()),
+                se_end_entry.get_date(),
+                int(se_end_hour.get()),
             ),
         )
         add_subevent_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
