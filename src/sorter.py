@@ -126,6 +126,7 @@ class Sorter:
 
         # Ask database for event using the date
         event_list = self.db.get_event(date)
+        subevent_list = self.db.get_event(date, 1)
         if len(event_list) == 0:
             self.meta_info.text_queue.put(f"No matching event found for file: {file}.\n")
             return
@@ -137,7 +138,6 @@ class Sorter:
         # print(event_list)
         # print(event_list[0])
         # print(event_list[0][0])
-        event_name = event_list[0][0]
 
         # Check if year folder for this file exists
         year_dir = join(target_dir, str(date.year))
@@ -149,8 +149,11 @@ class Sorter:
                 message="Creation of the directory %s failed" % year_dir, title="Error"
             )
 
+        # Get sub event if exists
+        sub_event = subevent_list[0] if len(subevent_list) > 0 else None
+        # Get event folder
+        event_dir = join(year_dir, self.get_new_foldername(event_list[0], sub_event))
         # Check if event folder for this file exists
-        event_dir = join(year_dir, self.get_new_foldername(event_list[0], date))
         try:
             if not os.path.exists(event_dir):
                 os.mkdir(event_dir)
@@ -191,6 +194,10 @@ class Sorter:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
         if file_extension == ".jpg" and self.modify_meta > 0:
+            event_name = event_list[0][0]
+            if len(subevent_list) == 1:
+                event_name += " " + subevent_list[0][0]
+
             self.modify_metadata_piexif(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event_name)
             # self.modify_metadata_exif(join(event_dir, new_name_ext), event_name)
@@ -268,17 +275,16 @@ class Sorter:
 
         return date
 
-    def get_new_foldername(self, event, date):
+    def get_new_foldername(self, event, subevent):
         event_name = event[0]
         start_date = datetime.datetime.strptime(event[1], "%Y-%m-%d %H:%M:%S")
         end_date = datetime.datetime.strptime(event[2], "%Y-%m-%d %H:%M:%S")
 
         subevent_name = ""
-        subevent_list = self.db.get_event(date, 1)
-        if len(subevent_list) == 1:
-            start_date = datetime.datetime.strptime(subevent_list[0][1], "%Y-%m-%d %H:%M:%S")
-            end_date = datetime.datetime.strptime(subevent_list[0][2], "%Y-%m-%d %H:%M:%S")
-            subevent_name = "-" + subevent_list[0][0]
+        if subevent is not None:
+            start_date = datetime.datetime.strptime(subevent[1], "%Y-%m-%d %H:%M:%S")
+            end_date = datetime.datetime.strptime(subevent[2], "%Y-%m-%d %H:%M:%S")
+            subevent_name = "-" + subevent[0]
 
         year = str(start_date.year)
         s_month_id = str(start_date.month)
@@ -367,7 +373,7 @@ class Sorter:
             exif_dict = piexif.load(file_with_path)
 
             if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
-                # TODO add subevent to the title
+                # Add a whitespace infront of every upper letter
                 t = re.sub(r"(\w)([A-Z])", r"\1 \2", title)
                 exif_dict["0th"][piexif.ImageIFD.ImageDescription] = t
 
