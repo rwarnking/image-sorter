@@ -532,6 +532,17 @@ class MainApp:
             validatecommand=(vcmd, "%P"),
         ).pack(side="left")
 
+        lbl_time = Label(time_frame, text="Seconds: ")
+        lbl_time.pack(side="left")
+        Entry(
+            time_frame,
+            textvariable=self.meta_info.shift_seconds,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+
         time_choices = ["Forward", "Backward"]
         self.meta_info.time_option.set(time_choices[0])
         time_options = OptionMenu(window, self.meta_info.time_option, *time_choices)

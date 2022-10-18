@@ -41,8 +41,9 @@ class Sorter:
         self.shift_timedata = self.meta_info.shift_timedata.get()
         self.time_option = self.meta_info.time_option.get()
         self.shift_days = int(self.meta_info.shift_days.get())
-        self.shift_minutes = int(self.meta_info.shift_minutes.get())
         self.shift_hours = int(self.meta_info.shift_hours.get())
+        self.shift_minutes = int(self.meta_info.shift_minutes.get())
+        self.shift_seconds = int(self.meta_info.shift_seconds.get())
 
         self.in_signature = self.meta_info.in_signature.get()
         self.file_signature = self.meta_info.file_signature.get()
@@ -110,15 +111,16 @@ class Sorter:
             return
         if self.shift_timedata > 0:
             try:
-                date_shift = datetime.timedelta(
+                self.date_shift = datetime.timedelta(
                     days=self.shift_days,
-                    minutes=self.shift_minutes,
                     hours=self.shift_hours,
+                    minutes=self.shift_minutes,
+                    seconds=self.shift_seconds,
                 )
                 if self.time_option == "Forward":
-                    date = date + date_shift
+                    date = date + self.date_shift
                 else:
-                    date = date - date_shift
+                    date = date - self.date_shift
             except ValueError:
                 messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
 
@@ -373,13 +375,39 @@ class Sorter:
                 piexif.ImageIFD.Artist not in exif_dict["0th"]
                 or len((exif_dict["0th"][piexif.ImageIFD.Artist]).decode("ascii")) < 1
             ):
+                # Get data
                 make = exif_dict["0th"][piexif.ImageIFD.Make]
                 model = exif_dict["0th"][piexif.ImageIFD.Model]
+                # Access database to get the artist for this make and model
                 artist = self.db.get_artist(str(make, "ascii"), str(model, "ascii"))
                 if len(artist) == 1:
                     # TODO [0][0]
                     exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
 
+            # If enabled shift the datetime metadata
+            if (
+                self.shift_timedata > 0
+                and piexif.ExifIFD.DateTimeOriginal in exif_dict["Exif"]
+            ):
+                # Read data
+                time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
+                # Convert from binary to ascii string
+                val = str(time, "ascii")
+                # Parse string to datetime object
+                date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S")
+                # Shift datetime
+                if self.time_option == "Forward":
+                    date = date + self.date_shift
+                else:
+                    date = date - self.date_shift
+                # Create string from datetime object
+                datestr = date.strftime("%Y:%m:%d %H:%M:%S")
+                # Convert to binary
+                datestr = datestr.encode("ascii")
+                # Write back to the buffer
+                exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal] = datestr
+
+            # Write back to the file
             exif_bytes = piexif.dump(exif_dict)
             piexif.insert(exif_bytes, file_with_path)
 

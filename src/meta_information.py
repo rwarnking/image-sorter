@@ -32,6 +32,8 @@ class MetaInformation:
         self.shift_hours.set("0")
         self.shift_minutes = StringVar()
         self.shift_minutes.set("0")
+        self.shift_seconds = StringVar()
+        self.shift_seconds.set("0")
         self.time_option = StringVar()
 
         self.text_queue = queue.Queue()
