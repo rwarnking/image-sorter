@@ -11,7 +11,7 @@ name: Create Release
 on:
   push:
     branches:
-      - master
+      - main
 
 # Set the Jobs
 jobs:
