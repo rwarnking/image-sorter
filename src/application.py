@@ -549,7 +549,11 @@ class MainApp:
         time_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
-            row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
+
+        Checkbutton(window, text="Process raw files", variable=self.meta_info.process_raw).grid(
+            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
         )
 
         Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(

@@ -7,6 +7,7 @@ import pathmagic  # noqa isort:skip
 import os
 import shutil
 import unittest
+from os.path import join
 from tkinter import Text, Tk
 
 from database import Database
@@ -24,12 +25,12 @@ class TestSort(unittest.TestCase):
         # Set the meta_info data
         meta_info = MetaInformation()
         meta_info.set_dirs(TEST_DIR, TEST_DIR)
-        meta_info.source_dir.set(TEST_DIR + "/test_images")
+        meta_info.source_dir.set(join(TEST_DIR, "test_images"))
 
         # load database
         self.db = Database(details_text)
-        self.db.insert_events(TEST_DIR + "/events.json")
-        self.db.insert_artists(TEST_DIR + "/artists.json")
+        self.db.insert_events(join(TEST_DIR, "events.json"))
+        self.db.insert_artists(join(TEST_DIR, "artists.json"))
 
         for idx, settings in enumerate(self.get_settings_list(meta_info)):
             print(idx)
@@ -43,7 +44,7 @@ class TestSort(unittest.TestCase):
 
             # Print subdirs in case the directory test does fail
             for x in os.walk(TEST_DIR):
-                print(x)
+                print(x[0])
 
             while not meta_info.text_queue.empty():
                 print(meta_info.text_queue.get(0))
@@ -52,9 +53,10 @@ class TestSort(unittest.TestCase):
             self.run_checks(idx, TEST_DIR)
 
             # Remove created folder
-            # TODO os.join here and everywhere else
             # TODO dir should be variable
-            shutil.rmtree(TEST_DIR + "/2020")
+            shutil.rmtree(join(TEST_DIR, "2020"))
+            if os.path.exists(join(TEST_DIR, "newtext.txt")):
+                os.remove(join(TEST_DIR, "newtext.txt"))
 
     def get_settings_list(self, meta_info):
         """
@@ -64,6 +66,23 @@ class TestSort(unittest.TestCase):
 
         # Use default settings
         obj = self.create_settings_obj(meta_info)
+        settings.append(obj)
+
+        # Enable processing .raw files
+        obj = self.create_settings_obj(meta_info)
+        obj["process_raw"] = 1
+        settings.append(obj)
+
+        # Use default settings with fallback signature
+        obj = self.create_settings_obj(meta_info)
+        obj["fallback_sig"] = 1
+        settings.append(obj)
+
+        # Enable processing .raw files, fallback signature and copy all
+        obj = self.create_settings_obj(meta_info)
+        obj["fallback_sig"] = 1
+        obj["process_raw"] = 1
+        obj["copy_unmatched"] = 1
         settings.append(obj)
 
         # Use a version with timeshift
@@ -86,45 +105,189 @@ class TestSort(unittest.TestCase):
 
         return settings
 
-    def run_checks(self, idx, TEST_DIR):
-        # Test if files exists using default settings
-        if idx == 0:
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
-            self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-01_21-15-34.jpg")
-            )
-            self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
-        # Test if files exists when using time shift
-        elif idx == 1:
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
-            self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-02_22-16-34.jpg")
-            )
-            self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
-        # Test if files exists when using different images signature
-        elif idx == 2:
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
-            self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/IMG_20200701_211534.jpg")
-            )
-            self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
-        # Test if files exists and are moved when dissabling copy
-        elif idx == 3:
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
-            self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
-            self.assertTrue(
-                os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-01_21-15-34.jpg")
-            )
-            self.assertFalse(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
+    def run_checks(self, idx, base_dir):
+
+        src_files = [
+            [  # Test source directory when using default settings
+                (True, ""),
+                (True, "test_images"),
+                (True, join("test_images", "20200701_211534.jpg")),
+                (True, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+            [  # Test source directory when also processing .raw files
+                (True, ""),
+                (True, "test_images"),
+                (True, join("test_images", "20200701_211534.jpg")),
+                (True, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+            [  # Test source directory when using fallback signature
+                (True, ""),
+                (True, "test_images"),
+                (True, join("test_images", "20200701_211534.jpg")),
+                (True, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+            [  # Test source directory when using fallback signature
+                # Processing .raw files
+                # Copy all
+                (True, ""),
+                (True, "test_images"),
+                (True, join("test_images", "20200701_211534.jpg")),
+                (True, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+            [  # Test source directory when using time shift settings
+                (True, ""),
+                (True, "test_images"),
+                (True, join("test_images", "20200701_211534.jpg")),
+                (True, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+            [  # Test source directory when using different image signature
+                (True, ""),
+                (True, "test_images"),
+                (True, join("test_images", "20200701_211534.jpg")),
+                (True, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+            [  # Test source directory when disabling copying
+                (True, ""),
+                (True, "test_images"),
+                (False, join("test_images", "20200701_211534.jpg")),
+                (False, join("test_images", "IMG_3113.JPG")),
+                (True, join("test_images", "IMG_3113.RAW")),
+                (True, join("test_images", "IMG_20200703_092850.svg")),
+                (True, join("test_images", "IMG_20200703_092959.gif")),
+                (True, join("test_images", "newtext.txt")),
+            ],
+        ]
+
+        main_dir = "2020"
+        sub_dir = "2020_[07_01-07_31]_Juli"
+        compl_dir = join(main_dir, sub_dir)
+
+        tgt_files = [
+            [  # Test target directory when using default settings
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "2020-07-01_21-15-34.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.jpg")),
+                (False, join(compl_dir, "2020-07-02_18-49-10.RAW")),
+                (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
+                (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
+                (False, join(base_dir, "newtext.txt")),
+            ],
+            [  # Test target directory when also processing .raw files
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "2020-07-01_21-15-34.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.RAW")),
+                (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
+                (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
+                (False, join(base_dir, "newtext.txt")),
+            ],
+            [  # Test target directory when using fallback signature
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "2020-07-01_21-15-34.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.jpg")),
+                (False, join(compl_dir, "2020-07-02_18-49-10.RAW")),
+                (True, join(compl_dir, "2020-07-03_09-28-50.svg")),
+                (True, join(compl_dir, "2020-07-03_09-29-59.gif")),
+                (False, join(base_dir, "newtext.txt")),
+            ],
+            [  # Test source directory when using fallback signature
+                # Processing .raw files
+                # Copy all
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "2020-07-01_21-15-34.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.RAW")),
+                (True, join(compl_dir, "2020-07-03_09-28-50.svg")),
+                (True, join(compl_dir, "2020-07-03_09-29-59.gif")),
+                (True, join(base_dir, "newtext.txt")),
+            ],
+            [  # Test target directory when using time shift settings
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "2020-07-02_22-16-34.jpg")),
+                (True, join(compl_dir, "2020-07-03_19-50-10.jpg")),
+                (False, join(compl_dir, "2020-07-02_18-49-10.RAW")),
+                (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
+                (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
+                (False, join(base_dir, "newtext.txt")),
+            ],
+            [  # Test target directory when using different image signature
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "IMG_20200701_211534.jpg")),
+                (True, join(compl_dir, "IMG_20200702_184910.jpg")),
+                (False, join(compl_dir, "IMG_20200702_184910.RAW")),
+                (False, join(compl_dir, "IMG_20200703_092850.svg")),
+                (False, join(compl_dir, "IMG_20200703_092959.gif")),
+                (False, join(base_dir, "newtext.txt")),
+            ],
+            [  # Test target directory when disabling copying
+                (True, main_dir),
+                (True, compl_dir),
+                (True, join(compl_dir, "2020-07-01_21-15-34.jpg")),
+                (True, join(compl_dir, "2020-07-02_18-49-10.jpg")),
+                (False, join(compl_dir, "2020-07-02_18-49-10.RAW")),
+                (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
+                (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
+                (False, join(base_dir, "newtext.txt")),
+            ],
+        ]
+
+        for f_tuple in src_files[idx]:
+            if f_tuple[0]:
+                result = os.path.exists(join(base_dir, f_tuple[1]))
+                print(f"Should be true, is {result}. ({base_dir}, {f_tuple[1]})")
+                self.assertTrue(os.path.exists(join(base_dir, f_tuple[1])))
+            else:
+                result = os.path.exists(join(base_dir, f_tuple[1]))
+                print(f"Should be false, is {result}. ({base_dir}, {f_tuple[1]})")
+                self.assertFalse(os.path.exists(join(base_dir, f_tuple[1])))
+
+        for f_tuple in tgt_files[idx]:
+            if f_tuple[0]:
+                result = os.path.exists(join(base_dir, f_tuple[1]))
+                print(f"Should be true, is {result}. ({base_dir}, {f_tuple[1]})")
+                self.assertTrue(os.path.exists(join(base_dir, f_tuple[1])))
+            else:
+                result = os.path.exists(join(base_dir, f_tuple[1]))
+                print(f"Should be false, is {result}. ({base_dir}, {f_tuple[1]})")
+                self.assertFalse(os.path.exists(join(base_dir, f_tuple[1])))
 
     def set_meta_info(self, meta_info, settings):
         meta_info.shift_timedata.set(settings["shift_timedata"])
         meta_info.modify_meta.set(settings["modify_meta"])
         meta_info.recursive.set(settings["recursive"])
         meta_info.copy_files.set(settings["copy_files"])
+        meta_info.copy_unmatched.set(settings["copy_unmatched"])
+        meta_info.process_raw.set(settings["process_raw"])
         meta_info.dont_ask_again.set(settings["dont_ask_again"])
         meta_info.fallback_sig.set(settings["fallback_sig"])
 
@@ -144,6 +307,8 @@ class TestSort(unittest.TestCase):
             "modify_meta": 0,
             "recursive": 0,
             "copy_files": 1,
+            "copy_unmatched": 0,
+            "process_raw": 0,
             "dont_ask_again": False,
             "fallback_sig": 0,
             "in_signature": meta_info.get_read_choices()[0],

@@ -17,6 +17,8 @@ class MetaInformation:
         self.copy_files.set(1)
         self.copy_unmatched = IntVar()
         self.copy_unmatched.set(1)
+        self.process_raw = IntVar()
+        self.process_raw.set(1)
         self.dont_ask_again = BooleanVar()
         self.dont_ask_again.set(False)
         self.fallback_sig = IntVar()

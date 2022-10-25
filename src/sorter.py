@@ -30,12 +30,15 @@ class Sorter:
 
         # create database
         self.db = Database(self.meta_info)
+        # List of raw files that were processed
+        self.raw_list = []
 
         # These variables are duplicates of the metadata vars.
         # This is done to improve the performance since these get() functions can get expensive
         # and should therefore not be called for each processed file
         self.copy_files = self.meta_info.copy_files.get()
         self.copy_unmatched = self.meta_info.copy_unmatched.get()
+        self.process_raw = self.meta_info.process_raw.get()
         self.modify_meta = self.meta_info.modify_meta.get()
         self.fallback_sig = self.meta_info.fallback_sig.get()
 
@@ -103,13 +106,21 @@ class Sorter:
         if not is_compatible:
             self.meta_info.text_queue.put(f"Found incompatible file: {file}.\n")
             if self.copy_unmatched > 0:
+                # Checks if a file is a .raw file and was already processed
+                # This does only work if the files are ordered alphabetically
+                if (
+                    file.lower().endswith(".raw")
+                    and self.process_raw > 0
+                    and file in self.raw_list
+                ):
+                    return
                 # Copy file
                 shutil.copy2(join(source_dir, file), target_dir)
                 self.meta_info.text_queue.put("Copied file anyway.\n")
             return
 
         # Get information of file
-        tmp, file_extension = os.path.splitext(file)
+        orig_file_name, file_extension = os.path.splitext(file)
         file_extension = file_extension.lower()
         date = self.get_file_info(file, source_dir, file_extension)
         if date is False:
@@ -191,10 +202,29 @@ class Sorter:
                 # Copy file
                 shutil.copy2(join(source_dir, file), join(event_dir, new_name_ext))
                 self.meta_info.text_queue.put(f"Copied file: {file} with name: {new_name_ext}.\n")
+
+                # If enabled search for a matching raw file
+                if self.process_raw > 0:
+                    # Check for a matching raw file
+                    raw_file_path = os.path.join(source_dir, orig_file_name + ".RAW")
+                    if os.path.exists(raw_file_path):
+                        # Copy the raw file with the new name and add it to the raw_list
+                        shutil.copy2(raw_file_path, join(event_dir, new_name + ".RAW"))
+                        self.raw_list.append(orig_file_name + ".RAW")
             else:
                 # Move file to the correct folder
                 shutil.move(join(source_dir, file), join(event_dir, new_name_ext))
                 self.meta_info.text_queue.put(f"Moved file: {file}. New Name: {new_name_ext}.\n")
+
+                # If enabled search for a matching raw file
+                if self.process_raw > 0:
+                    # Check for a matching raw file
+                    raw_file_path = os.path.join(source_dir, orig_file_name + ".RAW")
+                    if os.path.exists(raw_file_path):
+                        # Copy the raw file with the new name and add it to the raw_list
+                        shutil.move(raw_file_path, join(event_dir, new_name + ".RAW"))
+                        self.raw_list.append(orig_file_name + ".RAW")
+
         except OSError:
             messagebox.showinfo(message="Movement of file %s failed" % file, title="Error")
 
@@ -226,6 +256,7 @@ class Sorter:
                 try:
                     exif_dict = piexif.load(join(source_dir, file))
                     # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
+                    # TODO what if time not present? return False
                     time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
                     val = str(time, "ascii")
                     date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S")
@@ -389,6 +420,7 @@ class Sorter:
                 or len((exif_dict["0th"][piexif.ImageIFD.Artist]).decode("ascii")) < 1
             ):
                 # Get data
+                # TODO what if not present?
                 make = exif_dict["0th"][piexif.ImageIFD.Make]
                 model = exif_dict["0th"][piexif.ImageIFD.Model]
                 # Access database to get the artist for this make and model
@@ -398,6 +430,7 @@ class Sorter:
                     exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
 
             # If enabled shift the datetime metadata
+            # TODO what if the filename is used as date?
             if self.shift_timedata > 0 and piexif.ExifIFD.DateTimeOriginal in exif_dict["Exif"]:
                 # Read data
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
