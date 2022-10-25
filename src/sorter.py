@@ -35,6 +35,7 @@ class Sorter:
         # This is done to improve the performance since these get() functions can get expensive
         # and should therefore not be called for each processed file
         self.copy_files = self.meta_info.copy_files.get()
+        self.copy_unmatched = self.meta_info.copy_unmatched.get()
         self.modify_meta = self.meta_info.modify_meta.get()
         self.fallback_sig = self.meta_info.fallback_sig.get()
 
@@ -101,6 +102,10 @@ class Sorter:
         )
         if not is_compatible:
             self.meta_info.text_queue.put(f"Found incompatible file: {file}.\n")
+            if self.copy_unmatched > 0:
+                # Copy file
+                shutil.copy2(join(source_dir, file), target_dir)
+                self.meta_info.text_queue.put("Copied file anyway.\n")
             return
 
         # Get information of file

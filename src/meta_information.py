@@ -15,6 +15,8 @@ class MetaInformation:
         self.recursive.set(1)
         self.copy_files = IntVar()
         self.copy_files.set(1)
+        self.copy_unmatched = IntVar()
+        self.copy_unmatched.set(1)
         self.dont_ask_again = BooleanVar()
         self.dont_ask_again.set(False)
         self.fallback_sig = IntVar()

@@ -557,8 +557,12 @@ class MainApp:
         )
 
         Checkbutton(
+            window, text="Copy unmatched files", variable=self.meta_info.copy_unmatched
+        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        Checkbutton(
             window, text="Recursive file/folder processing", variable=self.meta_info.recursive
-        ).grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+        ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
 
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar
