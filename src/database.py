@@ -78,6 +78,19 @@ class Database:
     # Event related #
     #################
     def insert_event_from_date(self, title, start_day, start_hour, end_day, end_hour, subevent=0):
+        """
+        Adds a new event to the database using given date information.
+        The event is only added if the title is not empty
+        and the start date lies before the end date.
+
+        Args:
+            title: The title of the event as a String
+            start_day: The start day as a datetime object
+            start_hour: The hour in which the event start at the given day as an Integer (0-24)
+            end_day: The end day as a datetime object
+            end_hour: The hour in which the event ends at the given day as an Integer (0-24)
+            subevent: Indicate wether this is a subevent (0 = event, 1 = subevent)
+        """
         start_date = datetime.datetime.combine(
             start_day, datetime.datetime.min.time()
         ) + datetime.timedelta(hours=start_hour)
@@ -92,6 +105,7 @@ class Database:
             self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return
 
+        # TODO remove this check as soon as events are participant bound
         s_event = self.get_event(start_date, subevent)
         e_event = self.get_event(end_date, subevent)
         if len(s_event) > 0 or len(e_event) > 0:

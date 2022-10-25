@@ -33,12 +33,17 @@ class TestSort(unittest.TestCase):
 
         for idx, settings in enumerate(self.get_settings_list(meta_info)):
             print(idx)
+            print(settings)
             meta_info.finished = False
             self.set_meta_info(meta_info, settings)
 
             # Run the sort process
             s = Sorter(meta_info)
             s.run()
+
+            # Print subdirs in case the directory test does fail
+            for x in os.walk(TEST_DIR):
+                print(x)
 
             while not meta_info.text_queue.empty():
                 print(meta_info.text_queue.get(0))
@@ -52,11 +57,16 @@ class TestSort(unittest.TestCase):
             shutil.rmtree(TEST_DIR + "/2020")
 
     def get_settings_list(self, meta_info):
+        """
+        Creates a list of settings objects that should be tested.
+        """
         settings = []
 
+        # Use default settings
         obj = self.create_settings_obj(meta_info)
         settings.append(obj)
 
+        # Use a version with timeshift
         obj = self.create_settings_obj(meta_info)
         obj["shift_timedata"] = 1
         obj["shift_days"] = "1"
@@ -64,19 +74,20 @@ class TestSort(unittest.TestCase):
         obj["shift_minutes"] = "1"
         settings.append(obj)
 
+        # Use a different file signature
         obj = self.create_settings_obj(meta_info)
         obj["file_signature"] = meta_info.get_supported_file_signatures()[3]
         settings.append(obj)
 
+        # Use file movement instead of copying
         obj = self.create_settings_obj(meta_info)
         obj["copy_files"] = 0
         settings.append(obj)
 
-        print(settings)
-
         return settings
 
     def run_checks(self, idx, TEST_DIR):
+        # Test if files exists using default settings
         if idx == 0:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
             self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
@@ -84,6 +95,7 @@ class TestSort(unittest.TestCase):
                 os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-01_21-15-34.jpg")
             )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
+        # Test if files exists when using time shift
         elif idx == 1:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
             self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
@@ -91,6 +103,7 @@ class TestSort(unittest.TestCase):
                 os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/2020-07-02_22-16-34.jpg")
             )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
+        # Test if files exists when using different images signature
         elif idx == 2:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
             self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
@@ -98,6 +111,7 @@ class TestSort(unittest.TestCase):
                 os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli/IMG_20200701_211534.jpg")
             )
             self.assertTrue(os.path.exists(TEST_DIR + "/test_images/20200701_211534.jpg"))
+        # Test if files exists and are moved when dissabling copy
         elif idx == 3:
             self.assertTrue(os.path.exists(TEST_DIR + "/2020"))
             self.assertTrue(os.path.exists(TEST_DIR + "/2020/2020_[07_01-07_31]_Juli"))
@@ -111,6 +125,7 @@ class TestSort(unittest.TestCase):
         meta_info.modify_meta.set(settings["modify_meta"])
         meta_info.recursive.set(settings["recursive"])
         meta_info.copy_files.set(settings["copy_files"])
+        meta_info.dont_ask_again.set(settings["dont_ask_again"])
         meta_info.fallback_sig.set(settings["fallback_sig"])
 
         meta_info.in_signature.set(settings["in_signature"])
@@ -120,6 +135,7 @@ class TestSort(unittest.TestCase):
         meta_info.shift_days.set(settings["shift_days"])
         meta_info.shift_hours.set(settings["shift_hours"])
         meta_info.shift_minutes.set(settings["shift_minutes"])
+        meta_info.shift_seconds.set(settings["shift_seconds"])
         meta_info.time_option.set(settings["time_option"])
 
     def create_settings_obj(self, meta_info):
@@ -128,6 +144,7 @@ class TestSort(unittest.TestCase):
             "modify_meta": 0,
             "recursive": 0,
             "copy_files": 1,
+            "dont_ask_again": False,
             "fallback_sig": 0,
             "in_signature": meta_info.get_read_choices()[0],
             "file_signature": meta_info.get_supported_file_signatures()[0],
@@ -135,6 +152,7 @@ class TestSort(unittest.TestCase):
             "shift_days": "0",
             "shift_hours": "0",
             "shift_minutes": "0",
+            "shift_seconds": "0",
             "time_option": "Forward",
         }
         return obj

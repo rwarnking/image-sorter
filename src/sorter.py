@@ -286,13 +286,15 @@ class Sorter:
             end_date = datetime.datetime.strptime(subevent[2], "%Y-%m-%d %H:%M:%S")
             subevent_name = "-" + subevent[0]
 
+        # Get date information and padd month and day with 0 if necessary
         year = str(start_date.year)
-        s_month_id = str(start_date.month)
-        e_month_id = str(end_date.month)
+        s_month_id = str(start_date.month).zfill(2)
+        e_month_id = str(end_date.month).zfill(2)
 
-        s_day_id = str(start_date.day)
-        e_day_id = str(end_date.day)
+        s_day_id = str(start_date.day).zfill(2)
+        e_day_id = str(end_date.day).zfill(2)
 
+        # Create span object - used for example inside braces
         span = s_month_id + "_" + s_day_id
         if s_day_id != e_day_id or s_month_id != e_month_id:
             span = s_month_id + "_" + s_day_id + "-" + e_month_id + "_" + e_day_id
@@ -391,10 +393,7 @@ class Sorter:
                     exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
 
             # If enabled shift the datetime metadata
-            if (
-                self.shift_timedata > 0
-                and piexif.ExifIFD.DateTimeOriginal in exif_dict["Exif"]
-            ):
+            if self.shift_timedata > 0 and piexif.ExifIFD.DateTimeOriginal in exif_dict["Exif"]:
                 # Read data
                 time = exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal]
                 # Convert from binary to ascii string

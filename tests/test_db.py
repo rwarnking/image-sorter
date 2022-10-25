@@ -42,11 +42,12 @@ class TestDB(unittest.TestCase):
         # Check if not empty after insert one
         start_date = datetime.date(2020, 12, 1)
         end_date = datetime.date(2020, 12, 31)
-        self.db.insert_event_from_date("test_title", start_date, end_date)
+        self.db.insert_event_from_date("test_title", start_date, 0, end_date, 24)
         self.db_not_empty_test("events", 1)
 
         # Check if get elem returns correct elem
-        res = self.db.get_event(2020, 12, 15)
+        check_date = datetime.date(2020, 12, 15)
+        res = self.db.get_event(check_date)
         self.assertTrue(res[0][0] == "test_title")
 
         # Check if file exists after save
