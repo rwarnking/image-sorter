@@ -54,8 +54,8 @@ class Sorter:
         self.folder_signature = self.meta_info.folder_signature.get()
 
         # Get all files in the directory
-        source_dir = self.meta_info.source_dir.get()
-        target_dir = self.meta_info.target_dir.get()
+        source_dir = self.meta_info.img_src.get()
+        target_dir = self.meta_info.img_tgt.get()
 
         if not os.path.exists(source_dir):
             messagebox.showinfo(message="Source path could not be found.", title="Error")

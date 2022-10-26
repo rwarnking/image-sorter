@@ -1,4 +1,5 @@
 import queue
+from os.path import isfile, join
 from tkinter import BooleanVar, IntVar, StringVar
 
 
@@ -42,12 +43,33 @@ class MetaInformation:
 
         self.text_queue = queue.Queue()
 
-    def set_dirs(self, scr_dir, tgt_dir):
-        self.source_dir = StringVar()
-        self.source_dir.set(scr_dir)
+    def set_dirs(self, img_src, img_tgt, event_src, event_tgt, artist_src, artist_tgt):
+        self.img_src = StringVar()
+        self.img_src.set(img_src)
+        self.img_tgt = StringVar()
+        self.img_tgt.set(img_tgt)
 
-        self.target_dir = StringVar()
-        self.target_dir.set(tgt_dir)
+        self.event_src = StringVar()
+        if isfile(join(event_src, "events.json")):
+            self.event_src.set(join(event_src, "events.json"))
+        else: 
+            self.event_src.set("C:\\")
+        self.event_tgt = StringVar()
+        if isfile(join(event_tgt, "events.json")):
+            self.event_tgt.set(join(event_tgt, "events.json"))
+        else: 
+            self.event_tgt.set("C:\\")
+
+        self.artist_src = StringVar()
+        if isfile(join(artist_src, "artists.json")):
+            self.artist_src.set(join(artist_src, "artists.json"))
+        else: 
+            self.artist_src.set("C:\\")
+        self.artist_tgt = StringVar()
+        if isfile(join(artist_tgt, "artists.json")):
+            self.artist_tgt.set(join(artist_tgt, "artists.json"))
+        else: 
+            self.artist_tgt.set("C:\\")
 
     def get_supported_file_signatures(self):
         return [

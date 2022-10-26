@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 from tkinter import (
     END,
@@ -27,10 +28,14 @@ from tkcalendar import DateEntry
 PAD_X = 20
 PAD_Y = (10, 0)
 
-DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-SRC_PATH = os.path.dirname(os.path.realpath(__file__))
-TGT_PATH = os.path.dirname(os.path.realpath(__file__))
-
+# https://stackoverflow.com/questions/404744/
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app 
+    # path into variable _MEIPASS'.
+    APP_PATH = sys._MEIPASS
+else:
+    APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
 class MainApp:
     def __init__(self, window):
@@ -115,39 +120,39 @@ class MainApp:
             window.after(50, lambda: self.listen_for_result(window))
 
     ###############################################################################################
-    # Initialisation functions
+    # Initialization functions
     ###############################################################################################
     def init_resource_folder(self, window):
-        def browse_button(dir, initial):
-            filename = filedialog.askdirectory(initialdir=initial)
+        def browse_button(dir):
+            filename = filedialog.askdirectory(initialdir=dir.get())
             if filename != "":
                 dir.set(filename)
 
-        self.meta_info.set_dirs(SRC_PATH, TGT_PATH)
+        self.meta_info.set_dirs(APP_PATH, APP_PATH, APP_PATH, APP_PATH, APP_PATH, APP_PATH)
 
         # Source directory
         lbl1 = Label(window, text="Source directory:")
         lbl1.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_src_dir = Label(window, textvariable=self.meta_info.source_dir)
+        lbl_src_dir = Label(window, textvariable=self.meta_info.img_src)
         lbl_src_dir.grid(
             row=self.row_idx, column=1, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
         source_button = Button(
             window,
             text="Browse",
-            command=lambda: browse_button(self.meta_info.source_dir, SRC_PATH),
+            command=lambda: browse_button(self.meta_info.img_src),
         )
         source_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Target directory
         lbl2 = Label(window, text="Target directory:")
         lbl2.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_tgt_dir = Label(window, textvariable=self.meta_info.target_dir)
+        lbl_tgt_dir = Label(window, textvariable=self.meta_info.img_tgt)
         lbl_tgt_dir.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         target_button = Button(
             window,
             text="Browse",
-            command=lambda: browse_button(self.meta_info.target_dir, TGT_PATH),
+            command=lambda: browse_button(self.meta_info.img_tgt),
         )
         target_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
@@ -174,48 +179,39 @@ class MainApp:
         folder_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_event_system(self, window):
-        def browse_button(dir, initial):
-            filename = filedialog.askopenfilename(initialdir=initial)
-            if filename != "":
+        def browse_button_open(dir):
+            filename = filedialog.askopenfilename(initialdir=os.path.dirname(dir.get()))
+            if filename != "" and not filename.lower().endswith(".json"):
+                messagebox.showinfo(message="Please select a json file.", title="Error")
+            elif filename != "":
+                self.db.insert_events(filename)
+                dir.set(filename)
+
+        def browse_button_save(dir):
+            filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
+            if filename != "" and not filename.lower().endswith(".json"):
+                messagebox.showinfo(message="Please select a json file.", title="Error")
+            elif filename != "":
+                self.db.save_events(filename)
                 dir.set(filename)
 
         # Load events from file
-        # TODO why src?
-        ld_event_file = StringVar()
-        ld_event_file.set("src/events.json")
-        load_eventfile_button = Button(
-            window,
-            text="Load events from File",
-            command=lambda: self.db.insert_events(ld_event_file.get()),
-        )
-        load_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
-        lbl_load_eventfile = Label(window, textvariable=ld_event_file)
-        lbl_load_eventfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
         browse_load_file_button = Button(
-            window, text="Browse", command=lambda: browse_button(ld_event_file, DIR_PATH)
+            window, text="Load events from File", command=lambda: browse_button_open(self.meta_info.event_src)
         )
-        browse_load_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        browse_load_file_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_load_eventfile = Label(window, textvariable=self.meta_info.event_src)
+        lbl_load_eventfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Save events to file
-        # TODO why src?
-        sv_event_file = StringVar()
-        sv_event_file.set("src/events.json")
-        save_eventfile_button = Button(
-            window,
-            text="Save events to File",
-            command=lambda: self.db.save_events(sv_event_file.get()),
-        )
-        save_eventfile_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
-        lbl_save_eventfile = Label(window, textvariable=sv_event_file)
-        lbl_save_eventfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
         browse_save_file_button = Button(
-            window, text="Browse", command=lambda: browse_button(sv_event_file, DIR_PATH)
+            window, text="Save events to File", command=lambda: browse_button_save(self.meta_info.event_tgt)
         )
-        browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        browse_save_file_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_save_eventfile = Label(window, textvariable=self.meta_info.event_tgt)
+        lbl_save_eventfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         #################
         # Add one event #
@@ -379,54 +375,45 @@ class MainApp:
         clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_artist_system(self, window):
-        def browse_button(dir, initial):
-            filename = filedialog.askopenfilename(initialdir=initial)
-            if filename != "":
+        def browse_button_open(dir):
+            filename = filedialog.askopenfilename(initialdir=os.path.dirname(dir.get()))
+            if filename != "" and not filename.lower().endswith(".json"):
+                messagebox.showinfo(message="Please select a json file.", title="Error")
+            elif filename != "":
+                # TODO check if file is really a artist file and not for example an event file
+                self.db.insert_artists(filename)
+                dir.set(filename)
+
+        def browse_button_save(dir):
+            filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
+            if filename != "" and not filename.lower().endswith(".json"):
+                messagebox.showinfo(message="Please select a json file.", title="Error")
+            elif filename != "":
+                self.db.save_artists(filename)
                 dir.set(filename)
 
         # Load artists from file
-        # TODO why src?
-        ld_artist_file = StringVar()
-        ld_artist_file.set("src/artists.json")
-        load_artistfile_button = Button(
-            window,
-            text="Load artists from File",
-            command=lambda: self.db.insert_artists(ld_artist_file.get()),
-        )
-        load_artistfile_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
-
-        lbl_load_artistfile = Label(window, textvariable=ld_artist_file)
-        lbl_load_artistfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
         browse_load_file_button = Button(
-            window, text="Browse", command=lambda: browse_button(ld_artist_file, DIR_PATH)
+            window, text="Load artists from File", command=lambda: browse_button_open(self.meta_info.artist_src)
         )
-        browse_load_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        browse_load_file_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        lbl_load_artistfile = Label(window, textvariable=self.meta_info.artist_src)
+        lbl_load_artistfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Save artists to file
-        # TODO why src?
-        sv_artist_file = StringVar()
-        sv_artist_file.set("src/artists.json")
-        save_artistfile_button = Button(
-            window,
-            text="Save artists to File",
-            command=lambda: self.db.save_artists(sv_artist_file.get()),
-        )
-        save_artistfile_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
-
-        lbl_save_artistfile = Label(window, textvariable=sv_artist_file)
-        lbl_save_artistfile.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
         browse_save_file_button = Button(
-            window, text="Browse", command=lambda: browse_button(sv_artist_file, DIR_PATH)
+            window, text="Save artists to File", command=lambda: browse_button_save(self.meta_info.artist_tgt)
         )
-        browse_save_file_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        browse_save_file_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        # Add one artist
+        lbl_save_artistfile = Label(window, textvariable=self.meta_info.artist_tgt)
+        lbl_save_artistfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+
+        ##################
+        # Add one artist #
+        ##################
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
         device_frame = Frame(window)
         device_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")

@@ -237,6 +237,7 @@ class Database:
             self.out_text.insert(END, "Could not add Artist: Missing model!\n")
             return
 
+        # TODO check if Artist is already in database
         # TODO Artist can have multiple cameras, so a different check is needed
         # TODO have cameras be time dependend on artist, maybe the person did change the camera
         # if not self.has_elem("artists", "name", name):

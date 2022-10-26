@@ -25,7 +25,7 @@ class TestSort(unittest.TestCase):
         # Set the meta_info data
         meta_info = MetaInformation()
         meta_info.set_dirs(TEST_DIR, TEST_DIR)
-        meta_info.source_dir.set(join(TEST_DIR, "test_images"))
+        meta_info.img_src.set(join(TEST_DIR, "test_images"))
 
         # load database
         self.db = Database(details_text)
