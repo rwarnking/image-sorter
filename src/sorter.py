@@ -29,7 +29,7 @@ class Sorter:
         self.meta_info.text_queue.put("Start sorting\n")
 
         # create database
-        self.db = Database(self.meta_info)
+        self.db = Database()
         # List of raw files that were processed
         self.raw_list = []
 

@@ -13,8 +13,9 @@ class TestDB(unittest.TestCase):
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
         window = Tk()
+        self.db = Database()
         details_text = Text(window, width=0, height=0)
-        self.db = Database(details_text)
+        self.db.set_out_text(details_text)
 
         EVENT_COUNT = 4
         ARTIST_COUNT = 3

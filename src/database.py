@@ -5,8 +5,7 @@ from tkinter import END
 
 
 class Database:
-    def __init__(self, out_text, path="database.db"):
-        self.out_text = out_text
+    def __init__(self, path="database.db"):
         self.conn = sqlite3.connect(path)
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events \
@@ -17,6 +16,9 @@ class Database:
             "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
         )
         self.conn.commit()
+
+    def set_out_text(self, out_text):
+        self.out_text = out_text
 
     def clean_all(self):
         self.clean_events()
@@ -57,6 +59,33 @@ class Database:
             self.out_text.insert(END, f"From table {table}, {var} was deleted.\n")
         else:
             self.out_text.insert(END, f"In table {table}, {var} was not found.\n")
+
+    def delete_one_2(self, table, attr1, var1, attr2, var2):
+        if var1 == "" or var2 == "":
+            self.out_text.insert(END, "Could not delete: Missing value!\n")
+            return
+
+        if self.has_elem(table, attr1, var1) and self.has_elem(table, attr2, var2):
+            query = f"DELETE FROM {table} WHERE {attr1}=? AND {attr2}=?"
+            self.conn.execute(
+                query,
+                (
+                    var1,
+                    var2,
+                ),
+            )
+            self.conn.commit()
+            self.out_text.insert(
+                END,
+                f"From table {table}, \
+                ALL events with startdate {var1} and enddate {var2} was deleted.\n",
+            )
+        else:
+            self.out_text.insert(
+                END,
+                f"In table {table}, \
+                no event with startdate {var1} and enddate {var2} was found.\n",
+            )
 
     def get_all_from_table(self, table):
         cur = self.conn.execute(f"SELECT * FROM {table}")
@@ -104,6 +133,15 @@ class Database:
         if title == "":
             self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return
+
+        if subevent == 1:
+            s_event = self.get_event(start_date)
+            e_event = self.get_event(end_date)
+            if len(s_event) == 0 or len(e_event) == 0:
+                self.out_text.insert(
+                    END, "Could not add Subevent: No matching main event found!\n"
+                )
+                return
 
         # TODO remove this check as soon as events are participant bound
         s_event = self.get_event(start_date, subevent)
@@ -156,7 +194,7 @@ class Database:
                 (title, start_date, end_date, sub_event),
             )
             self.conn.commit()
-            self.out_text.insert(END, f"Event {title} was added.\n")
+            self.out_text.insert(END, f"Event {title} was added. ({start_date}, {end_date})\n")
         else:
             self.out_text.insert(END, f"Event {title} was already there, could NOT add.\n")
 
@@ -174,6 +212,21 @@ class Database:
     def delete_event(self, title):
         title = str(title).replace(" ", "")
         self.delete_one("events", "title", title)
+        # TODO if main event delete subevents
+
+    def delete_events_by_date(self, start_day, start_hour, end_day, end_hour):
+        """
+        Deletes all events and subevents that match the exact date.
+        """
+        start_date = datetime.datetime.combine(
+            start_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=start_hour)
+        end_date = datetime.datetime.combine(
+            end_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=end_hour)
+
+        self.delete_one_2("events", "start_date", start_date, "end_date", end_date)
+        # TODO if main event delete subevents
 
     def clean_events(self):
         self.conn.execute("DROP TABLE IF EXISTS events")
@@ -209,12 +262,18 @@ class Database:
     def get_event(self, date, sub=0):
         cur = self.conn.execute(
             "SELECT title, start_date, end_date \
-            FROM events WHERE start_date<? AND end_date>? AND sub=?",
-            # (year, month, day,
-            # year, month, day, hour,
-            # year, month, day,
-            # year, month, day, hour,
+            FROM events WHERE start_date<=? AND end_date>=? AND sub=?",
             (date, date, sub),
+        )
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def get_event_by_name(self, name):
+        cur = self.conn.execute(
+            "SELECT title, start_date, end_date \
+            FROM events WHERE title=?",
+            (name,),
         )
         result = cur.fetchall()
         cur.close()

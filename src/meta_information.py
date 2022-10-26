@@ -41,6 +41,11 @@ class MetaInformation:
         self.shift_seconds.set("0")
         self.time_option = StringVar()
 
+        self.event_action = StringVar()
+        self.artist_option = StringVar()
+
+        self.event_selection = StringVar()
+
         self.text_queue = queue.Queue()
 
     def set_dirs(self, img_src, img_tgt, event_src, event_tgt, artist_src, artist_tgt):
@@ -52,23 +57,23 @@ class MetaInformation:
         self.event_src = StringVar()
         if isfile(join(event_src, "events.json")):
             self.event_src.set(join(event_src, "events.json"))
-        else: 
+        else:
             self.event_src.set("C:\\")
         self.event_tgt = StringVar()
         if isfile(join(event_tgt, "events.json")):
             self.event_tgt.set(join(event_tgt, "events.json"))
-        else: 
+        else:
             self.event_tgt.set("C:\\")
 
         self.artist_src = StringVar()
         if isfile(join(artist_src, "artists.json")):
             self.artist_src.set(join(artist_src, "artists.json"))
-        else: 
+        else:
             self.artist_src.set("C:\\")
         self.artist_tgt = StringVar()
         if isfile(join(artist_tgt, "artists.json")):
             self.artist_tgt.set(join(artist_tgt, "artists.json"))
-        else: 
+        else:
             self.artist_tgt.set("C:\\")
 
     def get_supported_file_signatures(self):

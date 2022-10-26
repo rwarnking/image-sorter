@@ -24,11 +24,12 @@ class TestSort(unittest.TestCase):
 
         # Set the meta_info data
         meta_info = MetaInformation()
-        meta_info.set_dirs(TEST_DIR, TEST_DIR)
+        meta_info.set_dirs(TEST_DIR, TEST_DIR, TEST_DIR, TEST_DIR, TEST_DIR, TEST_DIR)
         meta_info.img_src.set(join(TEST_DIR, "test_images"))
 
         # load database
-        self.db = Database(details_text)
+        self.db = Database()
+        self.db.set_out_text(details_text)
         self.db.insert_events(join(TEST_DIR, "events.json"))
         self.db.insert_artists(join(TEST_DIR, "artists.json"))
 
