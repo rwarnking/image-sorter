@@ -288,13 +288,13 @@ class Database:
     def insert_artist(self, name, make, model):
         if name == "":
             self.out_text.insert(END, "Could not add Artist: Missing name!\n")
-            return
+            return False
         if make == "":
             self.out_text.insert(END, "Could not add Artist: Missing make!\n")
-            return
+            return False
         if model == "":
             self.out_text.insert(END, "Could not add Artist: Missing model!\n")
-            return
+            return False
 
         # TODO check if Artist is already in database
         # TODO Artist can have multiple cameras, so a different check is needed
@@ -304,9 +304,10 @@ class Database:
             "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
         )
         self.conn.commit()
-        self.out_text.insert(END, f"Artist {name} was added.\n")
+        self.out_text.insert(END, f"Artist {name}|{make}|{model} was added.\n")
         # else:
         #     self.out_text.insert(END, f"Artist {name} was already there, could NOT add.\n")
+        return True
 
     def insert_artists(self, file):
         with open(file) as json_file:
@@ -318,8 +319,30 @@ class Database:
                     artist["model"],
                 )
 
-    def delete_artist(self, name):
-        self.delete_one("artists", "name", name)
+    # TODO similar to has_elem, but with more parameter
+    def has_artist(self, name, make, model):
+        query = f"SELECT * FROM artists WHERE name=? AND make=? AND model=?"
+        cur = self.conn.execute(query, (name, make, model,))
+        result = cur.fetchall()
+        cur.close()
+
+        return len(result) > 0
+
+    def delete_artist(self, name, make, model):
+        if name == "" or make == "" or model == "":
+            self.out_text.insert(END, "Could not delete: Missing value!\n")
+            return
+
+        table = "artists"
+        if self.has_artist(name, make, model):
+            # TODO only delete first encounter
+            # https://stackoverflow.com/questions/60731492/delete-first-row-from-sqlite-table-in-python
+            query = f"DELETE FROM {table} WHERE name=? AND make=? AND model=?"
+            self.conn.execute(query, (name, make, model,))
+            self.conn.commit()
+            self.out_text.insert(END, f"From table {table}, {name}|{make}|{model} was deleted.\n")
+        else:
+            self.out_text.insert(END, f"In table {table}, {name}|{make}|{model} was not found.\n")
 
     def clean_artists(self):
         self.conn.execute("DROP TABLE IF EXISTS artists")

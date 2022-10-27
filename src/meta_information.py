@@ -42,9 +42,10 @@ class MetaInformation:
         self.time_option = StringVar()
 
         self.event_action = StringVar()
-        self.artist_option = StringVar()
+        self.artist_action = StringVar()
 
         self.event_selection = StringVar()
+        self.artist_selection = StringVar()
 
         self.text_queue = queue.Queue()
 

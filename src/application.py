@@ -188,6 +188,7 @@ class MainApp:
             if filename != "" and not filename.lower().endswith(".json"):
                 messagebox.showinfo(message="Please select a json file.", title="Error")
             elif filename != "":
+                # TODO check if file is really an event file and not for example an artist file
                 self.db.insert_events(filename)
                 dir.set(filename)
                 update_option_menu()
@@ -273,7 +274,7 @@ class MainApp:
             if len(event_names) == 0:
                 event_names = [""]
             # Write event values from database
-            delete_options["values"] = event_names
+            event_cb["values"] = event_names
             self.meta_info.event_selection.set(event_names[0])
 
         def execute_event_action():
@@ -321,23 +322,23 @@ class MainApp:
         # Action choisces #
         ###################
         # https://www.pythontutorial.net/tkinter/tkinter-combobox/
-        action_choices = [
+        list_e_actions = [
             "Add event",
             "Add subevent",
             "Delete by name",
             "Delete by date",
             "Edit event",
         ]
-        self.meta_info.event_action.set(action_choices[0])
-        mod_options = Combobox(window, textvariable=self.meta_info.event_action)
+        self.meta_info.event_action.set(list_e_actions[0])
+        cb_e_actions = Combobox(window, textvariable=self.meta_info.event_action)
         # Write event values from database
-        mod_options["values"] = action_choices
+        cb_e_actions["values"] = list_e_actions
         # Prevent typing a value
-        mod_options["state"] = "readonly"
+        cb_e_actions["state"] = "readonly"
         # Place the widget
-        mod_options.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        cb_e_actions.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
-        mod_options.bind("<<ComboboxSelected>>", change_gui)
+        cb_e_actions.bind("<<ComboboxSelected>>", change_gui)
 
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
         date_frame = Frame(window)
@@ -402,15 +403,15 @@ class MainApp:
             event_names = [""]
         self.meta_info.event_selection.set(event_names[0])
 
-        delete_options = Combobox(sel_event_frame, textvariable=self.meta_info.event_selection)
+        cb_e_selection = Combobox(sel_event_frame, textvariable=self.meta_info.event_selection)
         # Write event values from database
-        delete_options["values"] = event_names
+        cb_e_selection["values"] = event_names
         # Prevent typing a value
-        delete_options["state"] = "readonly"
+        cb_e_selection["state"] = "readonly"
         # Place the widget
-        delete_options.pack(side="left", fill="x", expand=True)
+        cb_e_selection.pack(side="left", fill="x", expand=True)
         # Bind callback
-        delete_options.bind("<<ComboboxSelected>>", change_event_data)
+        cb_e_selection.bind("<<ComboboxSelected>>", change_event_data)
 
         sel_event_frame.grid_remove()
 
@@ -451,6 +452,8 @@ class MainApp:
                 # TODO check if file is really a artist file and not for example an event file
                 self.db.insert_artists(filename)
                 dir.set(filename)
+                update_artist_selection()
+                update_artist_guidata(None)
 
         def browse_button_save(dir):
             filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
@@ -470,8 +473,8 @@ class MainApp:
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
 
-        lbl_load_artistfile = Label(window, textvariable=self.meta_info.artist_src)
-        lbl_load_artistfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_a_load = Label(window, textvariable=self.meta_info.artist_src)
+        lbl_a_load.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Save artists to file
         browse_save_file_button = Button(
@@ -486,71 +489,290 @@ class MainApp:
         lbl_save_artistfile = Label(window, textvariable=self.meta_info.artist_tgt)
         lbl_save_artistfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        ##################
-        # Add one artist #
-        ##################
+        #########################
+        # Artistmodification gui #
+        #########################
+        def update_artist_gui(_):
+            str_a_action = self.meta_info.artist_action.get()
+            frame_a_date_w.grid_remove()
+
+            frame_a_name_w.grid_remove()
+            frame_a_name_r.grid_remove()
+            frame_a_device_w.grid_remove()
+            frame_a_device_r.grid_remove()
+
+            lbl_a_repl.grid()
+            tmp_row = lbl_a_repl.grid_info()["row"]
+            lbl_a_repl.grid_remove()
+
+            if str_a_action == "Add artist":
+                # frame_a_date_w.grid(row=tmp_row - 1)
+                frame_a_name_w.grid(row=tmp_row - 1)
+                frame_a_device_w.grid(row=tmp_row - 1)
+            elif str_a_action == "Delete artist":
+                frame_a_name_r.grid()
+                frame_a_device_r.grid()
+            elif str_a_action == "Edit artist":
+                # frame_a_date_w.grid(row=tmp_row)
+                frame_a_name_r.grid()
+                frame_a_name_w.grid(row=tmp_row)
+                frame_a_device_r.grid()
+                frame_a_device_w.grid(row=tmp_row)
+                lbl_a_repl.grid()
+            update_artist_guidata(None)
+
+        def update_artist_guidata(_):
+            str_a_action = self.meta_info.artist_action.get()
+            elm_a_data = self.meta_info.artist_selection.get().split(" | ")
+
+            if str_a_action != "Add artist" and len(elm_a_data) > 1:
+                sv_a_name_w.set(elm_a_data[0])
+                sv_a_make_w.set(elm_a_data[1])
+                lbl_a_make_r.config(text=elm_a_data[1])
+                sv_a_model_w.set(elm_a_data[2])
+                lbl_a_model_r.config(text=elm_a_data[2])
+                # _date = datetime.datetime.strptime(artist[1], "%Y-%m-%d %H:%M:%S")
+                # a_start_entry.set_date(s_date)
+                # e_date = datetime.datetime.strptime(artist[2], "%Y-%m-%d %H:%M:%S")
+                # a_end_entry.set_date(e_date)
+            else:
+                sv_a_name_w.set("")
+                sv_a_make_w.set("")
+                lbl_a_make_r.config(text="")
+                sv_a_model_w.set("")
+                lbl_a_model_r.config(text="")
+
+        def execute_artist_action():
+            str_a_action = self.meta_info.artist_action.get()
+            if str_a_action == "Add artist":
+                self.db.insert_artist(
+                    sv_a_name_w.get(),
+                    sv_a_make_w.get(),
+                    sv_a_model_w.get(),
+                    # a_start_entry.get_date(),
+                    # int(a_start_hour.get()),
+                    # a_end_entry.get_date(),
+                    # int(a_end_hour.get()),
+                )
+            elif str_a_action == "Delete artist":
+                elm_a_data = self.meta_info.artist_selection.get().split(" | ")
+                self.db.delete_artist(elm_a_data[0], elm_a_data[1], elm_a_data[2])
+            elif str_a_action == "Edit artist":
+                elm_a_data = self.meta_info.artist_selection.get().split(" | ")
+                if self.db.insert_artist(
+                    sv_a_name_w.get(),
+                    sv_a_make_w.get(),
+                    sv_a_model_w.get(),
+                    # a_start_entry.get_date(),
+                    # int(a_start_hour.get()),
+                    # a_end_entry.get_date(),
+                    # int(a_end_hour.get()),
+                ):
+                    self.db.delete_artist(elm_a_data[0], elm_a_data[1], elm_a_data[2])
+            update_artist_selection()
+
+        def update_artist_selection():
+            list_a_names = [
+               x[0] + " | " + x[1] + " | " + x[2] for x in self.db.get_all_from_table("artists")
+            ]
+            if len(list_a_names) == 0:
+                list_a_names = [" |  | "]
+            # Write artist values from database
+            cb_a_select["values"] = list_a_names
+            self.meta_info.artist_selection.set(list_a_names[0])
+            update_artist_guidata(None)
+
+        ###################
+        # Action choisces #
+        ###################
+        # https://www.pythontutorial.net/tkinter/tkinter-combobox/
+        list_a_actions = [
+            "Add artist",
+            "Delete artist",
+            "Edit artist",
+        ]
+        self.meta_info.artist_action.set(list_a_actions[0])
+        cb_a_actions = Combobox(window, textvariable=self.meta_info.artist_action)
+        # Write artist values from database
+        cb_a_actions["values"] = list_a_actions
+        # Prevent typing a value
+        cb_a_actions["state"] = "readonly"
+        # Place the widget
+        cb_a_actions.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # Bind callback
+        cb_a_actions.bind("<<ComboboxSelected>>", update_artist_gui)
+
+        #############################
+        # Artist Name, Make & Model #
+        #############################
+        #########
+        # Name Frame (write)
+        #########
+        frame_a_name_w = Frame(window)
+        frame_a_name_w.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        # Artist name input field
+        sv_a_name_w = StringVar()
+        sv_a_name_w.set("")
+        lbl_a_name = Label(frame_a_name_w, text="Name: ")
+        lbl_a_name.pack(side="left")
+        Entry(frame_a_name_w, textvariable=sv_a_name_w).pack(side="left", fill="x", expand=True)
+
+        #########
+        # Name Frame (read)
+        # Combobox to select artists
+        #########
+        frame_a_name_r = Frame(window)
+        frame_a_name_r.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        list_a_names = [
+            x[0] + " | " + x[1] + " | " + x[2] for x in self.db.get_all_from_table("artists")
+        ]
+        if len(list_a_names) == 0:
+            list_a_names = [" |  | "]
+        self.meta_info.artist_selection.set(list_a_names[0])
+
+        cb_a_select = Combobox(frame_a_name_r, textvariable=self.meta_info.artist_selection)
+        # Write artist values from database
+        cb_a_select["values"] = list_a_names
+        # Prevent typing a value
+        cb_a_select["state"] = "readonly"
+        # Place the widget
+        cb_a_select.pack(side="left", fill="x", expand=True)
+        # Bind callback
+        cb_a_select.bind("<<ComboboxSelected>>", update_artist_guidata)
+
+        #########
+        # Device Frame (write)
+        #########
+        frame_a_device_w = Frame(window)
+        frame_a_device_w.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        # Artist make input field
+        sv_a_make_w = StringVar()
+        sv_a_make_w.set("")
+        lbl_a_make = Label(frame_a_device_w, text="Make: ")
+        lbl_a_make.pack(side="left")
+        Entry(frame_a_device_w, textvariable=sv_a_make_w).pack(side="left", fill="x", expand=1)
+
+        # Artist model input field
+        sv_a_model_w = StringVar()
+        sv_a_model_w.set("")
+        lbl_a_model = Label(frame_a_device_w, text="Model: ")
+        lbl_a_model.pack(side="left")
+        Entry(frame_a_device_w, textvariable=sv_a_model_w).pack(side="left", fill="x", expand=1)
+
+        #########
+        # Device Frame (read)
+        #########
+        frame_a_device_r = Frame(window)
+        # TODO check wether to use border somewhere
+        # frame_a_device_r["borderwidth"] = 5
+        # frame_a_device_r["relief"] = "solid"
+        frame_a_device_r.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="ew")
+
+        # Artist make input field
+        lbl_a_make = Label(frame_a_device_r, text="Make: ")
+        lbl_a_make.pack(side="left")
+        lbl_a_make_r = Label(frame_a_device_r, text="", anchor="w")
+        lbl_a_make_r.pack(side="left", fill="x", expand=1)
+
+        # Artist model input field
+        lbl_a_model = Label(frame_a_device_r, text="Model: ")
+        lbl_a_model.pack(side="left")
+        lbl_a_model_r = Label(frame_a_device_r, text="", anchor="w")
+        lbl_a_model_r.pack(side="left", fill="x", expand=1)
+
+        # Advance Row by one
+        self.row()
+
+        # Replacement label
+        lbl_a_repl = Label(window, text="Replacement: ")
+        lbl_a_repl.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        #########
+        # Date Frame (write)
+        #########
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
-        device_frame = Frame(window)
-        device_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        frame_a_date_w = Frame(window)
+        frame_a_date_w.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        sv_artist_name = StringVar()
-        sv_artist_name.set("")
-        sv_artist_make = StringVar()
-        sv_artist_make.set("")
-        sv_artist_model = StringVar()
-        sv_artist_model.set("")
+        lbl_a_date = Label(frame_a_date_w, text="Start: ")
+        lbl_a_date.pack(side="left")
+        a_start_entry = DateEntry(
+            frame_a_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
+        )
+        a_start_entry.pack(side="left")
+        # Hour selector
+        a_start_hour = StringVar()
+        a_start_hour.set("0")
+        a_end_hour = StringVar()
+        a_end_hour.set("24")
+        vcmd = window.register(lambda P: str.isdigit(P) and int(P) > -1 and int(P) < 25)
 
-        lbl_date = Label(device_frame, text="Make: ")
-        lbl_date.pack(side="left")
-        Entry(device_frame, textvariable=sv_artist_make).pack(side="left")
+        Label(frame_a_date_w, text=":").pack(side="left")
+        Entry(
+            frame_a_date_w,
+            textvariable=a_start_hour,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="left")
+        Label(frame_a_date_w, text="h").pack(side="left")
 
-        Entry(device_frame, textvariable=sv_artist_model).pack(side="right")
-        lbl_date = Label(device_frame, text="Model: ")
+        Label(frame_a_date_w, text="h").pack(side="right")
+        Entry(
+            frame_a_date_w,
+            textvariable=a_end_hour,
+            width=3,
+            justify="right",
+            validate="all",
+            validatecommand=(vcmd, "%P"),
+        ).pack(side="right")
+        Label(frame_a_date_w, text=":").pack(side="right")
+        a_end_entry = DateEntry(
+            frame_a_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
+        )
+        a_end_entry.pack(side="right")
+        lbl_date = Label(frame_a_date_w, text="End: ")
         lbl_date.pack(side="right")
 
-        device_frame = Frame(window)
-        device_frame.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_date = Label(device_frame, text="Name: ")
-        lbl_date.pack(side="left")
-        Entry(device_frame, textvariable=sv_artist_name).pack(side="right")
+        # Advance Row by one
+        # TODO remove
+        self.row()
 
-        load_artistfile_button = Button(
-            window,
-            text="Add artist",
-            command=lambda: self.db.insert_artist(
-                sv_artist_name.get(), sv_artist_make.get(), sv_artist_model.get()
-            ),
+        #####################################
+        # Remove unneeded for initial state #
+        #####################################
+        # frame_a_name_w.grid_remove()
+        frame_a_name_r.grid_remove()
+        # frame_a_device_w.grid_remove()
+        frame_a_device_r.grid_remove()
+        lbl_a_repl.grid_remove()
+
+        ###################
+        # General buttons #
+        ###################
+        btn_a_execute = Button(
+            window, text="Execute", command=lambda: execute_artist_action()
         )
-        load_artistfile_button.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_a_execute.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        # Remove one artist
-        rm_artist_name = StringVar()
-        rm_artist_name.set("")
-        load_artistfile_button = Button(
-            window,
-            text="Remove artist",
-            command=lambda: self.db.delete_artist(rm_artist_name.get()),
-        )
-        load_artistfile_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
-
-        device_frame = Frame(window)
-        device_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_date = Label(device_frame, text="Name: ")
-        lbl_date.pack(side="left")
-        Entry(device_frame, textvariable=rm_artist_name).pack(side="right")
-
-        # Remove all artists
-        print_artists_button = Button(
+        # Print all artists to the details window
+        btn_a_print = Button(
             window, text="Print artist list", command=lambda: self.db.print_artists()
         )
-        print_artists_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_a_print.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        clear_artists_button = Button(
-            window, text="Clear artist list", command=lambda: self.db.clean_artists()
+        # Remove all artists from the database
+        btn_a_clear = Button(
+            window, 
+            text="Clear artist list", 
+            command=lambda: {
+                self.db.clean_artists(), update_artist_selection(), update_artist_guidata(None)
+            },
         )
-        clear_artists_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_a_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_checkboxes(self, window):
         Checkbutton(window, text="Shift timedata", variable=self.meta_info.shift_timedata).grid(
