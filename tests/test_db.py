@@ -41,9 +41,17 @@ class TestDB(unittest.TestCase):
         self.db_empty_test("artists")
 
         # Check if not empty after insert one
-        start_date = datetime.date(2020, 12, 1)
-        end_date = datetime.date(2020, 12, 31)
-        self.db.insert_event_from_date("test_title", start_date, 0, end_date, 24)
+        start_day = datetime.date(2020, 12, 1)
+        end_day = datetime.date(2020, 12, 31)
+        start_hour = 0
+        end_hour = 23
+        start_date = datetime.datetime.combine(
+            start_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=start_hour)
+        end_date = datetime.datetime.combine(
+            end_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=end_hour)
+        self.db.insert_event_from_date("test_title", start_date, start_hour, end_date, end_hour)
         self.db_not_empty_test("events", 1)
 
         # Check if get elem returns correct elem
@@ -58,7 +66,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(os.path.exists(TEST_DIR + "/events2.json"))
 
         # Check if empty after clean
-        self.db.delete_event("test_title")
+        self.db.delete_event("test_title", start_date, end_date)
         self.db_empty_test("events")
 
         # Check if not empty after insert one
@@ -74,7 +82,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(os.path.exists(TEST_DIR + "/artists2.json"))
 
         # Check if empty after clean
-        self.db.delete_artist("test_name")
+        self.db.delete_artist("test_name", "test_make", "test_model")
         self.db_empty_test("artists")
 
         # Check if not empty after insert from saved file

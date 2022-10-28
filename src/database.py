@@ -2,10 +2,11 @@ import datetime
 import json
 import sqlite3
 from tkinter import END
+from typing import Dict, List, Tuple, Union
 
 
 class Database:
-    def __init__(self, path="database.db"):
+    def __init__(self, path: str = "database.db"):
         self.conn = sqlite3.connect(path)
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events \
@@ -39,61 +40,75 @@ class Database:
     ######################
     # Generell functions #
     ######################
-    def has_elem(self, table, attr, var):
-        query = f"SELECT * FROM {table} WHERE {attr}=?"
-        cur = self.conn.execute(query, (var,))
+    def get_where_and_vals(self, args: Tuple[Tuple[str, ...], ...]):
+        where: str = ""
+        vals: Tuple[Union[str, datetime.datetime], ...] = ()
+        for pair in args:
+            if pair[1] == "":
+                self.out_text.insert(END, f"Ignored attr {pair[0]} (Missing value)!\n")
+            else:
+                if where != "":
+                    where += "AND "
+                where += pair[0] + "=? "
+                vals += (pair[1],)
+        return where, vals
+
+    def get_setter(self, args: Tuple[Tuple[str, ...], ...]):
+        setter: str = ""
+        vals: Tuple[Union[str, datetime.datetime], ...] = ()
+        for pair in args:
+            if pair[2] == "":
+                self.out_text.insert(END, f"Ignored attr {pair[0]} (Missing value)!\n")
+            else:
+                if setter != "":
+                    setter += ", "
+                setter += pair[0] + "=? "
+                vals += (pair[2],)
+        return setter, vals
+
+    def has_elem(self, table: str, *args: Tuple[str, ...]) -> bool:
+        where, vals = self.get_where_and_vals(args)
+        if where == "":
+            return False
+
+        query = f"SELECT * FROM {table} WHERE {where}"
+        cur = self.conn.execute(query, vals)
         result = cur.fetchall()
         cur.close()
 
         return len(result) > 0
 
-    def delete_one(self, table, attr, var):
-        if var == "":
-            self.out_text.insert(END, "Could not delete: Missing value!\n")
-            return
+    def delete(self, table: str, *args: Tuple[str, str]):
+        where, vals = self.get_where_and_vals(args)
 
-        if self.has_elem(table, attr, var):
-            query = f"DELETE FROM {table} WHERE {attr}=?"
-            self.conn.execute(query, (var,))
+        if self.has_elem(table, args[0]):
+            query = f"DELETE FROM {table} WHERE {where}"
+            self.conn.execute(query, vals)
             self.conn.commit()
-            self.out_text.insert(END, f"From table {table}, {var} was deleted.\n")
+            self.out_text.insert(END, f"From table {table}, {args} was deleted.\n")
         else:
-            self.out_text.insert(END, f"In table {table}, {var} was not found.\n")
+            self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
 
-    def delete_one_2(self, table, attr1, var1, attr2, var2):
-        if var1 == "" or var2 == "":
-            self.out_text.insert(END, "Could not delete: Missing value!\n")
-            return
+    def update(self, table: str, *args: Tuple[str, ...]):
+        where, vals1 = self.get_where_and_vals(args)
+        setter, vals2 = self.get_setter(args)
+        vals = vals2 + vals1
 
-        if self.has_elem(table, attr1, var1) and self.has_elem(table, attr2, var2):
-            query = f"DELETE FROM {table} WHERE {attr1}=? AND {attr2}=?"
-            self.conn.execute(
-                query,
-                (
-                    var1,
-                    var2,
-                ),
-            )
+        if self.has_elem(table, args[0]):
+            query = f"UPDATE {table} SET {setter} WHERE {where}"
+            self.conn.execute(query, vals)
             self.conn.commit()
-            self.out_text.insert(
-                END,
-                f"From table {table}, \
-                ALL events with startdate {var1} and enddate {var2} was deleted.\n",
-            )
+            self.out_text.insert(END, f"From table {table}, {args} was updated.\n")
         else:
-            self.out_text.insert(
-                END,
-                f"In table {table}, \
-                no event with startdate {var1} and enddate {var2} was found.\n",
-            )
+            self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
 
-    def get_all_from_table(self, table):
+    def get_all_from_table(self, table: str):
         cur = self.conn.execute(f"SELECT * FROM {table}")
         result = cur.fetchall()
         cur.close()
         return result
 
-    def print_table(self, table):
+    def print_table(self, table: str):
         cur = self.conn.execute(f"SELECT * FROM {table}")
         result = cur.fetchall()
         cur.close()
@@ -111,6 +126,10 @@ class Database:
         Adds a new event to the database using given date information.
         The event is only added if the title is not empty
         and the start date lies before the end date.
+
+        Mainevents are allowed to overlap, subevent are not.
+        Mainevents are also allowed to have the same title,
+        while subevents need to have a unique title inside its mainevent.
 
         Args:
             title: The title of the event as a String
@@ -134,15 +153,6 @@ class Database:
             self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return
 
-        if subevent == 1:
-            s_event = self.get_event(start_date)
-            e_event = self.get_event(end_date)
-            if len(s_event) == 0 or len(e_event) == 0:
-                self.out_text.insert(
-                    END, "Could not add Subevent: No matching main event found!\n"
-                )
-                return
-
         # TODO remove this check as soon as events are participant bound
         s_event = self.get_event(start_date, subevent)
         e_event = self.get_event(end_date, subevent)
@@ -162,7 +172,7 @@ class Database:
             subevent,
         )
 
-    def insert_subevent_from_date(self, title, start_day, start_hour, end_day, end_hour):
+    def insert_subevent_from_date(self, title: str, start_day, start_hour, end_day, end_hour):
         start_date = datetime.datetime.combine(
             start_day, datetime.datetime.min.time()
         ) + datetime.timedelta(hours=start_hour)
@@ -180,25 +190,26 @@ class Database:
                 END, "Subevent could not be added. Two matching main events found.\n"
             )
             return
+        # TODO do an overlap check with other subevents
+        # TODO subevents need to assigned to a mainevent
 
         self.insert_event_from_date(title, start_date, start_hour, end_date, end_hour, 1)
 
-    def insert_event(self, title, start_date, end_date, sub_event):
-        # TODO Add check that the new events do not overlap
-        if not self.has_elem("events", "title", title):
-            title = str(title).replace(" ", "")
-            self.conn.execute(
-                "INSERT INTO events \
-                (title, start_date, end_date, sub) \
-                VALUES (?, ?, ?, ?)",
-                (title, start_date, end_date, sub_event),
-            )
-            self.conn.commit()
-            self.out_text.insert(END, f"Event {title} was added. ({start_date}, {end_date})\n")
-        else:
-            self.out_text.insert(END, f"Event {title} was already there, could NOT add.\n")
+    def insert_event(self, title: str, start_date, end_date, sub_event: int):
+        title = str(title).replace(" ", "")
+        self.conn.execute(
+            "INSERT INTO events \
+            (title, start_date, end_date, sub) \
+            VALUES (?, ?, ?, ?)",
+            (title, start_date, end_date, sub_event),
+        )
+        self.conn.commit()
+        self.out_text.insert(END, f"Event {title} was added. ({start_date}, {end_date})\n")
 
-    def insert_events(self, file):
+    def insert_events(self, file: str):
+        """
+        Add events from a file.
+        """
         with open(file) as json_file:
             data = json.load(json_file)
             for event in data["events"]:
@@ -209,26 +220,47 @@ class Database:
                     event["subevent"],
                 )
 
-    def delete_event(self, title):
-        title = str(title).replace(" ", "")
-        self.delete_one("events", "title", title)
-        # TODO if main event delete subevents
-
-    def delete_events_by_date(self, start_day, start_hour, end_day, end_hour):
+    def update_event(self, title, s_date, e_date, n_title, n_s_day, n_s_hour, n_e_day, n_e_hour):
         """
-        Deletes all events and subevents that match the exact date.
+        Update the selected event.
         """
-        start_date = datetime.datetime.combine(
-            start_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=start_hour)
-        end_date = datetime.datetime.combine(
-            end_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=end_hour)
+        n_s_date = datetime.datetime.combine(
+            n_s_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=n_s_hour)
+        n_e_date = datetime.datetime.combine(
+            n_e_day, datetime.datetime.min.time()
+        ) + datetime.timedelta(hours=n_e_hour)
 
-        self.delete_one_2("events", "start_date", start_date, "end_date", end_date)
+        if n_e_date < n_s_date:
+            self.out_text.insert(END, "Could not add Event: end date < start date!\n")
+            return
+        if title == "":
+            self.out_text.insert(END, "Could not add Event: Missing title!\n")
+            return
+
+        # Remove unwanted characters
+        str(n_title).replace(" ", "")
+        str(n_title).replace("-", "")
+        str(n_title).replace("_", "")
+
+        self.update(
+            "events",
+            ("title", title, n_title),
+            ("start_date", s_date, n_s_date),
+            ("end_date", e_date, n_e_date),
+        )
+
+    def delete_event(self, title: str, s_date: str, e_date: str):
+        """
+        Delete the selected event.
+        """
+        self.delete("events", ("title", title), ("start_date", s_date), ("end_date", e_date))
         # TODO if main event delete subevents
 
     def clean_events(self):
+        """
+        Delete all events in the database.
+        """
         self.conn.execute("DROP TABLE IF EXISTS events")
 
         self.conn.execute(
@@ -238,9 +270,12 @@ class Database:
 
         self.out_text.insert(END, "All event entrys were deleted.\n")
 
-    def save_events(self, file):
+    def save_events(self, file: str):
+        """
+        Save all events to a json file.
+        """
         data = self.get_all_from_table("events")
-        json_data = {"events": []}
+        json_data: Dict[str, List] = {"events": []}
         for elem in data:
             json_data["events"].append(
                 {
@@ -259,21 +294,14 @@ class Database:
             json.dump(json_data, outfile, indent=4)
         self.out_text.insert(END, f"Events were saved to file {file}.\n")
 
-    def get_event(self, date, sub=0):
+    def get_event(self, date: datetime.datetime, sub: int = 0):
+        """
+        Get the event with the specified date.
+        """
         cur = self.conn.execute(
             "SELECT title, start_date, end_date \
             FROM events WHERE start_date<=? AND end_date>=? AND sub=?",
             (date, date, sub),
-        )
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    def get_event_by_name(self, name):
-        cur = self.conn.execute(
-            "SELECT title, start_date, end_date \
-            FROM events WHERE title=?",
-            (name,),
         )
         result = cur.fetchall()
         cur.close()
@@ -285,31 +313,34 @@ class Database:
     ##################
     # Artist related #
     ##################
-    def insert_artist(self, name, make, model):
+    def insert_artist(self, name: str, make: str, model: str):
         if name == "":
             self.out_text.insert(END, "Could not add Artist: Missing name!\n")
-            return False
+            return
         if make == "":
             self.out_text.insert(END, "Could not add Artist: Missing make!\n")
-            return False
+            return
         if model == "":
             self.out_text.insert(END, "Could not add Artist: Missing model!\n")
-            return False
+            return
 
-        # TODO check if Artist is already in database
-        # TODO Artist can have multiple cameras, so a different check is needed
         # TODO have cameras be time dependend on artist, maybe the person did change the camera
-        # if not self.has_elem("artists", "name", name):
-        self.conn.execute(
-            "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
-        )
-        self.conn.commit()
-        self.out_text.insert(END, f"Artist {name}|{make}|{model} was added.\n")
-        # else:
-        #     self.out_text.insert(END, f"Artist {name} was already there, could NOT add.\n")
-        return True
+        if not self.has_elem("artists", ("name", name), ("make", make), ("model", model)):
+            self.conn.execute(
+                "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
+            )
+            self.conn.commit()
+            self.out_text.insert(END, f"Artist {name}|{make}|{model} was added.\n")
+        else:
+            self.out_text.insert(
+                END, f"Artist {name}|{make}|{model} was already there, did NOT add.\n"
+            )
+        return
 
-    def insert_artists(self, file):
+    def insert_artists(self, file: str):
+        """
+        Add artists from a file.
+        """
         with open(file) as json_file:
             data = json.load(json_file)
             for artist in data["artists"]:
@@ -319,32 +350,57 @@ class Database:
                     artist["model"],
                 )
 
-    # TODO similar to has_elem, but with more parameter
-    def has_artist(self, name, make, model):
-        query = f"SELECT * FROM artists WHERE name=? AND make=? AND model=?"
-        cur = self.conn.execute(query, (name, make, model,))
-        result = cur.fetchall()
-        cur.close()
+    def update_artist(self, name: str, make: str, model: str, n_name: str, n_make: str, n_model):
+        """
+        Update the selected artist.
+        """
+        if n_name == "":
+            self.out_text.insert(END, "Could not add Artist: Missing name!\n")
+            return
+        if n_make == "":
+            self.out_text.insert(END, "Could not add Artist: Missing make!\n")
+            return
+        if n_model == "":
+            self.out_text.insert(END, "Could not add Artist: Missing model!\n")
+            return
 
-        return len(result) > 0
+        self.update(
+            "artists",
+            ("name", name, n_name),
+            ("make", make, n_make),
+            ("model", model, n_model),
+        )
 
-    def delete_artist(self, name, make, model):
+    def delete_artist(self, name: str, make: str, model: str):
+        """
+        Delete the selected artist.
+        """
         if name == "" or make == "" or model == "":
             self.out_text.insert(END, "Could not delete: Missing value!\n")
             return
 
         table = "artists"
-        if self.has_artist(name, make, model):
-            # TODO only delete first encounter
-            # https://stackoverflow.com/questions/60731492/delete-first-row-from-sqlite-table-in-python
+        if self.has_elem(table, ("name", name), ("make", make), ("model", model)):
+            # Only one entry should be present,
+            # since the insertion does not allow direct copys of an entry
             query = f"DELETE FROM {table} WHERE name=? AND make=? AND model=?"
-            self.conn.execute(query, (name, make, model,))
+            self.conn.execute(
+                query,
+                (
+                    name,
+                    make,
+                    model,
+                ),
+            )
             self.conn.commit()
             self.out_text.insert(END, f"From table {table}, {name}|{make}|{model} was deleted.\n")
         else:
             self.out_text.insert(END, f"In table {table}, {name}|{make}|{model} was not found.\n")
 
     def clean_artists(self):
+        """
+        Delete all artists in the database.
+        """
         self.conn.execute("DROP TABLE IF EXISTS artists")
 
         self.conn.execute(
@@ -353,9 +409,12 @@ class Database:
 
         self.out_text.insert(END, "All artist entrys were deleted.\n")
 
-    def save_artists(self, file):
+    def save_artists(self, file: str):
+        """
+        Save all artists to a json file.
+        """
         data = self.get_all_from_table("artists")
-        json_data = {"artists": []}
+        json_data: Dict[str, List] = {"artists": []}
         for elem in data:
             json_data["artists"].append(
                 {
@@ -369,7 +428,10 @@ class Database:
             json.dump(json_data, outfile, indent=4)
         self.out_text.insert(END, f"Artists were saved to file {file}.\n")
 
-    def get_artist(self, make, model):
+    def get_artist(self, make: str, model: str):
+        """
+        Get the artist with the specified make and model.
+        """
         cur = self.conn.execute("SELECT name FROM artists WHERE make=? AND model=?", (make, model))
         result = cur.fetchall()
         cur.close()

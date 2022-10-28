@@ -191,7 +191,8 @@ class MainApp:
                 # TODO check if file is really an event file and not for example an artist file
                 self.db.insert_events(filename)
                 dir.set(filename)
-                update_option_menu()
+                update_event_selection()
+                update_event_guidata(None)
 
         def browse_button_save(dir):
             filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
@@ -202,132 +203,140 @@ class MainApp:
                 dir.set(filename)
 
         # Load events from file
-        browse_load_file_button = Button(
+        btn_e_loadfile = Button(
             window,
             text="Load events from File",
             command=lambda: browse_button_open(self.meta_info.event_src),
         )
-        browse_load_file_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        btn_e_loadfile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        lbl_load_eventfile = Label(window, textvariable=self.meta_info.event_src)
-        lbl_load_eventfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_e_load = Label(window, textvariable=self.meta_info.event_src)
+        lbl_e_load.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Save events to file
-        browse_save_file_button = Button(
+        btn_e_savefile = Button(
             window,
             text="Save events to File",
             command=lambda: browse_button_save(self.meta_info.event_tgt),
         )
-        browse_save_file_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        btn_e_savefile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        lbl_save_eventfile = Label(window, textvariable=self.meta_info.event_tgt)
-        lbl_save_eventfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_e_save = Label(window, textvariable=self.meta_info.event_tgt)
+        lbl_e_save.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         #########################
         # Eventmodification gui #
         #########################
-        def change_gui(_):
-            action = self.meta_info.event_action.get()
-            date_frame.grid_remove()
-            name_frame.grid_remove()
-            sel_event_frame.grid_remove()
-            lbl_repl.grid()
-            tmp = lbl_repl.grid_info()["row"]
-            lbl_repl.grid_remove()
-            str_event_title.set("")
+        def update_event_gui(_):
+            str_e_action = self.meta_info.event_action.get()
 
-            if action == "Add event":
-                date_frame.grid(row=tmp - 1)
-                name_frame.grid(row=tmp - 1)
-            elif action == "Add subevent":
-                date_frame.grid(row=tmp - 1)
-                name_frame.grid(row=tmp - 1)
-            elif action == "Delete by name":
-                sel_event_frame.grid()
-            elif action == "Delete by date":
-                date_frame.grid(row=tmp - 1)
-            elif action == "Edit event":
-                date_frame.grid(row=tmp)
-                name_frame.grid(row=tmp)
-                sel_event_frame.grid()
-                lbl_repl.grid()
-                name = self.meta_info.event_selection.get()
-                change_event_data(name)
+            frame_e_date_w.grid_remove()
+            frame_e_title_w.grid_remove()
+            frame_e_title_r.grid_remove()
 
-        def change_event_data(event):
-            name = self.meta_info.event_selection.get()
-            event_list = self.db.get_event_by_name(name)
-            if len(event_list) > 0:
-                event = event_list[0]
-                str_event_title.set(event[0])
-                s_date = datetime.datetime.strptime(event[1], "%Y-%m-%d %H:%M:%S")
+            lbl_e_repl.grid()
+            tmp_row = lbl_e_repl.grid_info()["row"]
+            lbl_e_repl.grid_remove()
+            str_e_title_w.set("")
+
+            if str_e_action == "Add event":
+                frame_e_date_w.grid(row=tmp_row - 1)
+                frame_e_title_w.grid(row=tmp_row - 1)
+            elif str_e_action == "Add subevent":
+                frame_e_date_w.grid(row=tmp_row - 1)
+                frame_e_title_w.grid(row=tmp_row - 1)
+            elif str_e_action == "Delete (sub)event":
+                frame_e_title_r.grid()
+            elif str_e_action == "Edit (sub)event":
+                frame_e_date_w.grid(row=tmp_row)
+                frame_e_title_w.grid(row=tmp_row)
+                frame_e_title_r.grid()
+                lbl_e_repl.grid()
+            update_event_guidata(None)
+
+        def update_event_guidata(_):
+            str_e_action = self.meta_info.event_action.get()
+            elm_e_data = self.meta_info.event_selection.get().split(" | ")
+
+            if (
+                str_e_action != "Add event"
+                and str_e_action != "Add subevent"
+                and len(elm_e_data) > 1
+            ):
+                str_e_title_w.set(elm_e_data[0])
+                s_date = datetime.datetime.strptime(elm_e_data[1], "%Y-%m-%d %H:%M:%S")
                 e_start_entry.set_date(s_date)
-                e_date = datetime.datetime.strptime(event[2], "%Y-%m-%d %H:%M:%S")
-                e_end_entry.set_date(e_date)
-
-        def update_option_menu():
-            event_names = [x[0] for x in self.db.get_all_from_table("events")]
-            if len(event_names) == 0:
-                event_names = [""]
-            # Write event values from database
-            event_cb["values"] = event_names
-            self.meta_info.event_selection.set(event_names[0])
+                sv_e_shour.set(s_date.hour)
+                e_date = datetime.datetime.strptime(elm_e_data[2], "%Y-%m-%d %H:%M:%S")
+                date_e_end.set_date(e_date)
+                sv_e_ehour.set(e_date.hour)
+            else:
+                str_e_title_w.set("")
 
         def execute_event_action():
-            action = self.meta_info.event_action.get()
-            if action == "Add event":
+            str_e_action = self.meta_info.event_action.get()
+            if str_e_action == "Add event":
                 self.db.insert_event_from_date(
-                    str_event_title.get(),
+                    str_e_title_w.get(),
                     e_start_entry.get_date(),
-                    int(e_start_hour.get()),
-                    e_end_entry.get_date(),
-                    int(e_end_hour.get()),
+                    int(sv_e_shour.get()),
+                    date_e_end.get_date(),
+                    int(sv_e_ehour.get()),
                 )
-            elif action == "Add subevent":
-                self.db.insert_event_from_date(
-                    str_event_title.get(),
+            elif str_e_action == "Add subevent":
+                self.db.insert_subevent_from_date(
+                    str_e_title_w.get(),
                     e_start_entry.get_date(),
-                    int(e_start_hour.get()),
-                    e_end_entry.get_date(),
-                    int(e_end_hour.get()),
-                    1,
+                    int(sv_e_shour.get()),
+                    date_e_end.get_date(),
+                    int(sv_e_ehour.get()),
                 )
-            elif action == "Delete by name":
-                name = self.meta_info.event_selection.get()
-                self.db.delete_event(name)
-            elif action == "Delete by date":
-                self.db.delete_events_by_date(
+            elif str_e_action == "Delete (sub)event":
+                elm_e_data = self.meta_info.event_selection.get().split(" | ")
+                self.db.delete_event(elm_e_data[0], elm_e_data[1], elm_e_data[2])
+            elif str_e_action == "Edit (sub)event":
+                elm_e_data = self.meta_info.event_selection.get().split(" | ")
+                self.db.update_event(
+                    elm_e_data[0],
+                    elm_e_data[1],
+                    elm_e_data[2],
+                    str_e_title_w.get(),
                     e_start_entry.get_date(),
-                    int(e_start_hour.get()),
-                    e_end_entry.get_date(),
-                    int(e_end_hour.get()),
+                    int(sv_e_shour.get()),
+                    date_e_end.get_date(),
+                    int(sv_e_ehour.get()),
                 )
-            elif action == "Edit event":
-                name = self.meta_info.event_selection.get()
-                self.db.delete_event(name)
-                self.db.insert_event_from_date(
-                    str_event_title.get(),
-                    e_start_entry.get_date(),
-                    int(e_start_hour.get()),
-                    e_end_entry.get_date(),
-                    int(e_end_hour.get()),
-                )
-            update_option_menu()
+                # self.db.delete_event(elm_e_data[0], elm_e_data[1], elm_e_data[2])
+                # self.db.insert_event_from_date(
+                #     str_e_title_w.get(),
+                #     e_start_entry.get_date(),
+                #     int(sv_e_shour.get()),
+                #     date_e_end.get_date(),
+                #     int(sv_e_ehour.get()),
+                # )
+            update_event_selection()
 
-        ###################
-        # Action choisces #
-        ###################
+        def update_event_selection():
+            list_e_titles = [
+                str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+                for x in self.db.get_all_from_table("events")
+            ]
+            if len(list_e_titles) == 0:
+                list_e_titles = [" |  | "]
+            # Write event values from database
+            cb_e_select["values"] = list_e_titles
+            self.meta_info.event_selection.set(list_e_titles[0])
+            update_event_guidata(None)
+
+        ##################
+        # Action choices #
+        ##################
         # https://www.pythontutorial.net/tkinter/tkinter-combobox/
         list_e_actions = [
             "Add event",
             "Add subevent",
-            "Delete by name",
-            "Delete by date",
-            "Edit event",
+            "Delete (sub)event",
+            "Edit (sub)event",
         ]
         self.meta_info.event_action.set(list_e_actions[0])
         cb_e_actions = Combobox(window, textvariable=self.meta_info.event_action)
@@ -338,110 +347,131 @@ class MainApp:
         # Place the widget
         cb_e_actions.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
-        cb_e_actions.bind("<<ComboboxSelected>>", change_gui)
+        cb_e_actions.bind("<<ComboboxSelected>>", update_event_gui)
 
+        #######################
+        # Event Title & Dates #
+        #######################
+        #########
+        # Date Frame (write)
+        #########
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
-        date_frame = Frame(window)
-        date_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        frame_e_date_w = Frame(window)
+        frame_e_date_w.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        lbl_date = Label(date_frame, text="Start: ")
-        lbl_date.pack(side="left")
+        lbl_e_sdate = Label(frame_e_date_w, text="Start: ")
+        lbl_e_sdate.pack(side="left")
         e_start_entry = DateEntry(
-            date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
+            frame_e_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
         )
         e_start_entry.pack(side="left")
         # Hour selector
-        e_start_hour = StringVar()
-        e_start_hour.set("0")
-        e_end_hour = StringVar()
-        e_end_hour.set("24")
+        sv_e_shour = StringVar()
+        sv_e_shour.set("0")
+        sv_e_ehour = StringVar()
+        sv_e_ehour.set("24")
         vcmd = window.register(lambda P: str.isdigit(P) and int(P) > -1 and int(P) < 25)
 
-        Label(date_frame, text=":").pack(side="left")
+        Label(frame_e_date_w, text=":").pack(side="left")
         Entry(
-            date_frame,
-            textvariable=e_start_hour,
+            frame_e_date_w,
+            textvariable=sv_e_shour,
             width=3,
             justify="right",
             validate="all",
             validatecommand=(vcmd, "%P"),
         ).pack(side="left")
-        Label(date_frame, text="h").pack(side="left")
+        Label(frame_e_date_w, text="h").pack(side="left")
 
-        Label(date_frame, text="h").pack(side="right")
+        Label(frame_e_date_w, text="h").pack(side="right")
         Entry(
-            date_frame,
-            textvariable=e_end_hour,
+            frame_e_date_w,
+            textvariable=sv_e_ehour,
             width=3,
             justify="right",
             validate="all",
             validatecommand=(vcmd, "%P"),
         ).pack(side="right")
-        Label(date_frame, text=":").pack(side="right")
-        e_end_entry = DateEntry(
-            date_frame, width=12, background="darkblue", foreground="white", borderwidth=2
+        Label(frame_e_date_w, text=":").pack(side="right")
+        date_e_end = DateEntry(
+            frame_e_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
         )
-        e_end_entry.pack(side="right")
-        lbl_date = Label(date_frame, text="End: ")
-        lbl_date.pack(side="right")
+        date_e_end.pack(side="right")
+        lbl_e_edate = Label(frame_e_date_w, text="End: ")
+        lbl_e_edate.pack(side="right")
 
-        str_event_title = StringVar()
-        str_event_title.set("")
-        name_frame = Frame(window)
-        name_frame.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_date = Label(name_frame, text="Title: ")
-        lbl_date.pack(side="left")
-        Entry(name_frame, textvariable=str_event_title).pack(side="left", fill="x", expand=True)
+        #########
+        # Title Frame (write)
+        #########
+        frame_e_title_w = Frame(window)
+        frame_e_title_w.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        #############################
+        # Event title input field
+        str_e_title_w = StringVar()
+        str_e_title_w.set("")
+        lbl_e_title = Label(frame_e_title_w, text="Title: ")
+        lbl_e_title.pack(side="left")
+        Entry(frame_e_title_w, textvariable=str_e_title_w).pack(side="left", fill="x", expand=True)
+
+        #########
+        # Title Frame (read)
         # Combobox to select events #
-        #############################
-        sel_event_frame = Frame(window)
-        sel_event_frame.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        event_names = [x[0] for x in self.db.get_all_from_table("events")]
-        if len(event_names) == 0:
-            event_names = [""]
-        self.meta_info.event_selection.set(event_names[0])
+        #########
+        frame_e_title_r = Frame(window)
+        frame_e_title_r.grid(
+            row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+        list_e_titles = [
+            str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+            for x in self.db.get_all_from_table("events")
+        ]
+        if len(list_e_titles) == 0:
+            list_e_titles = [""]
+        self.meta_info.event_selection.set(list_e_titles[0])
 
-        cb_e_selection = Combobox(sel_event_frame, textvariable=self.meta_info.event_selection)
+        cb_e_select = Combobox(frame_e_title_r, textvariable=self.meta_info.event_selection)
         # Write event values from database
-        cb_e_selection["values"] = event_names
+        cb_e_select["values"] = list_e_titles
         # Prevent typing a value
-        cb_e_selection["state"] = "readonly"
+        cb_e_select["state"] = "readonly"
         # Place the widget
-        cb_e_selection.pack(side="left", fill="x", expand=True)
+        cb_e_select.pack(side="left", fill="x", expand=True)
         # Bind callback
-        cb_e_selection.bind("<<ComboboxSelected>>", change_event_data)
-
-        sel_event_frame.grid_remove()
+        cb_e_select.bind("<<ComboboxSelected>>", update_event_guidata)
 
         # Replacement label
-        lbl_repl = Label(window, text="Replacement: ")
-        lbl_repl.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_e_repl = Label(window, text="Replacement: ")
+        lbl_e_repl.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        lbl_repl.grid_remove()
+        #####################################
+        # Remove unneeded for initial state #
+        #####################################
+        frame_e_title_r.grid_remove()
+        lbl_e_repl.grid_remove()
 
         ###################
         # General buttons #
         ###################
-        execute_events_button = Button(
-            window, text="Execute", command=lambda: execute_event_action()
-        )
-        execute_events_button.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_e_execute = Button(window, text="Execute", command=lambda: execute_event_action())
+        btn_e_execute.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Print all events to the details window
-        print_events_button = Button(
+        btn_e_print = Button(
             window, text="Print event list", command=lambda: self.db.print_events()
         )
-        print_events_button.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_e_print.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Remove all events from the database
-        clear_events_button = Button(
+        btn_e_clear = Button(
             window,
             text="Clear event list",
-            command=lambda: {self.db.clean_events(), update_option_menu()},
+            command=lambda: {
+                self.db.clean_events(),
+                update_event_selection(),
+                update_event_guidata(None),
+            },
         )
-        clear_events_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_e_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_artist_system(self, window):
         def browse_button_open(dir):
@@ -464,38 +494,34 @@ class MainApp:
                 dir.set(filename)
 
         # Load artists from file
-        browse_load_file_button = Button(
+        btn_a_loadfile = Button(
             window,
             text="Load artists from File",
             command=lambda: browse_button_open(self.meta_info.artist_src),
         )
-        browse_load_file_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        btn_a_loadfile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         lbl_a_load = Label(window, textvariable=self.meta_info.artist_src)
         lbl_a_load.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Save artists to file
-        browse_save_file_button = Button(
+        btn_a_savefile = Button(
             window,
             text="Save artists to File",
             command=lambda: browse_button_save(self.meta_info.artist_tgt),
         )
-        browse_save_file_button.grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        btn_a_savefile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         lbl_save_artistfile = Label(window, textvariable=self.meta_info.artist_tgt)
         lbl_save_artistfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        #########################
+        ##########################
         # Artistmodification gui #
-        #########################
+        ##########################
         def update_artist_gui(_):
             str_a_action = self.meta_info.artist_action.get()
-            frame_a_date_w.grid_remove()
 
+            frame_a_date_w.grid_remove()
             frame_a_name_w.grid_remove()
             frame_a_name_r.grid_remove()
             frame_a_device_w.grid_remove()
@@ -559,21 +585,20 @@ class MainApp:
                 self.db.delete_artist(elm_a_data[0], elm_a_data[1], elm_a_data[2])
             elif str_a_action == "Edit artist":
                 elm_a_data = self.meta_info.artist_selection.get().split(" | ")
-                if self.db.insert_artist(
+                self.db.update_artist(
+                    elm_a_data[0],
+                    elm_a_data[1],
+                    elm_a_data[2],
                     sv_a_name_w.get(),
                     sv_a_make_w.get(),
                     sv_a_model_w.get(),
-                    # a_start_entry.get_date(),
-                    # int(a_start_hour.get()),
-                    # a_end_entry.get_date(),
-                    # int(a_end_hour.get()),
-                ):
-                    self.db.delete_artist(elm_a_data[0], elm_a_data[1], elm_a_data[2])
+                )
             update_artist_selection()
 
         def update_artist_selection():
             list_a_names = [
-               x[0] + " | " + x[1] + " | " + x[2] for x in self.db.get_all_from_table("artists")
+                str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+                for x in self.db.get_all_from_table("artists")
             ]
             if len(list_a_names) == 0:
                 list_a_names = [" |  | "]
@@ -582,9 +607,9 @@ class MainApp:
             self.meta_info.artist_selection.set(list_a_names[0])
             update_artist_guidata(None)
 
-        ###################
-        # Action choisces #
-        ###################
+        ##################
+        # Action choices #
+        ##################
         # https://www.pythontutorial.net/tkinter/tkinter-combobox/
         list_a_actions = [
             "Add artist",
@@ -625,7 +650,8 @@ class MainApp:
         frame_a_name_r = Frame(window)
         frame_a_name_r.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         list_a_names = [
-            x[0] + " | " + x[1] + " | " + x[2] for x in self.db.get_all_from_table("artists")
+            str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+            for x in self.db.get_all_from_table("artists")
         ]
         if len(list_a_names) == 0:
             list_a_names = [" |  | "]
@@ -753,9 +779,7 @@ class MainApp:
         ###################
         # General buttons #
         ###################
-        btn_a_execute = Button(
-            window, text="Execute", command=lambda: execute_artist_action()
-        )
+        btn_a_execute = Button(window, text="Execute", command=lambda: execute_artist_action())
         btn_a_execute.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Print all artists to the details window
@@ -766,10 +790,12 @@ class MainApp:
 
         # Remove all artists from the database
         btn_a_clear = Button(
-            window, 
-            text="Clear artist list", 
+            window,
+            text="Clear artist list",
             command=lambda: {
-                self.db.clean_artists(), update_artist_selection(), update_artist_guidata(None)
+                self.db.clean_artists(),
+                update_artist_selection(),
+                update_artist_guidata(None),
             },
         )
         btn_a_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
