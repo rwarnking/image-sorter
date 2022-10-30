@@ -10,7 +10,6 @@ from tkinter import (
     Entry,
     Frame,
     Label,
-    OptionMenu,
     StringVar,
     Text,
     Tk,
@@ -161,14 +160,22 @@ class MainApp:
         target_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_signatures(self, window):
-        in_choices = self.meta_info.get_read_choices()
-        file_choices = self.meta_info.get_supported_file_signatures()
-        folder_choices = self.meta_info.get_supported_folder_signatures()
+        list_in_choices = self.meta_info.get_read_choices()
+        list_file_choices = self.meta_info.get_supported_file_signatures()
+        list_folder_choices = self.meta_info.get_supported_folder_signatures()
 
         lbl = Label(window, text="Input data:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        in_options = OptionMenu(window, self.meta_info.in_signature, *in_choices)
-        in_options.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        cb_insig_select = Combobox(window, textvariable=self.meta_info.in_signature)
+        # Write file signatures
+        cb_insig_select["values"] = list_in_choices
+        # Prevent typing a value
+        cb_insig_select["state"] = "readonly"
+        # Place the widget
+        cb_insig_select.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # Assign width
+        cb_insig_select["width"] = len(max(list_in_choices, key=len))
 
         Checkbutton(window, text="Use fallback data", variable=self.meta_info.fallback_sig).grid(
             row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
@@ -176,11 +183,26 @@ class MainApp:
 
         lbl = Label(window, text="Output file/folder:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        file_options = OptionMenu(window, self.meta_info.file_signature, *file_choices)
-        file_options.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        folder_options = OptionMenu(window, self.meta_info.folder_signature, *folder_choices)
-        folder_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        cb_filesig_select = Combobox(window, textvariable=self.meta_info.file_signature)
+        # Write file signatures
+        cb_filesig_select["values"] = list_file_choices
+        # Prevent typing a value
+        cb_filesig_select["state"] = "readonly"
+        # Place the widget
+        cb_filesig_select.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # Assign width
+        cb_filesig_select["width"] = len(max(list_file_choices, key=len))
+
+        cb_foldersig_select = Combobox(window, textvariable=self.meta_info.folder_signature)
+        # Write folder signatures
+        cb_foldersig_select["values"] = list_folder_choices
+        # Prevent typing a value
+        cb_foldersig_select["state"] = "readonly"
+        # Place the widget
+        cb_foldersig_select.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # Assign width
+        cb_foldersig_select["width"] = len(max(list_folder_choices, key=len))
 
     def init_event_system(self, window):
         def browse_button_open(dir):
@@ -306,14 +328,6 @@ class MainApp:
                     date_e_end.get_date(),
                     int(sv_e_ehour.get()),
                 )
-                # self.db.delete_event(elm_e_data[0], elm_e_data[1], elm_e_data[2])
-                # self.db.insert_event_from_date(
-                #     str_e_title_w.get(),
-                #     e_start_entry.get_date(),
-                #     int(sv_e_shour.get()),
-                #     date_e_end.get_date(),
-                #     int(sv_e_ehour.get()),
-                # )
             update_event_selection()
 
         def update_event_selection():
@@ -436,6 +450,8 @@ class MainApp:
         cb_e_select["state"] = "readonly"
         # Place the widget
         cb_e_select.pack(side="left", fill="x", expand=True)
+        # Assign width
+        cb_e_select["width"] = len(max(list_e_titles, key=len))
         # Bind callback
         cb_e_select.bind("<<ComboboxSelected>>", update_event_guidata)
 
@@ -664,6 +680,8 @@ class MainApp:
         cb_a_select["state"] = "readonly"
         # Place the widget
         cb_a_select.pack(side="left", fill="x", expand=True)
+        # Assign width
+        cb_a_select["width"] = len(max(list_a_names, key=len))
         # Bind callback
         cb_a_select.bind("<<ComboboxSelected>>", update_artist_guidata)
 
@@ -801,63 +819,78 @@ class MainApp:
         btn_a_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
     def init_checkboxes(self, window):
-        Checkbutton(window, text="Shift timedata", variable=self.meta_info.shift_timedata).grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
+        #########
+        # Time shift combobox
+        #########
+        frame_tshift_sel = Frame(window)
+        frame_tshift_sel.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl_tshift_sel = Label(frame_tshift_sel, text="Time Shift: ")
+        lbl_tshift_sel.pack(side="left", fill="x", expand=1)
+        list_shift_actions = ["Forward", "None", "Backward"]
+        self.meta_info.shift_selection.set(list_shift_actions[1])
 
+        cb_shift_select = Combobox(frame_tshift_sel, textvariable=self.meta_info.shift_selection)
+        # Write event values from database
+        cb_shift_select["values"] = list_shift_actions
+        # Prevent typing a value
+        cb_shift_select["state"] = "readonly"
+        # Place the widget
+        cb_shift_select.pack(side="left", fill="x", expand=1)
+
+        #########
+        # Time shift values
+        #########
         vcmd = window.register(lambda P: str.isdigit(P) or P == "")
-        time_frame = Frame(window)
-        time_frame.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        frame_tshift_vals = Frame(window)
+        frame_tshift_vals.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        lbl_time = Label(time_frame, text="Days: ")
-        lbl_time.pack(side="left")
+        lbl_tshift_d = Label(frame_tshift_vals, text="Days: ")
+        lbl_tshift_d.pack(side="left", fill="x", expand=1)
         Entry(
-            time_frame,
+            frame_tshift_vals,
             textvariable=self.meta_info.shift_days,
             width=3,
             justify="right",
             validate="all",
             validatecommand=(vcmd, "%P"),
-        ).pack(side="left")
+        ).pack(side="left", fill="x", expand=1)
 
-        lbl_time = Label(time_frame, text="Hours: ")
-        lbl_time.pack(side="left")
+        lbl_tshift_h = Label(frame_tshift_vals, text="Hours: ")
+        lbl_tshift_h.pack(side="left", fill="x", expand=1)
         Entry(
-            time_frame,
+            frame_tshift_vals,
             textvariable=self.meta_info.shift_hours,
             width=3,
             justify="right",
             validate="all",
             validatecommand=(vcmd, "%P"),
-        ).pack(side="left")
+        ).pack(side="left", fill="x", expand=1)
 
-        lbl_time = Label(time_frame, text="Minutes: ")
-        lbl_time.pack(side="left")
+        lbl_tshift_m = Label(frame_tshift_vals, text="Minutes: ")
+        lbl_tshift_m.pack(side="left", fill="x", expand=1)
         Entry(
-            time_frame,
+            frame_tshift_vals,
             textvariable=self.meta_info.shift_minutes,
             width=3,
             justify="right",
             validate="all",
             validatecommand=(vcmd, "%P"),
-        ).pack(side="left")
+        ).pack(side="left", fill="x", expand=1)
 
-        lbl_time = Label(time_frame, text="Seconds: ")
-        lbl_time.pack(side="left")
+        lbl_tshift_s = Label(frame_tshift_vals, text="Seconds: ")
+        lbl_tshift_s.pack(side="left", fill="x", expand=1)
         Entry(
-            time_frame,
+            frame_tshift_vals,
             textvariable=self.meta_info.shift_seconds,
             width=3,
             justify="right",
             validate="all",
             validatecommand=(vcmd, "%P"),
-        ).pack(side="left")
+        ).pack(side="left", fill="x", expand=1)
 
-        time_choices = ["Forward", "Backward"]
-        self.meta_info.time_option.set(time_choices[0])
-        time_options = OptionMenu(window, self.meta_info.time_option, *time_choices)
-        time_options.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
+        ###################
+        # General buttons #
+        ###################
         Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
         )
@@ -898,31 +931,16 @@ class MainApp:
         self.time_label.grid(row=self.row(), columnspan=3, sticky="E", padx=PAD_X)
 
     def init_details(self, window):
-        # Create details button
-        def details():
-            if helper_frame.hidden:
-                helper_frame.grid()
-                helper_frame.hidden = False
-                self.run_button.grid(row=self.row_idx + 1)
-            else:
-                helper_frame.grid_remove()
-                helper_frame.hidden = True
-                self.run_button.grid(row=self.row_idx)
-
-        details_button = Button(window, text="Details", command=details)
-        details_button.grid(row=self.row(), column=0, sticky="W", padx=PAD_X, pady=PAD_Y)
-
         # Details Menu
         helper_frame = Frame(window, width=window.winfo_width() - PAD_X * 2, height=100)
         helper_frame.pack_propagate(False)
-        self.details_text = Text(helper_frame, width=0, height=0)
-        details_scroll = Scrollbar(helper_frame, command=self.details_text.yview)
-        details_scroll.pack(side=RIGHT, fill="y")
-        self.details_text.configure(yscrollcommand=details_scroll.set)
+        helper_frame.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y)
+
+        self.details_text = Text(helper_frame)
+        self.details_scroll = Scrollbar(helper_frame, command=self.details_text.yview)
+        self.details_scroll.pack(side=RIGHT, fill="y")
+        self.details_text.configure(yscrollcommand=self.details_scroll.set)
         self.details_text.pack(fill="both", expand=True)
-        helper_frame.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=PAD_Y)
-        helper_frame.grid_remove()
-        helper_frame.hidden = True
 
 
 ###################################################################################################

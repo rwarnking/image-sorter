@@ -92,6 +92,7 @@ class TestSort(unittest.TestCase):
         obj["shift_days"] = "1"
         obj["shift_hours"] = "1"
         obj["shift_minutes"] = "1"
+        obj["shift_selection"] = "Forward"
         settings.append(obj)
 
         # Use a different file signature
@@ -300,7 +301,7 @@ class TestSort(unittest.TestCase):
         meta_info.shift_hours.set(settings["shift_hours"])
         meta_info.shift_minutes.set(settings["shift_minutes"])
         meta_info.shift_seconds.set(settings["shift_seconds"])
-        meta_info.time_option.set(settings["time_option"])
+        meta_info.shift_selection.set(settings["shift_selection"])
 
     def create_settings_obj(self, meta_info):
         obj = {
@@ -319,6 +320,6 @@ class TestSort(unittest.TestCase):
             "shift_hours": "0",
             "shift_minutes": "0",
             "shift_seconds": "0",
-            "time_option": "Forward",
+            "shift_selection": "None",
         }
         return obj

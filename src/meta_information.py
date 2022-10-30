@@ -39,7 +39,7 @@ class MetaInformation:
         self.shift_minutes.set("0")
         self.shift_seconds = StringVar()
         self.shift_seconds.set("0")
-        self.time_option = StringVar()
+        self.shift_selection = StringVar()
 
         self.event_action = StringVar()
         self.artist_action = StringVar()

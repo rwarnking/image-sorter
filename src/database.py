@@ -117,6 +117,9 @@ class Database:
 
         if len(result) == 0:
             self.out_text.insert(END, "Table empty.\n")
+        # TODO autoscroll text box by using this
+        # Scroll text to the end
+        self.out_text.yview(END)
 
     #################
     # Event related #
@@ -193,7 +196,9 @@ class Database:
         # TODO do an overlap check with other subevents
         # TODO subevents need to assigned to a mainevent
 
-        self.insert_event_from_date(title, start_date, start_hour, end_date, end_hour, 1)
+        # Do not use the calculated date, since the insert event function itself does
+        # calculate the date.
+        self.insert_event_from_date(title, start_day, start_hour, end_day, end_hour, 1)
 
     def insert_event(self, title: str, start_date, end_date, sub_event: int):
         title = str(title).replace(" ", "")

@@ -43,7 +43,7 @@ class Sorter:
         self.fallback_sig = self.meta_info.fallback_sig.get()
 
         self.shift_timedata = self.meta_info.shift_timedata.get()
-        self.time_option = self.meta_info.time_option.get()
+        self.shift_selection = self.meta_info.shift_selection.get()
         self.shift_days = int(self.meta_info.shift_days.get())
         self.shift_hours = int(self.meta_info.shift_hours.get())
         self.shift_minutes = int(self.meta_info.shift_minutes.get())
@@ -133,9 +133,9 @@ class Sorter:
                     minutes=self.shift_minutes,
                     seconds=self.shift_seconds,
                 )
-                if self.time_option == "Forward":
+                if self.shift_selection == "Forward":
                     date = date + self.date_shift
-                else:
+                elif self.shift_selection == "Backward":
                     date = date - self.date_shift
             except ValueError:
                 messagebox.showinfo(message="Shift values need to be at least 0.", title="Error")
@@ -439,9 +439,9 @@ class Sorter:
                 # Parse string to datetime object
                 date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S")
                 # Shift datetime
-                if self.time_option == "Forward":
+                if self.shift_selection == "Forward":
                     date = date + self.date_shift
-                else:
+                elif self.shift_selection == "Backward":
                     date = date - self.date_shift
                 # Create string from datetime object
                 datestr = date.strftime("%Y:%m:%d %H:%M:%S")
