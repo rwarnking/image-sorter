@@ -21,9 +21,11 @@ from tkinter.ttk import Checkbutton, Combobox, Progressbar, Scrollbar, Separator
 # own imports
 from database import Database
 from helper import lt_window
+from idlelib.tooltip import Hovertip
 from meta_information import MetaInformation
 from sorter import Sorter
 from tkcalendar import DateEntry
+from tooltips import TooltipDict
 
 PAD_X = 20
 PAD_Y = (10, 0)
@@ -140,24 +142,26 @@ class MainApp:
         lbl_src_dir.grid(
             row=self.row_idx, column=1, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
-        source_button = Button(
+        btn_src = Button(
             window,
             text="Browse",
             command=lambda: browse_button(self.meta_info.img_src),
         )
-        source_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_src.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_src, TooltipDict["btn_src"])
 
         # Target directory
         lbl2 = Label(window, text="Target directory:")
         lbl2.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         lbl_tgt_dir = Label(window, textvariable=self.meta_info.img_tgt)
         lbl_tgt_dir.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        target_button = Button(
+        btn_tgt = Button(
             window,
             text="Browse",
             command=lambda: browse_button(self.meta_info.img_tgt),
         )
-        target_button.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_tgt.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_tgt, TooltipDict["btn_tgt"])
 
     def init_signatures(self, window):
         list_in_choices = self.meta_info.get_read_choices()
@@ -176,6 +180,7 @@ class MainApp:
         cb_insig_select.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Assign width
         cb_insig_select["width"] = len(max(list_in_choices, key=len))
+        Hovertip(cb_insig_select, TooltipDict["cb_insig_select"])
 
         Checkbutton(window, text="Use fallback data", variable=self.meta_info.fallback_sig).grid(
             row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
@@ -193,6 +198,7 @@ class MainApp:
         cb_filesig_select.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Assign width
         cb_filesig_select["width"] = len(max(list_file_choices, key=len))
+        Hovertip(cb_filesig_select, TooltipDict["cb_filesig_select"])
 
         cb_foldersig_select = Combobox(window, textvariable=self.meta_info.folder_signature)
         # Write folder signatures
@@ -203,6 +209,7 @@ class MainApp:
         cb_foldersig_select.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Assign width
         cb_foldersig_select["width"] = len(max(list_folder_choices, key=len))
+        Hovertip(cb_foldersig_select, TooltipDict["cb_foldersig_select"])
 
     def init_event_system(self, window):
         def browse_button_open(dir):
@@ -231,6 +238,7 @@ class MainApp:
             command=lambda: browse_button_open(self.meta_info.event_src),
         )
         btn_e_loadfile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_e_loadfile, TooltipDict["btn_e_loadfile"])
 
         lbl_e_load = Label(window, textvariable=self.meta_info.event_src)
         lbl_e_load.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -242,6 +250,7 @@ class MainApp:
             command=lambda: browse_button_save(self.meta_info.event_tgt),
         )
         btn_e_savefile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_e_savefile, TooltipDict["btn_e_savefile"])
 
         lbl_e_save = Label(window, textvariable=self.meta_info.event_tgt)
         lbl_e_save.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -287,7 +296,7 @@ class MainApp:
             ):
                 str_e_title_w.set(elm_e_data[0])
                 s_date = datetime.datetime.strptime(elm_e_data[1], "%Y-%m-%d %H:%M:%S")
-                e_start_entry.set_date(s_date)
+                date_e_start.set_date(s_date)
                 sv_e_shour.set(s_date.hour)
                 e_date = datetime.datetime.strptime(elm_e_data[2], "%Y-%m-%d %H:%M:%S")
                 date_e_end.set_date(e_date)
@@ -300,7 +309,7 @@ class MainApp:
             if str_e_action == "Add event":
                 self.db.insert_event_from_date(
                     str_e_title_w.get(),
-                    e_start_entry.get_date(),
+                    date_e_start.get_date(),
                     int(sv_e_shour.get()),
                     date_e_end.get_date(),
                     int(sv_e_ehour.get()),
@@ -308,7 +317,7 @@ class MainApp:
             elif str_e_action == "Add subevent":
                 self.db.insert_subevent_from_date(
                     str_e_title_w.get(),
-                    e_start_entry.get_date(),
+                    date_e_start.get_date(),
                     int(sv_e_shour.get()),
                     date_e_end.get_date(),
                     int(sv_e_ehour.get()),
@@ -323,7 +332,7 @@ class MainApp:
                     elm_e_data[1],
                     elm_e_data[2],
                     str_e_title_w.get(),
-                    e_start_entry.get_date(),
+                    date_e_start.get_date(),
                     int(sv_e_shour.get()),
                     date_e_end.get_date(),
                     int(sv_e_ehour.get()),
@@ -362,6 +371,7 @@ class MainApp:
         cb_e_actions.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
         cb_e_actions.bind("<<ComboboxSelected>>", update_event_gui)
+        Hovertip(cb_e_actions, TooltipDict["cb_e_actions"])
 
         #######################
         # Event Title & Dates #
@@ -375,10 +385,11 @@ class MainApp:
 
         lbl_e_sdate = Label(frame_e_date_w, text="Start: ")
         lbl_e_sdate.pack(side="left")
-        e_start_entry = DateEntry(
+        date_e_start = DateEntry(
             frame_e_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
         )
-        e_start_entry.pack(side="left")
+        date_e_start.pack(side="left")
+        Hovertip(date_e_start, TooltipDict["date_e_start"])
         # Hour selector
         sv_e_shour = StringVar()
         sv_e_shour.set("0")
@@ -407,10 +418,12 @@ class MainApp:
             validatecommand=(vcmd, "%P"),
         ).pack(side="right")
         Label(frame_e_date_w, text=":").pack(side="right")
+
         date_e_end = DateEntry(
             frame_e_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
         )
         date_e_end.pack(side="right")
+        Hovertip(date_e_end, TooltipDict["date_e_end"])
         lbl_e_edate = Label(frame_e_date_w, text="End: ")
         lbl_e_edate.pack(side="right")
 
@@ -454,6 +467,7 @@ class MainApp:
         cb_e_select["width"] = len(max(list_e_titles, key=len))
         # Bind callback
         cb_e_select.bind("<<ComboboxSelected>>", update_event_guidata)
+        Hovertip(cb_e_select, TooltipDict["cb_e_select"])
 
         # Replacement label
         lbl_e_repl = Label(window, text="Replacement: ")
@@ -470,12 +484,14 @@ class MainApp:
         ###################
         btn_e_execute = Button(window, text="Execute", command=lambda: execute_event_action())
         btn_e_execute.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_e_execute, TooltipDict["btn_e_execute"])
 
         # Print all events to the details window
         btn_e_print = Button(
             window, text="Print event list", command=lambda: self.db.print_events()
         )
         btn_e_print.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_e_print, TooltipDict["btn_e_print"])
 
         # Remove all events from the database
         btn_e_clear = Button(
@@ -488,6 +504,7 @@ class MainApp:
             },
         )
         btn_e_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_e_clear, TooltipDict["btn_e_clear"])
 
     def init_artist_system(self, window):
         def browse_button_open(dir):
@@ -516,6 +533,7 @@ class MainApp:
             command=lambda: browse_button_open(self.meta_info.artist_src),
         )
         btn_a_loadfile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_a_loadfile, TooltipDict["btn_a_loadfile"])
 
         lbl_a_load = Label(window, textvariable=self.meta_info.artist_src)
         lbl_a_load.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -527,6 +545,7 @@ class MainApp:
             command=lambda: browse_button_save(self.meta_info.artist_tgt),
         )
         btn_a_savefile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_a_savefile, TooltipDict["btn_a_savefile"])
 
         lbl_save_artistfile = Label(window, textvariable=self.meta_info.artist_tgt)
         lbl_save_artistfile.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -537,7 +556,7 @@ class MainApp:
         def update_artist_gui(_):
             str_a_action = self.meta_info.artist_action.get()
 
-            frame_a_date_w.grid_remove()
+            # frame_a_date_w.grid_remove()
             frame_a_name_w.grid_remove()
             frame_a_name_r.grid_remove()
             frame_a_device_w.grid_remove()
@@ -642,6 +661,7 @@ class MainApp:
         cb_a_actions.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
         cb_a_actions.bind("<<ComboboxSelected>>", update_artist_gui)
+        Hovertip(cb_a_actions, TooltipDict["cb_a_actions"])
 
         #############################
         # Artist Name, Make & Model #
@@ -684,6 +704,7 @@ class MainApp:
         cb_a_select["width"] = len(max(list_a_names, key=len))
         # Bind callback
         cb_a_select.bind("<<ComboboxSelected>>", update_artist_guidata)
+        Hovertip(cb_a_select, TooltipDict["cb_a_select"])
 
         #########
         # Device Frame (write)
@@ -737,49 +758,49 @@ class MainApp:
         # Date Frame (write)
         #########
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
-        frame_a_date_w = Frame(window)
-        frame_a_date_w.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # frame_a_date_w = Frame(window)
+        # frame_a_date_w.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        lbl_a_date = Label(frame_a_date_w, text="Start: ")
-        lbl_a_date.pack(side="left")
-        a_start_entry = DateEntry(
-            frame_a_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
-        )
-        a_start_entry.pack(side="left")
-        # Hour selector
-        a_start_hour = StringVar()
-        a_start_hour.set("0")
-        a_end_hour = StringVar()
-        a_end_hour.set("24")
-        vcmd = window.register(lambda P: str.isdigit(P) and int(P) > -1 and int(P) < 25)
+        # lbl_a_date = Label(frame_a_date_w, text="Start: ")
+        # lbl_a_date.pack(side="left")
+        # a_start_entry = DateEntry(
+        #     frame_a_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
+        # )
+        # a_start_entry.pack(side="left")
+        # # Hour selector
+        # a_start_hour = StringVar()
+        # a_start_hour.set("0")
+        # a_end_hour = StringVar()
+        # a_end_hour.set("24")
+        # vcmd = window.register(lambda P: str.isdigit(P) and int(P) > -1 and int(P) < 25)
 
-        Label(frame_a_date_w, text=":").pack(side="left")
-        Entry(
-            frame_a_date_w,
-            textvariable=a_start_hour,
-            width=3,
-            justify="right",
-            validate="all",
-            validatecommand=(vcmd, "%P"),
-        ).pack(side="left")
-        Label(frame_a_date_w, text="h").pack(side="left")
+        # Label(frame_a_date_w, text=":").pack(side="left")
+        # Entry(
+        #     frame_a_date_w,
+        #     textvariable=a_start_hour,
+        #     width=3,
+        #     justify="right",
+        #     validate="all",
+        #     validatecommand=(vcmd, "%P"),
+        # ).pack(side="left")
+        # Label(frame_a_date_w, text="h").pack(side="left")
 
-        Label(frame_a_date_w, text="h").pack(side="right")
-        Entry(
-            frame_a_date_w,
-            textvariable=a_end_hour,
-            width=3,
-            justify="right",
-            validate="all",
-            validatecommand=(vcmd, "%P"),
-        ).pack(side="right")
-        Label(frame_a_date_w, text=":").pack(side="right")
-        a_end_entry = DateEntry(
-            frame_a_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
-        )
-        a_end_entry.pack(side="right")
-        lbl_date = Label(frame_a_date_w, text="End: ")
-        lbl_date.pack(side="right")
+        # Label(frame_a_date_w, text="h").pack(side="right")
+        # Entry(
+        #     frame_a_date_w,
+        #     textvariable=a_end_hour,
+        #     width=3,
+        #     justify="right",
+        #     validate="all",
+        #     validatecommand=(vcmd, "%P"),
+        # ).pack(side="right")
+        # Label(frame_a_date_w, text=":").pack(side="right")
+        # a_end_entry = DateEntry(
+        #     frame_a_date_w, width=12, background="darkblue", foreground="white", borderwidth=2
+        # )
+        # a_end_entry.pack(side="right")
+        # lbl_date = Label(frame_a_date_w, text="End: ")
+        # lbl_date.pack(side="right")
 
         # Advance Row by one
         # TODO remove
@@ -799,12 +820,14 @@ class MainApp:
         ###################
         btn_a_execute = Button(window, text="Execute", command=lambda: execute_artist_action())
         btn_a_execute.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_a_execute, TooltipDict["btn_a_execute"])
 
         # Print all artists to the details window
         btn_a_print = Button(
             window, text="Print artist list", command=lambda: self.db.print_artists()
         )
         btn_a_print.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_a_print, TooltipDict["btn_a_print"])
 
         # Remove all artists from the database
         btn_a_clear = Button(
@@ -817,6 +840,7 @@ class MainApp:
             },
         )
         btn_a_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_a_clear, TooltipDict["btn_a_clear"])
 
     def init_checkboxes(self, window):
         #########
@@ -836,6 +860,7 @@ class MainApp:
         cb_shift_select["state"] = "readonly"
         # Place the widget
         cb_shift_select.pack(side="left", fill="x", expand=1)
+        Hovertip(cb_shift_select, TooltipDict["cb_shift_select"])
 
         #########
         # Time shift values

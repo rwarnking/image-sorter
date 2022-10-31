@@ -1,4 +1,8 @@
 *.jpg
+*.png
+*.gif
+*.svg
+*.mp4
 *.db
 
 # Byte-compiled / optimized / DLL files

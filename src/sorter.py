@@ -123,7 +123,13 @@ class Sorter:
         orig_file_name, file_extension = os.path.splitext(file)
         file_extension = file_extension.lower()
         date = self.get_file_info(file, source_dir, file_extension)
+        # Check if date was parseable, via metadata or filename
         if date is False:
+            # Check if file should be copied even though it was not parseable
+            if self.copy_unmatched > 0:
+                # Copy file
+                shutil.copy2(join(source_dir, file), target_dir)
+                self.meta_info.text_queue.put("Copied file anyway.\n")
             return
         if self.shift_timedata > 0:
             try:

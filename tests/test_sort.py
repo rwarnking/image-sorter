@@ -58,6 +58,8 @@ class TestSort(unittest.TestCase):
             shutil.rmtree(join(TEST_DIR, "2020"))
             if os.path.exists(join(TEST_DIR, "newtext.txt")):
                 os.remove(join(TEST_DIR, "newtext.txt"))
+            if os.path.exists(join(TEST_DIR, "Test.jpg")):
+                os.remove(join(TEST_DIR, "Test.jpg"))
 
     def get_settings_list(self, meta_info):
         """
@@ -119,6 +121,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
             [  # Test source directory when also processing .raw files
                 (True, ""),
@@ -129,6 +132,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
             [  # Test source directory when using fallback signature
                 (True, ""),
@@ -139,6 +143,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
             [  # Test source directory when using fallback signature
                 # Processing .raw files
@@ -151,6 +156,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
             [  # Test source directory when using time shift settings
                 (True, ""),
@@ -161,6 +167,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
             [  # Test source directory when using different image signature
                 (True, ""),
@@ -171,6 +178,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
             [  # Test source directory when disabling copying
                 (True, ""),
@@ -181,6 +189,7 @@ class TestSort(unittest.TestCase):
                 (True, join("test_images", "IMG_20200703_092850.svg")),
                 (True, join("test_images", "IMG_20200703_092959.gif")),
                 (True, join("test_images", "newtext.txt")),
+                (True, join("test_images", "Test.jpg")),
             ],
         ]
 
@@ -198,6 +207,7 @@ class TestSort(unittest.TestCase):
                 (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
                 (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (False, join(base_dir, "newtext.txt")),
+                (False, join(base_dir, "Test.jpg")),
             ],
             [  # Test target directory when also processing .raw files
                 (True, main_dir),
@@ -208,6 +218,7 @@ class TestSort(unittest.TestCase):
                 (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
                 (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (False, join(base_dir, "newtext.txt")),
+                (False, join(base_dir, "Test.jpg")),
             ],
             [  # Test target directory when using fallback signature
                 (True, main_dir),
@@ -218,6 +229,7 @@ class TestSort(unittest.TestCase):
                 (True, join(compl_dir, "2020-07-03_09-28-50.svg")),
                 (True, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (False, join(base_dir, "newtext.txt")),
+                (False, join(base_dir, "Test.jpg")),
             ],
             [  # Test source directory when using fallback signature
                 # Processing .raw files
@@ -230,6 +242,7 @@ class TestSort(unittest.TestCase):
                 (True, join(compl_dir, "2020-07-03_09-28-50.svg")),
                 (True, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (True, join(base_dir, "newtext.txt")),
+                (True, join(base_dir, "Test.jpg")),
             ],
             [  # Test target directory when using time shift settings
                 (True, main_dir),
@@ -240,6 +253,7 @@ class TestSort(unittest.TestCase):
                 (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
                 (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (False, join(base_dir, "newtext.txt")),
+                (False, join(base_dir, "Test.jpg")),
             ],
             [  # Test target directory when using different image signature
                 (True, main_dir),
@@ -250,6 +264,7 @@ class TestSort(unittest.TestCase):
                 (False, join(compl_dir, "IMG_20200703_092850.svg")),
                 (False, join(compl_dir, "IMG_20200703_092959.gif")),
                 (False, join(base_dir, "newtext.txt")),
+                (False, join(base_dir, "Test.jpg")),
             ],
             [  # Test target directory when disabling copying
                 (True, main_dir),
@@ -260,6 +275,7 @@ class TestSort(unittest.TestCase):
                 (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
                 (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (False, join(base_dir, "newtext.txt")),
+                (False, join(base_dir, "Test.jpg")),
             ],
         ]
 
