@@ -1,6 +1,7 @@
 import datetime
 import json
 import sqlite3
+from re import sub
 from tkinter import END
 from typing import Dict, List, Tuple, Union
 
@@ -8,32 +9,43 @@ from typing import Dict, List, Tuple, Union
 class Database:
     def __init__(self, path: str = "database.db"):
         self.conn = sqlite3.connect(path)
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events \
-            (title STRING, start_date DATE, end_date DATE, sub INT)"
-        )
-
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
-        )
+        self.conn.execute("PRAGMA foreign_keys = 1")
+        self.create_tables()
         self.conn.commit()
 
     def set_out_text(self, out_text):
         self.out_text = out_text
 
+    def create_tables(self):
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS events \
+            (eid INTEGER PRIMARY KEY ASC, \
+                title STRING, start_date DATE, end_date DATE, sub INT)"
+        )
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS persons (pid INTEGER PRIMARY KEY ASC, name STRING)"
+        )
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS artists(\
+            person_id INT, make TEXT, model TEXT, \
+            FOREIGN KEY (person_id) REFERENCES persons (pid) ON DELETE CASCADE)"
+        )
+
+        self.conn.execute("CREATE TABLE IF NOT EXISTS participants (\
+            event_id INT NOT NULL, person_id INT NOT NULL, \
+            FOREIGN KEY (event_id) \
+                REFERENCES events (eid) ON DELETE CASCADE, \
+            FOREIGN KEY (person_id) \
+                REFERENCES persons (pid))"
+        )
+
     def clean_all(self):
         self.clean_events()
         self.clean_artists()
-        self.conn.execute("DROP TABLE IF EXISTS events")
-        self.conn.execute("DROP TABLE IF EXISTS artists")
-
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events \
-            (title STRING, start_date DATE, end_date DATE, sub INT)"
-        )
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
-        )
+        self.clean_persons()
+        self.clean_participants()
 
         self.out_text.insert(END, "All table entrys were deleted.\n")
 
@@ -112,19 +124,131 @@ class Database:
         cur = self.conn.execute(f"SELECT * FROM {table}")
         result = cur.fetchall()
         cur.close()
-        for r in result:
-            self.out_text.insert(END, str(r) + "\n")
-
         if len(result) == 0:
-            self.out_text.insert(END, "Table empty.\n")
+            self.out_text.insert(END, f"{table} table empty.\n")
+        else: 
+            self.out_text.insert(END, f"Content of table {table}.\n")
+            for r in result:
+                self.out_text.insert(END, str(r) + "\n")
+
         # TODO autoscroll text box by using this
         # Scroll text to the end
         self.out_text.yview(END)
 
+    ##################
+    # Person related #
+    ##################
+    def insert_person(self, name: str):
+        self.conn.execute(
+            "INSERT INTO persons (name) VALUES (?)",
+            (name,),
+        )
+        self.conn.commit()
+
+    # TODO unused?
+    def delete_person(self, name: str):
+        """
+        Delete the selected event.
+        """
+        self.delete("persons", ("name", name))
+
+    def clean_persons(self):
+        """
+        Delete all persons in the database.
+        """
+        self.conn.execute("DROP TABLE IF EXISTS persons")
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS persons (pid INTEGER PRIMARY KEY ASC, name STRING)"
+        )
+
+        self.out_text.insert(END, "All person entrys were deleted.\n")
+
+    def get_person_by_name(self, name: str):
+        """
+        Get the person with the specified name.
+        """
+        cur = self.conn.execute("SELECT * FROM persons WHERE name=?", (name,))
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def get_person_by_id(self, pid: int):
+        """
+        Get the person with the specified id.
+        """
+        cur = self.conn.execute("SELECT * FROM persons WHERE pid=?", (pid,))
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def print_persons(self):
+        self.print_table("persons")
+
+    #######################
+    # Participant related #
+    #######################
+    def insert_participant(self, event_id: int, person_id: int):
+        self.conn.execute(
+            "INSERT INTO participants \
+            (event_id, person_id) \
+            VALUES (?, ?)",
+            (event_id, person_id),
+        )
+        self.conn.commit()
+
+    # TODO unused & untested?
+    def delete_participant(self, event_id: int, person_id: int):
+        """
+        Delete the selected participant.
+        """
+        self.delete("persons", ("event_id", event_id), ("person_id", person_id))
+
+    def clean_participants(self):
+        """
+        Delete all participants in the database.
+        """
+        self.conn.execute("DROP TABLE IF EXISTS participants")
+
+        self.conn.execute("CREATE TABLE IF NOT EXISTS participants (\
+            event_id INT NOT NULL, person_id INT NOT NULL, \
+            FOREIGN KEY (event_id) \
+                REFERENCES events (eid) ON DELETE CASCADE, \
+            FOREIGN KEY (person_id) \
+                REFERENCES persons (pid))"
+        )
+
+        self.out_text.insert(END, "All participant entrys were deleted.\n")
+
+    # TODO unused & untested?
+    def get_participants_by_event(self, event_id: int):
+        """
+        Get all participants with the specified event.
+        """
+        cur = self.conn.execute("SELECT * FROM participants WHERE event_id=?", (event_id,))
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    # TODO unused & untested?
+    def get_participants_by_person(self, person_id: int):
+        """
+        Get all participants with the specified person.
+        """
+        cur = self.conn.execute("SELECT * FROM participants WHERE person_id=?", (person_id,))
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def print_participants(self):
+        self.print_table("participants")
+
     #################
     # Event related #
     #################
-    def insert_event_from_date(self, title, start_day, start_hour, end_day, end_hour, subevent=0):
+    def insert_event_from_date(
+        self, title, start_day, start_hour: int, end_day, end_hour: int, parts, subevent=0
+    ):
         """
         Adds a new event to the database using given date information.
         The event is only added if the title is not empty
@@ -149,6 +273,14 @@ class Database:
             end_day, datetime.datetime.min.time()
         ) + datetime.timedelta(hours=end_hour)
 
+        # Remove unwanted characters
+        # TODO replace only for folder name not for internal storage
+        title = sub(r"[^\w\s]", "", title)
+        # TODO remove
+        # # Remove whitespaces but only before and after commata
+        # parts = sub(r"\s*,\s*", ",", parts).split(",")
+        # parts = list(filter(None, parts))
+
         if end_date < start_date:
             self.out_text.insert(END, "Could not add Event: end date < start date!\n")
             return
@@ -156,18 +288,7 @@ class Database:
             self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return
 
-        # TODO remove this check as soon as events are participant bound
-        s_event = self.get_event(start_date, subevent)
-        e_event = self.get_event(end_date, subevent)
-        if len(s_event) > 0 or len(e_event) > 0:
-            self.out_text.insert(END, "Event was not added. Overlapping event found.\n")
-            return
-
-        # Remove unwanted characters
-        str(title).replace(" ", "")
-        str(title).replace("-", "")
-        str(title).replace("_", "")
-
+        # Insert event first, so we can get its primary key for the participants
         self.insert_event(
             title,
             start_date,
@@ -175,7 +296,28 @@ class Database:
             subevent,
         )
 
-    def insert_subevent_from_date(self, title: str, start_day, start_hour, end_day, end_hour):
+        # Use the event data to get the primary key
+        event_id = self.get_event2(title, start_date, end_date, subevent)[0][0]
+        # For each participant create an entry in the list
+        for p_name in parts:
+            if p_name == "":
+                continue
+            # Insert if not present
+            if not self.has_elem("persons", ("name", p_name)):
+                self.insert_person(p_name)
+
+            # Use the string to get the person id
+            person_id = self.get_person_by_name(p_name)[0][0]
+
+            self.insert_participant(event_id, person_id)
+        if len(parts) > 0:
+            self.out_text.insert(END, f"Participants were added.\n")
+        else:
+            self.out_text.insert(END, f"No participants were added!\n")
+
+    def insert_subevent_from_date(
+        self, title: str, start_day, start_hour: int, end_day, end_hour: int, parts: str
+    ):
         start_date = datetime.datetime.combine(
             start_day, datetime.datetime.min.time()
         ) + datetime.timedelta(hours=start_hour)
@@ -183,6 +325,7 @@ class Database:
             end_day, datetime.datetime.min.time()
         ) + datetime.timedelta(hours=end_hour)
 
+        # TODO make mainevent selectable in gui and then allow for a date range
         s_main = self.get_event(start_date)
         e_main = self.get_event(end_date)
         if len(s_main) == 0 or len(e_main) == 0:
@@ -198,7 +341,7 @@ class Database:
 
         # Do not use the calculated date, since the insert event function itself does
         # calculate the date.
-        self.insert_event_from_date(title, start_day, start_hour, end_day, end_hour, 1)
+        self.insert_event_from_date(title, start_day, start_hour, end_day, end_hour, parts, 1)
 
     def insert_event(self, title: str, start_date, end_date, sub_event: int):
         title = str(title).replace(" ", "")
@@ -244,6 +387,7 @@ class Database:
             return
 
         # Remove unwanted characters
+        # TODO + sql injection?
         str(n_title).replace(" ", "")
         str(n_title).replace("-", "")
         str(n_title).replace("_", "")
@@ -270,7 +414,8 @@ class Database:
 
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS events \
-            (title STRING, start_date DATE, end_date Date INT, sub INT)"
+            (eid INTEGER PRIMARY KEY ASC, \
+                title STRING, start_date DATE, end_date DATE, sub INT)"
         )
 
         self.out_text.insert(END, "All event entrys were deleted.\n")
@@ -304,7 +449,7 @@ class Database:
         Get the event with the specified date.
         """
         cur = self.conn.execute(
-            "SELECT title, start_date, end_date \
+            "SELECT * \
             FROM events WHERE start_date<=? AND end_date>=? AND sub=?",
             (date, date, sub),
         )
@@ -312,14 +457,31 @@ class Database:
         cur.close()
         return result
 
+    # TODO rename and merge with before method?
+    def get_event2(self, title: str, s_date: datetime.datetime, e_date: datetime.datetime, sub: int = 0):
+        """
+        Get the event with the specified date.
+        """
+        cur = self.conn.execute(
+            "SELECT * \
+            FROM events WHERE title=? AND start_date=? AND end_date=? AND sub=?",
+            (title, s_date, e_date, sub),
+        )
+        result = cur.fetchall()
+        cur.close()
+        return result
+
     def print_events(self):
+        # TODO remove 
         self.print_table("events")
+        self.print_table("participants")
+        self.print_table("persons")
 
     ##################
     # Artist related #
     ##################
-    def insert_artist(self, name: str, make: str, model: str):
-        if name == "":
+    def insert_artist(self, p_name: str, make: str, model: str):
+        if p_name == "":
             self.out_text.insert(END, "Could not add Artist: Missing name!\n")
             return
         if make == "":
@@ -329,16 +491,23 @@ class Database:
             self.out_text.insert(END, "Could not add Artist: Missing model!\n")
             return
 
+        # Insert if not present
+        if not self.has_elem("persons", ("name", p_name)):
+            self.insert_person(p_name)
+
+        # Use the string to get the person id
+        person_id = self.get_person_by_name(p_name)[0][0]
+
         # TODO have cameras be time dependend on artist, maybe the person did change the camera
-        if not self.has_elem("artists", ("name", name), ("make", make), ("model", model)):
+        if not self.has_elem("artists", ("person_id", person_id), ("make", make), ("model", model)):
             self.conn.execute(
-                "INSERT INTO artists (name, make, model) VALUES (?, ?, ?)", (name, make, model)
+                "INSERT INTO artists (person_id, make, model) VALUES (?, ?, ?)", (person_id, make, model)
             )
             self.conn.commit()
-            self.out_text.insert(END, f"Artist {name}|{make}|{model} was added.\n")
+            self.out_text.insert(END, f"Artist {p_name}|{make}|{model} was added.\n")
         else:
             self.out_text.insert(
-                END, f"Artist {name}|{make}|{model} was already there, did NOT add.\n"
+                END, f"Artist {p_name}|{make}|{model} was already there, did NOT add.\n"
             )
         return
 
@@ -369,12 +538,26 @@ class Database:
             self.out_text.insert(END, "Could not add Artist: Missing model!\n")
             return
 
-        self.update(
-            "artists",
-            ("name", name, n_name),
-            ("make", make, n_make),
-            ("model", model, n_model),
-        )
+        # Check if person present
+        if self.has_elem("persons", ("name", name)):
+            # Use the string to get the person id
+            person_id = self.get_person_by_name(name)[0][0]
+
+            if self.has_elem("artists", ("person_id", person_id), ("make", make), ("model", model)):
+                self.update(
+                    "persons",
+                    ("name", name, n_name),
+                )
+
+                self.update(
+                    "artists",
+                    ("make", make, n_make),
+                    ("model", model, n_model),
+                )
+            else:
+                self.out_text.insert(END, "Artist could not be updated, artist does not exist!\n")
+        else:
+            self.out_text.insert(END, "Artist could not be updated, person does not exist!\n")
 
     def delete_artist(self, name: str, make: str, model: str):
         """
@@ -385,20 +568,25 @@ class Database:
             return
 
         table = "artists"
-        if self.has_elem(table, ("name", name), ("make", make), ("model", model)):
-            # Only one entry should be present,
-            # since the insertion does not allow direct copys of an entry
-            query = f"DELETE FROM {table} WHERE name=? AND make=? AND model=?"
-            self.conn.execute(
-                query,
-                (
-                    name,
-                    make,
-                    model,
-                ),
-            )
-            self.conn.commit()
-            self.out_text.insert(END, f"From table {table}, {name}|{make}|{model} was deleted.\n")
+        # Check if person present
+        if self.has_elem("persons", ("name", name)):
+            # Use the string to get the person id
+            person_id = self.get_person_by_name(name)[0][0]
+
+            if self.has_elem(table, ("person_id", person_id), ("make", make), ("model", model)):
+                # Only one entry should be present,
+                # since the insertion does not allow direct copys of an entry
+                query = f"DELETE FROM {table} WHERE person_id=? AND make=? AND model=?"
+                self.conn.execute(
+                    query,
+                    (
+                        person_id,
+                        make,
+                        model,
+                    ),
+                )
+                self.conn.commit()
+                self.out_text.insert(END, f"From table {table}, {name}|{make}|{model} was deleted.\n")
         else:
             self.out_text.insert(END, f"In table {table}, {name}|{make}|{model} was not found.\n")
 
@@ -409,7 +597,9 @@ class Database:
         self.conn.execute("DROP TABLE IF EXISTS artists")
 
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS artists (name STRING, make STRING, model STRING)"
+            "CREATE TABLE IF NOT EXISTS artists(\
+            person_id INT, make TEXT, model TEXT, \
+            FOREIGN KEY (person_id) REFERENCES persons (pid))"
         )
 
         self.out_text.insert(END, "All artist entrys were deleted.\n")
@@ -437,9 +627,22 @@ class Database:
         """
         Get the artist with the specified make and model.
         """
-        cur = self.conn.execute("SELECT name FROM artists WHERE make=? AND model=?", (make, model))
+        cur = self.conn.execute("SELECT * FROM artists WHERE make=? AND model=?", (make, model))
         result = cur.fetchall()
         cur.close()
+        return result
+
+    def has_artist(self, name: str, make: str, model: str):
+        """
+        Check if there is an artist with the specified name, make and model.
+        """
+        result = False
+        lst_persons = self.db.get_person_by_name(name)
+
+        for p in lst_persons:
+            # Get first attribute (pid) and use it for the check
+            if self.db.has_elem("artists", ("person_id", p[0]), ("make", make), ("model", model)):
+                return (p[0], make, model)
         return result
 
     def print_artists(self):

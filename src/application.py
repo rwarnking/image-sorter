@@ -270,6 +270,9 @@ class MainApp:
             lbl_e_repl.grid_remove()
             str_e_title_w.set("")
 
+            lbl_e_parts.grid()
+            frame_e_parts_w.grid()
+
             if str_e_action == "Add event":
                 frame_e_date_w.grid(row=tmp_row - 1)
                 frame_e_title_w.grid(row=tmp_row - 1)
@@ -278,6 +281,8 @@ class MainApp:
                 frame_e_title_w.grid(row=tmp_row - 1)
             elif str_e_action == "Delete (sub)event":
                 frame_e_title_r.grid()
+                lbl_e_parts.grid_remove()
+                frame_e_parts_w.grid_remove()
             elif str_e_action == "Edit (sub)event":
                 frame_e_date_w.grid(row=tmp_row)
                 frame_e_title_w.grid(row=tmp_row)
@@ -313,6 +318,7 @@ class MainApp:
                     int(sv_e_shour.get()),
                     date_e_end.get_date(),
                     int(sv_e_ehour.get()),
+                    str_e_parts_w.get(),
                 )
             elif str_e_action == "Add subevent":
                 self.db.insert_subevent_from_date(
@@ -321,12 +327,16 @@ class MainApp:
                     int(sv_e_shour.get()),
                     date_e_end.get_date(),
                     int(sv_e_ehour.get()),
+                    str_e_parts_w.get(),
                 )
             elif str_e_action == "Delete (sub)event":
                 elm_e_data = self.meta_info.event_selection.get().split(" | ")
                 self.db.delete_event(elm_e_data[0], elm_e_data[1], elm_e_data[2])
             elif str_e_action == "Edit (sub)event":
                 elm_e_data = self.meta_info.event_selection.get().split(" | ")
+                if len(elm_e_data) < 2:
+                    self.details_text.insert(END, "Can not modify selected event.\n")
+                    return
                 self.db.update_event(
                     elm_e_data[0],
                     elm_e_data[1],
@@ -341,11 +351,11 @@ class MainApp:
 
         def update_event_selection():
             list_e_titles = [
-                str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+                str(x[1]) + " | " + str(x[2]) + " | " + str(x[3])
                 for x in self.db.get_all_from_table("events")
             ]
             if len(list_e_titles) == 0:
-                list_e_titles = [" |  | "]
+                list_e_titles = ["No events present!"]
             # Write event values from database
             cb_e_select["values"] = list_e_titles
             self.meta_info.event_selection.set(list_e_titles[0])
@@ -449,11 +459,11 @@ class MainApp:
             row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
         list_e_titles = [
-            str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+            str(x[1]) + " | " + str(x[2]) + " | " + str(x[3])
             for x in self.db.get_all_from_table("events")
         ]
         if len(list_e_titles) == 0:
-            list_e_titles = [""]
+            list_e_titles = ["No events present!"]
         self.meta_info.event_selection.set(list_e_titles[0])
 
         cb_e_select = Combobox(frame_e_title_r, textvariable=self.meta_info.event_selection)
@@ -472,6 +482,19 @@ class MainApp:
         # Replacement label
         lbl_e_repl = Label(window, text="Replacement: ")
         lbl_e_repl.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        #########
+        # Participants
+        #########
+        frame_e_parts_w = Frame(window)
+        frame_e_parts_w.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        # Event title input field
+        str_e_parts_w = StringVar()
+        str_e_parts_w.set("")
+        lbl_e_parts = Label(window, text="List of Participants:")
+        lbl_e_parts.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Entry(frame_e_parts_w, textvariable=str_e_parts_w).pack(side="left", fill="x", expand=True)
 
         #####################################
         # Remove unneeded for initial state #
@@ -631,8 +654,9 @@ class MainApp:
             update_artist_selection()
 
         def update_artist_selection():
+            # Get list of all artists, use the person_id, to get the name of the person
             list_a_names = [
-                str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+                str(self.db.get_person_by_id(x[0])[0][1]) + " | " + str(x[1]) + " | " + str(x[2])
                 for x in self.db.get_all_from_table("artists")
             ]
             if len(list_a_names) == 0:
@@ -685,8 +709,9 @@ class MainApp:
         #########
         frame_a_name_r = Frame(window)
         frame_a_name_r.grid(row=self.row_idx, column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # Get list of all artists, use the person_id, to get the name of the person
         list_a_names = [
-            str(x[0]) + " | " + str(x[1]) + " | " + str(x[2])
+            str(self.db.get_person_by_id(x[0])[0][1]) + " | " + str(x[1]) + " | " + str(x[2])
             for x in self.db.get_all_from_table("artists")
         ]
         if len(list_a_names) == 0:
