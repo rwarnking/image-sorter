@@ -8,9 +8,9 @@ TooltipDict = {
     "box_fallback": "Enable to use the not selected option in \
         case the selection does not yield useable date.",
     # Events
-    "btn_e_loadfile": "Browse for a json file to load the events from.\
+    "btn_loadfile": "Browse for a json file to load the database from.\
         \nEvents are loaded directly after file selection.",
-    "btn_e_savefile": "Browse for a json file to save the events to.\
+    "btn_savefile": "Browse for a json file to save the database to.\
         \nEvents are saved directly after file selection.",
     "cb_e_actions": "Select an action to modify the currently used events.\
         \nUse the execute button to execute.",
@@ -23,10 +23,6 @@ TooltipDict = {
     "btn_e_print": "Print the currently used event list.",
     "btn_e_clear": "Clear all entries from the current event list.",
     # Artists
-    "btn_a_loadfile": "Browse for a json file to load the artists from.\
-        \nArtists are loaded directly after file selection.",
-    "btn_a_savefile": "Browse for a json file to save the artists to.\
-        \nArtists are saved directly after file selection.",
     "cb_a_actions": "Select an action to modify the currently used artists.\
         \nUse the execute button to execute.",
     "ent_a_make": "Set the camera make of the artist.",

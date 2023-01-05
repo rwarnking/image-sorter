@@ -164,6 +164,25 @@ class Database:
 
         self.out_text.insert(END, "All person entrys were deleted.\n")
 
+    def update_person(self, name: str, n_name: str):
+        """
+        Update the selected person.
+        """
+        if n_name == "":
+            self.out_text.insert(END, "Could not update person: Missing name!\n")
+            return
+
+        # Remove unwanted characters
+        # TODO + sql injection?
+        str(n_name).replace(" ", "")
+        str(n_name).replace("-", "")
+        str(n_name).replace("_", "")
+
+        self.update(
+            "persons",
+            ("name", name, n_name),
+        )
+
     def get_person_by_name(self, name: str):
         """
         Get the person with the specified name.
