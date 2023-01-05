@@ -41,6 +41,87 @@ class Database:
                 REFERENCES persons (pid))"
         )
 
+    def load_from_file(self, file):
+        """
+        Add tables from a file.
+        """
+        with open(file) as json_file:
+            data = json.load(json_file)
+            for person in data["persons"]:
+                self.insert_person(person["name"])
+            
+            for artist in data["artists"]:
+                self.insert_artist(
+                    artist["name"],
+                    artist["make"],
+                    artist["model"],
+                )
+
+            for event in data["events"]:
+                self.insert_event(
+                    event["title"],
+                    datetime.datetime.strptime(event["start"]["date"], "%Y-%m-%d %H:%M:%S"),
+                    datetime.datetime.strptime(event["end"]["date"], "%Y-%m-%d %H:%M:%S"),
+                    0 # TODO remove subevent idx
+                )
+
+    def save_to_file(self, file):
+        """
+        Save all tables to a file.
+        """
+        json_data: Dict[str, List] = {
+            "events": [],
+            "subevents": [],
+            "participants": [],
+            "artists": [],
+            "persons": [],
+        }
+
+        data = self.get_all_from_table("events")
+        for elem in data:
+            json_data["events"].append(
+                {
+                    "title": elem[1],
+                    "start": {
+                        "date": elem[2],
+                    },
+                    "end": {
+                        "date": elem[3],
+                    },
+                }
+            )
+    
+        data = self.get_all_from_table("participants")
+        for elem in data:
+            json_data["participants"].append(
+                {
+                    "person_id": elem[0],
+                    "event_id": elem[1],
+                }
+            )
+
+        data = self.get_all_from_table("artists")
+        for elem in data:
+            json_data["artists"].append(
+                {
+                    "name": elem[0],
+                    "make": elem[1],
+                    "model": elem[2],
+                }
+            )
+        
+        data = self.get_all_from_table("persons")
+        for elem in data:
+            json_data["persons"].append(
+                {
+                    "name": elem[1],
+                }
+            )
+
+        with open(file, "w") as outfile:
+            json.dump(json_data, outfile, indent=4)
+        self.out_text.insert(END, f"All tables were saved to file {file}.\n")
+
     def clean_all(self):
         self.clean_events()
         self.clean_artists()
@@ -373,20 +454,6 @@ class Database:
         self.conn.commit()
         self.out_text.insert(END, f"Event {title} was added. ({start_date}, {end_date})\n")
 
-    def insert_events(self, file: str):
-        """
-        Add events from a file.
-        """
-        with open(file) as json_file:
-            data = json.load(json_file)
-            for event in data["events"]:
-                self.insert_event(
-                    event["title"],
-                    datetime.datetime.strptime(event["start"]["date"], "%Y-%m-%d %H:%M:%S"),
-                    datetime.datetime.strptime(event["end"]["date"], "%Y-%m-%d %H:%M:%S"),
-                    event["subevent"],
-                )
-
     def update_event(self, title, s_date, e_date, n_title, n_s_day, n_s_hour, n_e_day, n_e_hour):
         """
         Update the selected event.
@@ -529,19 +596,6 @@ class Database:
                 END, f"Artist {p_name}|{make}|{model} was already there, did NOT add.\n"
             )
         return
-
-    def insert_artists(self, file: str):
-        """
-        Add artists from a file.
-        """
-        with open(file) as json_file:
-            data = json.load(json_file)
-            for artist in data["artists"]:
-                self.insert_artist(
-                    artist["name"],
-                    artist["make"],
-                    artist["model"],
-                )
 
     def update_artist(self, name: str, make: str, model: str, n_name: str, n_make: str, n_model):
         """

@@ -70,7 +70,8 @@ class ModifyDBBox(object):
             if filename != "" and not filename.lower().endswith(".json"):
                 messagebox.showinfo(message="Please select a json file.", title="Error")
             elif filename != "":
-                # self.db.insert_events(filename) # TODO
+                self.db.load_from_file(filename)
+                self.updateListFrame(db, self.db_select.get())
                 dir.set(filename)
 
         def browse_button_save(dir):
@@ -78,7 +79,7 @@ class ModifyDBBox(object):
             if filename != "" and not filename.lower().endswith(".json"):
                 messagebox.showinfo(message="Please select a json file.", title="Error")
             elif filename != "":
-                # self.db.save_events(filename) # TODO
+                self.db.save_to_file(filename)
                 dir.set(filename)
 
         # Load events from file
@@ -178,13 +179,21 @@ class ModifyDBBox(object):
 
         self.updateListFrame(db, self.db_select.get())
 
+        def cleanup():
+            str_selection = self.db_select.get()
+            if str_selection == "events":
+                self.db.clean_events()
+            elif str_selection == "artists":
+                self.db.clean_artists()
+            elif str_selection == "persons":
+                self.db.clean_persons()
+            self.updateListFrame(db, str_selection)
+
         # Remove all events from the database
         btn_clear = Button(
             self.root,
             text="Clear selected table",
-            command=lambda: {
-                self.db.clean_events(), # TODO does only work for events
-            },
+            command=lambda: cleanup(),
         )
         btn_clear.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Hovertip(btn_clear, TooltipDict["btn_clear"]) # TODO
