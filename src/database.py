@@ -107,7 +107,7 @@ class Database:
             "persons": [],
         }
 
-        data = self.get_all_from_table("events")
+        data = self.get_all("events")
         for elem in data:
             json_data["events"].append(
                 {
@@ -122,7 +122,7 @@ class Database:
                 }
             )
 
-        data = self.get_all_from_table("subevents")
+        data = self.get_all("subevents")
         for elem in data:
             json_data["subevents"].append(
                 {
@@ -137,7 +137,7 @@ class Database:
                 }
             )
     
-        data = self.get_all_from_table("participants")
+        data = self.get_all("participants")
         for elem in data:
             json_data["participants"].append(
                 {
@@ -153,7 +153,7 @@ class Database:
                 }
             )
 
-        data = self.get_all_from_table("artists")
+        data = self.get_all("artists")
         for elem in data:
             json_data["artists"].append(
                 {
@@ -170,7 +170,7 @@ class Database:
                 }
             )
         
-        data = self.get_all_from_table("persons")
+        data = self.get_all("persons")
         for elem in data:
             json_data["persons"].append(
                 {
@@ -237,12 +237,28 @@ class Database:
                 vals += (pair[2],)
         return setter, vals
 
+    def get_all(self, table: str):
+        cur = self.conn.execute(f"SELECT * FROM {table}")
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def get(self, table: str, *args: Tuple[str, str]):
+        where, vals = self.get_where_and_vals(args)
+
+        query = f"SELECT * FROM {table} WHERE {where}"
+        cur = self.conn.execute(query, vals)
+        result = cur.fetchall()
+        cur.close()
+        return result
+
     # TODO checken das bei has elem auch immer das ganze array uebergeben wird
     def has_elem(self, table: str, *args: Tuple[str, ...]) -> bool:
         where, vals = self.get_where_and_vals(args)
         if where == "":
             return False
 
+        # TODO use get function
         query = f"SELECT * FROM {table} WHERE {where}"
         cur = self.conn.execute(query, vals)
         result = cur.fetchall()
@@ -281,7 +297,8 @@ class Database:
         has_elem = self.has_elem(table, args[0])
         if has_elem:
             # Shift the element with the same id
-            count = len(self.get_all_from_table(table))
+            # TODO this does not work since sqlite does not fill empty slots
+            count = len(self.get_all(table))
             self.update(table, (args[0][0], has_elem, count + 1))
 
         # Check if it is present under another id
@@ -296,6 +313,20 @@ class Database:
         cursor = self.conn.execute(query, vals)
         self.conn.commit()
         return True, cursor.lastrowid
+
+    # TODO one to one doublicate of insert function
+    def get_has_or_insert(self, table: str, *args: Tuple[str, ...]):
+        setter, qmarks, vals = self.get_setter_qmarks_vals(args)
+
+        # If the element is not already present add
+        has_elem = self.has_elem(table, *args)
+        if not has_elem:
+            query = f"INSERT INTO {table} ({setter}) VALUES ({qmarks})"
+            cur = self.conn.execute(query, vals)
+            self.conn.commit()
+            return True, cur.lastrowid
+        else:
+            return False, has_elem
 
     def update(self, table: str, *args: Tuple[str, ...]):
         where, vals1 = self.get_where_and_vals(args)
@@ -320,12 +351,6 @@ class Database:
             self.out_text.insert(END, f"From table {table}, {args} was deleted.\n")
         else:
             self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
-
-    def get_all_from_table(self, table: str):
-        cur = self.conn.execute(f"SELECT * FROM {table}")
-        result = cur.fetchall()
-        cur.close()
-        return result
 
     def print_table(self, table: str):
         cur = self.conn.execute(f"SELECT * FROM {table}")
@@ -420,24 +445,6 @@ class Database:
 
         self.out_text.insert(END, "All person entrys were deleted.\n")
 
-    def get_person_by_name(self, name: str):
-        """
-        Get the person with the specified name.
-        """
-        cur = self.conn.execute("SELECT * FROM persons WHERE name=?", (name,))
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    def get_person_by_id(self, pid: int):
-        """
-        Get the person with the specified id.
-        """
-        cur = self.conn.execute("SELECT * FROM persons WHERE pid=?", (pid,))
-        result = cur.fetchall()
-        cur.close()
-        return result
-
     def print_persons(self):
         self.print_table("persons")
 
@@ -525,26 +532,6 @@ class Database:
 
         self.out_text.insert(END, "All participant entrys were deleted.\n")
 
-    # TODO unused & untested?
-    def get_participants_by_event(self, event_id: int):
-        """
-        Get all participants with the specified event.
-        """
-        cur = self.conn.execute("SELECT * FROM participants WHERE event_id=?", (event_id,))
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    # TODO unused & untested?
-    def get_participants_by_person(self, person_id: int):
-        """
-        Get all participants with the specified person.
-        """
-        cur = self.conn.execute("SELECT * FROM participants WHERE person_id=?", (person_id,))
-        result = cur.fetchall()
-        cur.close()
-        return result
-
     def print_participants(self):
         self.print_table("participants")
 
@@ -605,17 +592,10 @@ class Database:
             self.out_text.insert(END, f"Event already present (eid: {res}).\n")
             self.out_text.insert(END, f"Event not added (title: {title}, start: {start_date}, end: {end_date}).\n")
 
-    def update_event(self, title, s_date, e_date, n_title, n_s_day, n_s_hour, n_e_day, n_e_hour):
+    def update_event(self, title, s_date, e_date, n_title, n_s_date, n_e_date):
         """
         Update the selected event.
         """
-        n_s_date = datetime.datetime.combine(
-            n_s_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=n_s_hour)
-        n_e_date = datetime.datetime.combine(
-            n_e_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=n_e_hour)
-
         if not self.test_event_input(1, title, n_s_date, n_e_date):
             return
 
@@ -662,20 +642,6 @@ class Database:
             "SELECT * \
             FROM events WHERE start_date<=? AND end_date>=?",
             (date, date),
-        )
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    # TODO rename and merge with before method?
-    def get_event2(self, title: str, s_date: datetime.datetime, e_date: datetime.datetime):
-        """
-        Get the event with the specified date.
-        """
-        cur = self.conn.execute(
-            "SELECT * \
-            FROM events WHERE title=? AND start_date=? AND end_date=?",
-            (title, s_date, e_date),
         )
         result = cur.fetchall()
         cur.close()
@@ -801,20 +767,6 @@ class Database:
         cur.close()
         return result
 
-    # TODO rename and merge with before method?
-    def get_subevent2(self, title: str, s_date: datetime.datetime, e_date: datetime.datetime):
-        """
-        Get the subevent with the specified values.
-        """
-        cur = self.conn.execute(
-            "SELECT * \
-            FROM subevents WHERE title=? AND start_date=? AND end_date=?",
-            (title, s_date, e_date),
-        )
-        result = cur.fetchall()
-        cur.close()
-        return result
-
     def print_events(self):
         self.print_table("subevents")
 
@@ -888,34 +840,46 @@ class Database:
 
     # TODO check all update methods, if a check is needed is the artist/person present
     # TODO check if time combine can be done before
-    def update_artist(self, pid: int, make: str, model: str, s_date, e_date, n_pid: str, n_make: str, n_model, n_s_day, n_s_hour, n_e_day, n_e_hour):
+    def update_artist(
+            self, 
+            person_id: int, make: str, model: str, s_date, e_date, 
+            n_person_id: int, n_make: str, n_model, n_s_date, n_e_date
+        ):
         """
         Update the selected artist.
         """
-        n_s_date = datetime.datetime.combine(
-            n_s_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=n_s_hour)
-        n_e_date = datetime.datetime.combine(
-            n_e_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=n_e_hour)
+        # TODO
+        # n_s_date = datetime.datetime.combine(
+        #     n_s_day, datetime.datetime.min.time()
+        # ) + datetime.timedelta(hours=n_s_hour)
+        # n_e_date = datetime.datetime.combine(
+        #     n_e_day, datetime.datetime.min.time()
+        # ) + datetime.timedelta(hours=n_e_hour)
 
-        if not self.test_artist_input(1, pid, make, model, n_s_date, n_e_date):
+        if not self.test_artist_input(1, n_person_id, n_make, n_model, n_s_date, n_e_date):
             return
 
         self.update(
             "artists",
-            ("pid", pid, n_pid),
+            ("person_id", person_id, n_person_id),
             ("make", make, n_make),
             ("model", model, n_model),
             ("start_date", s_date, n_s_date),
             ("end_date", e_date, n_e_date),
         )
 
-    def delete_artist(self, pid: str, make: str, model: str, s_date, e_date):
+    def delete_artist(self, person_id: str, make: str, model: str, s_date, e_date):
         """
         Delete the selected artist.
         """
-        self.delete("artists", ("pid", pid), ("make", make), ("model", model), ("start_date", s_date), ("end_date", e_date))
+        self.delete(
+            "artists",
+            ("person_id", person_id),
+            ("make", make),
+            ("model", model),
+            ("start_date", s_date),
+            ("end_date", e_date)
+        )
 
     def clean_artists(self):
         """
@@ -932,25 +896,6 @@ class Database:
         )
 
         self.out_text.insert(END, "All artist entrys were deleted.\n")
-
-    def get_artist(self, make: str, model: str):
-        """
-        Get the artist with the specified make and model.
-        """
-        cur = self.conn.execute("SELECT * FROM artists WHERE make=? AND model=?", (make, model))
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    # TODO
-    def get_artist2(self, pid: str, make: str, model: str, start_date, end_date):
-        """
-        Get the artist with the specified pid, make and model.
-        """
-        cur = self.conn.execute("SELECT * FROM artists WHERE person_id=? AND make=? AND model=? AND start_date=? AND end_date=?", (pid, make, model, start_date, end_date))
-        result = cur.fetchall()
-        cur.close()
-        return result
 
     # def has_artist(self, name: str, make: str, model: str):
     #     """

@@ -217,10 +217,11 @@ class ModifyDBBox(object):
 
         list_table_content = [
             ' | '.join(str(e) for e in x)
-            for x in db.get_all_from_table(table)
+            for x in db.get_all(table)
         ]
 
         ############################
+        str_selection = self.db_select.get()
 
         # Creating label for each artist/event/...
         for i, e in enumerate(list_table_content):
@@ -230,6 +231,13 @@ class ModifyDBBox(object):
 
             button = Button(self.text_db_list, text="Del", command=partial(self.clickDelete, e), width=5)
             self.text_db_list.window_create("end", window=button)
+
+            # Special case because the artist contains a person id
+            if str_selection == "artists":
+                first_idx = e.index(" | ")
+                second_idx = e.index(" | ", first_idx + 1)
+                num = int(e[first_idx+3:second_idx])
+                e = e[:second_idx] + " (" + self.db.get("persons", ("pid", num))[0][1] + ")" + e[second_idx:]
 
             self.text_db_list.insert("end", " " + e + "\n")
 
@@ -247,8 +255,8 @@ class ModifyDBBox(object):
             self.db.delete_event(elm_data[1], elm_data[2], elm_data[3])
         elif str_selection == "artists":
             elm_data = elem.split(" | ")
-            # TODO elm_data[0] is the index not the name
-            self.db.delete_artist(elm_data[0], elm_data[1], elm_data[2])
+            # Obacht: elm_data[0] is the index not the name
+            self.db.delete_artist(elm_data[1], elm_data[2], elm_data[3], elm_data[4], elm_data[5])
         elif str_selection == "persons":
             elm_data = elem.split(" | ")
             self.db.delete_person(elm_data[1])
@@ -306,22 +314,28 @@ class ModifyEventBox(object):
 
         # TODO 
         titel = ""
-        info = elem.split(" | ")
+        elm_e_data = elem.split(" | ")
         if elem != "":
-            titel = info[1]
+            titel = elm_e_data[1]
+
+        def checkfull(*args):
+            if str_e_title_w.get():
+                btn_add.config(state="normal")
+            else:
+                btn_add.config(state="disabled")
 
         #########
-        # Title Frame (write)
-        #########
         # Event title input field
+        #########
         str_e_title_w = StringVar()
         str_e_title_w.set(titel)
+        str_e_title_w.trace("w", checkfull)
         lbl_e_title = Label(self.root, text="Title: ")
         lbl_e_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Entry(self.root, textvariable=str_e_title_w).grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         #########
-        # Date Frame (write)
+        # Date and time input
         #########
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
         lbl_e_sdate = Label(self.root, text="Start: ")
@@ -360,14 +374,14 @@ class ModifyEventBox(object):
 ################################ TODO
 
         if elem != "":
-            s_date = datetime.datetime.strptime(info[2], "%Y-%m-%d %H:%M:%S")
+            s_date = datetime.datetime.strptime(elm_e_data[2], "%Y-%m-%d %H:%M:%S")
             date_e_start.set_date(s_date)
             while tp_e_start.hours24() < s_date.hour:
                 tp_e_start._24HrsTime.invoke("buttonup")
             while tp_e_start.minutes() < s_date.minute:
                 tp_e_start._minutes.invoke("buttonup")
 
-            e_date = datetime.datetime.strptime(info[3], "%Y-%m-%d %H:%M:%S")
+            e_date = datetime.datetime.strptime(elm_e_data[3], "%Y-%m-%d %H:%M:%S")
             date_e_end.set_date(e_date)
             while tp_e_end.hours24() > e_date.hour:
                 tp_e_end._24HrsTime.invoke("buttondown")
@@ -376,15 +390,14 @@ class ModifyEventBox(object):
 ##########################
 
         #########
-        # Participants
+        # Participant List Input
         #########
-        # Event title input field
         str_e_parts_w = StringVar()
         str_e_parts_w.set("")
         lbl_e_parts = Label(self.root, text="List of Participants:")
         lbl_e_parts.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
 
-        #######################
+        # Participant Frame and Text
         self.frame_part_new = Frame(self.root, width=500, height=56, bg="white")
         self.frame_part_new.pack_propagate(False)
         self.frame_part_new.grid(
@@ -398,27 +411,35 @@ class ModifyEventBox(object):
         button = Button(self.text_part_new, text="Add from list:", width=12, command=self.clickList)
         button.grid(row=0, column=0, padx=(0, 5), pady=0, sticky="W")
 
-        list_participants = [
+        # Get a list of all persons to select from
+        list_persons = [
             ' | '.join(str(e) for e in x)
-            for x in db.get_all_from_table("persons")
+            for x in db.get_all("persons")
         ]
 
         self.str_parts = StringVar()
-        self.str_parts.set(list_participants[0])
+        self.str_parts.set(list_persons[0])
         cb_insig_select = Combobox(self.text_part_new, textvariable=self.str_parts)
         # Write file signatures
-        cb_insig_select["values"] = list_participants
+        cb_insig_select["values"] = list_persons
         # Prevent typing a value
         cb_insig_select["state"] = "readonly"
         # Place the widget
         cb_insig_select.grid(row=0, column=1, padx=0, pady=0, sticky="EW")
         # Hovertip(cb_insig_select, TooltipDict["cb_insig_select"]) # TODO
 
-        button = Button(self.text_part_new, text="Add via input:", width=12, command=self.clickInput)
+        button = Button(self.text_part_new, text="Add via input:", width=12, command=self.clickInput, state="disabled")
         button.grid(row=1, column=0, padx=(0, 5), pady=0, sticky="W")
+
+        def checkfull(*args):
+            if self.str_part_w.get():
+                button.config(state="normal")
+            else:
+                button.config(state="disabled")
 
         self.str_part_w = StringVar()
         self.str_part_w.set("")
+        self.str_part_w.trace("w", checkfull)
         # Prevent the use of the pipe character as input
         vcmd = self.root.register(lambda P: "|" not in P)
         Entry(self.text_part_new, textvariable=self.str_part_w,
@@ -428,9 +449,9 @@ class ModifyEventBox(object):
             row=1, column=1, padx=0, pady=0, sticky="EW"
         )
 
-        ########################
-
-        # Frame for participant list
+        #########
+        # Participant List Frame
+        #########
         # self.frame_db_list = Frame(self.root, width=self.root.winfo_width() - PAD_X * 2, height=300, bg="white")
         self.frame_part_list = Frame(self.root, width=500, height=100, bg="white")
         self.frame_part_list.pack_propagate(False)
@@ -447,34 +468,53 @@ class ModifyEventBox(object):
         self.text_part_list.pack(fill="both", expand=True)
 
         self.list_new_participants = []
+        if elem != "":
+            self.list_new_participants = [
+                self.db.get("persons", ("pid", x[1]))[0][1] 
+                for x in self.db.get("participants", ("event_id", elm_e_data[0]))
+            ]
 
         self.updateListFrame()
 
         def add():
+            n_s_date = datetime.datetime.combine(
+                date_e_start.get_date(), datetime.datetime.min.time()
+            ) + datetime.timedelta(hours=tp_e_start.hours24(), minutes=tp_e_start.minutes())
+            n_e_date = datetime.datetime.combine(
+                date_e_end.get_date(), datetime.datetime.min.time()
+            ) + datetime.timedelta(hours=tp_e_end.hours24(), minutes=tp_e_end.minutes())
+            
             if elem == "":
-                self.db.insert_event_from_date(
+                self.db.insert_event(
                     str_e_title_w.get(),
-                    date_e_start.get_date(),
-                    tp_e_start.hours24(),
-                    date_e_end.get_date(),
-                    tp_e_end.hours24(),
-                    self.list_new_participants,
+                    n_s_date,
+                    n_e_date,
                 )
+
+                # TODO Add participants from list
+                for p in self.list_new_participants:
+                    # Create person if it does not exist
+                    if not self.db.has_elem("persons", ("name", p)):
+                        self.db.insert_person(p)
+
+                    # TODO get person id
+                    pid = 0
+                    eid = elm_e_data[1]
+                    if not self.db.has_elem("participants", ("person_id", pid), ("event_id", eid), ("start_date", n_s_date), ("end_date", n_e_date)):
+                        self.db.insert_participant(pid, eid, n_s_date, n_e_date)
             else:
                 # TODO does not update participants
-                s_date = datetime.datetime.strptime(info[2], "%Y-%m-%d %H:%M:%S")
-                e_date = datetime.datetime.strptime(info[3], "%Y-%m-%d %H:%M:%S")
+                s_date = datetime.datetime.strptime(elm_e_data[2], "%Y-%m-%d %H:%M:%S")
+                e_date = datetime.datetime.strptime(elm_e_data[3], "%Y-%m-%d %H:%M:%S")
                 self.db.update_event(
                     # old
-                    info[1],
+                    elm_e_data[1],
                     s_date,
                     e_date,
                     # new
                     str_e_title_w.get(),
-                    date_e_start.get_date(),
-                    tp_e_start.hours24(),
-                    date_e_end.get_date(),
-                    tp_e_end.hours24(),
+                    n_s_date,
+                    n_e_date,
                 )
 
             self.changed = True
@@ -486,11 +526,15 @@ class ModifyEventBox(object):
             command=self.closed,
         ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
 
-        Button(
+        # In update mode the button must not be disabled from the start,
+        # because changes in the timecells can not be checked.
+        btn_add = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
-        ).grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+            state="disabled" if elem == "" else "normal",
+        )
+        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
 
         center_window(self.root)
 
@@ -508,9 +552,6 @@ class ModifyEventBox(object):
         # Creating label for each artist/event/...
         for i, e in enumerate(self.list_new_participants):
             # https://stackoverflow.com/questions/6920302/
-            button = Button(self.text_part_list, text="Mod", command=partial(self.clickModify, e), width=5)
-            self.text_part_list.window_create("end", window=button)
-
             button = Button(self.text_part_list, text="Del", command=partial(self.clickDelete, e), width=5)
             self.text_part_list.window_create("end", window=button)
 
@@ -532,19 +573,10 @@ class ModifyEventBox(object):
         if person not in self.list_new_participants:
             self.list_new_participants.append(person)
             self.updateListFrame()
-        print(person)
-
-    def clickModify(self, person):
-        # TODO
-        # box = ModifyPersonBox("Modify person", self.db, person)
-        # if box.changed:
-        #     self.updateListFrame()
-        print(person)
 
     def clickDelete(self, person):
         self.list_new_participants.remove(person)
         self.updateListFrame()
-        print(person)
 
     # Function on Closeing MessageBox
     def closed(self):
@@ -576,22 +608,43 @@ class ModifyArtistBox(object):
         model = ""
         elm_a_data = elem.split(" | ")
         if elem != "":
-            name = elm_a_data[0]
-            make = elm_a_data[1]
-            model = elm_a_data[2]
+            name = self.db.get("persons", ("pid", elm_a_data[1]))[0][1]
+            make = elm_a_data[2]
+            model = elm_a_data[3]
+
+        def checkfull(*args):
+            a = sv_a_name.get()
+            b = sv_a_make.get()
+            c = sv_a_model.get()
+            if a and b and c:
+                btn_add.config(state="normal")
+            else:
+                btn_add.config(state="disabled")
 
         # Artist name input field
+        # Get a list of all persons to select from
+        list_persons = [
+            x[1] for x in db.get_all("persons")
+        ]
+        # Test that the name is present in the list
+        assert(name in list_persons if elem != "" else True)
+
         sv_a_name = StringVar()
-        sv_a_name.set(name)
-        lbl_a_name = Label(self.root, text="Name: ")
-        lbl_a_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(self.root, textvariable=sv_a_name).grid(
+        sv_a_name.set(name if elem != "" else "")
+        sv_a_name.trace("w", checkfull)
+        cb_person_select = Combobox(self.root, textvariable=sv_a_name)
+        # Write file signatures
+        cb_person_select["values"] = list_persons
+        # Place the widget
+        cb_person_select.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
+        # Hovertip(cb_insig_select, TooltipDict["cb_person_select"]) # TODO
 
         # Make input field
         sv_a_make = StringVar()
         sv_a_make.set(make)
+        sv_a_make.trace("w", checkfull)
         lbl_a_make = Label(self.root, text="Make: ")
         lbl_a_make.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Entry(self.root, textvariable=sv_a_make).grid(
@@ -601,7 +654,8 @@ class ModifyArtistBox(object):
         # Make input field
         sv_a_model = StringVar()
         sv_a_model.set(model)
-        lbl_a_model = Label(self.root, text="Make: ")
+        sv_a_model.trace("w", checkfull)
+        lbl_a_model = Label(self.root, text="Model: ")
         lbl_a_model.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Entry(self.root, textvariable=sv_a_model).grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -644,40 +698,63 @@ class ModifyArtistBox(object):
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-################################ TODO
+        if elem != "":
+            s_date = datetime.datetime.strptime(elm_a_data[4], "%Y-%m-%d %H:%M:%S")
+            date_e_start.set_date(s_date)
+            while tp_e_start.hours24() < s_date.hour:
+                tp_e_start._24HrsTime.invoke("buttonup")
+            while tp_e_start.minutes() < s_date.minute:
+                tp_e_start._minutes.invoke("buttonup")
 
-        # if elem != "":
-        #     s_date = datetime.datetime.strptime(info[2], "%Y-%m-%d %H:%M:%S")
-        #     date_e_start.set_date(s_date)
-        #     while tp_e_start.hours24() < s_date.hour:
-        #         tp_e_start._24HrsTime.invoke("buttonup")
-        #     while tp_e_start.minutes() < s_date.minute:
-        #         tp_e_start._minutes.invoke("buttonup")
-
-        #     e_date = datetime.datetime.strptime(info[3], "%Y-%m-%d %H:%M:%S")
-        #     date_e_end.set_date(e_date)
-        #     while tp_e_end.hours24() > e_date.hour:
-        #         tp_e_end._24HrsTime.invoke("buttondown")
-        #     while tp_e_end.minutes() > e_date.minute:
-        #         tp_e_end._minutes.invoke("buttondown")
-##########################
+            e_date = datetime.datetime.strptime(elm_a_data[5], "%Y-%m-%d %H:%M:%S")
+            # TODO for some reason does 2100 not get to the gui
+            # -> it is possible to have 2100 but the gui does shorten it to 31/12/00 so -> 2000
+            # 31/12/2100 works check if there is a setting
+            date_e_end.set_date(e_date)
+            while tp_e_end.hours24() > e_date.hour:
+                tp_e_end._24HrsTime.invoke("buttondown")
+            while tp_e_end.minutes() > e_date.minute:
+                tp_e_end._minutes.invoke("buttondown")
 
         def add():
+            s_date = datetime.datetime.combine(
+                date_e_start.get_date(), datetime.datetime.min.time()
+            ) + datetime.timedelta(hours=tp_e_start.hours24(), minutes=tp_e_start.minutes())
+            e_date = datetime.datetime.combine(
+                date_e_end.get_date(), datetime.datetime.min.time()
+            ) + datetime.timedelta(hours=tp_e_end.hours24(), minutes=tp_e_end.minutes())
             if elem == "":
+
+                # Call a function that returns the id of the person and adds the person
+                # if it is not yet present in the database
+                p_id = self.db.get_has_or_insert("persons", ("name", sv_a_name.get()))[1]
+
                 self.db.insert_artist(
-                    sv_a_name.get(),
+                    p_id,
                     sv_a_make.get(),
                     sv_a_model.get(),
+                    s_date,
+                    e_date,
                 )
             else:
+                # Call a function that returns the id of the person and adds the person
+                # if it is not yet present in the database
+                p_id = self.db.get_has_or_insert("persons", ("name", sv_a_name.get()))[1]
+
+                print(elm_a_data)
+
                 # TODO does not update time
                 self.db.update_artist(
-                    elm_a_data[0],
-                    elm_a_data[1],
+                    int(elm_a_data[1]),
                     elm_a_data[2],
-                    sv_a_name.get(),
+                    elm_a_data[3],
+                    elm_a_data[4],
+                    elm_a_data[5],
+                    p_id,
                     sv_a_make.get(),
                     sv_a_model.get(),
+                    s_date,
+                    e_date,
                 )
 
             self.changed = True
@@ -689,11 +766,17 @@ class ModifyArtistBox(object):
             command=self.closed,
         ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
 
-        Button(
+        # In update mode the button must not be disabled from the start,
+        # because changes in the timecells can not be checked.
+        # TODO it is possible to have empty time cells currently and the timepicker 
+        # does not check for this itself
+        btn_add = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
-        ).grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+            state="disabled" if elem == "" else "normal",
+        )
+        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
 
         center_window(self.root)
 
@@ -728,9 +811,16 @@ class ModifyPersonBox(object):
         elm_p_data = elem.split(" | ")
         name = "" if elem == "" else elm_p_data[1]
 
-        # Artist name input field
+        def checkfull(*args):
+            if sv_p_name.get():
+                btn_add.config(state="normal")
+            else:
+                btn_add.config(state="disabled")
+
+        # Person name input field
         sv_p_name = StringVar()
         sv_p_name.set(name)
+        sv_p_name.trace("w", checkfull)
         lbl_p_name = Label(self.root, text="Name: ")
         lbl_p_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Entry(self.root, textvariable=sv_p_name).grid(
@@ -757,11 +847,13 @@ class ModifyPersonBox(object):
             command=self.closed,
         ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
 
-        Button(
+        btn_add = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
-        ).grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+            state="disabled",
+        )
+        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
 
         center_window(self.root)
 
