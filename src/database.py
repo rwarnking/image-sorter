@@ -18,15 +18,18 @@ class Database:
 
     def create_tables(self):
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events \
-            (eid INTEGER PRIMARY KEY ASC, \
-                title STRING, start_date DATE, end_date DATE)"
+            "CREATE TABLE IF NOT EXISTS events( \
+            eid INTEGER PRIMARY KEY ASC, \
+            title STRING, start_date DATE, end_date DATE)"
         )
 
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS subevents \
-            (seid INTEGER PRIMARY KEY ASC, \
-                title STRING, start_date DATE, end_date DATE)"
+            "CREATE TABLE IF NOT EXISTS subevents( \
+            seid INTEGER PRIMARY KEY ASC, \
+            event_id INT NOT NULL, \
+            title STRING, start_date DATE, end_date DATE, \
+            FOREIGN KEY (event_id) \
+                REFERENCES events (eid) ON DELETE CASCADE)"
         )
 
         self.conn.execute(
@@ -48,7 +51,7 @@ class Database:
             FOREIGN KEY (event_id) \
                 REFERENCES events (eid) ON DELETE CASCADE, \
             FOREIGN KEY (person_id) \
-                REFERENCES persons (pid))"
+                REFERENCES persons (pid) ON DELETE CASCADE)"
         )
 
     def load_from_file(self, file):
@@ -81,6 +84,7 @@ class Database:
             for subevent in data["subevents"]:
                 self.insert_subevent_with_id(
                     subevent["seid"],
+                    subevent["event_id"],
                     subevent["title"],
                     datetime.datetime.strptime(subevent["start"]["date"], "%Y-%m-%d %H:%M:%S"),
                     datetime.datetime.strptime(subevent["end"]["date"], "%Y-%m-%d %H:%M:%S"),
@@ -222,6 +226,7 @@ class Database:
                     where += "AND "
                 where += pair[0] + "=? "
                 vals += (pair[1],)
+
         return where, vals
 
     def get_setter(self, args: Tuple[Tuple[str, ...], ...]):
@@ -312,7 +317,21 @@ class Database:
         query = f"INSERT INTO {table} ({setter}) VALUES ({qmarks})"
         cursor = self.conn.execute(query, vals)
         self.conn.commit()
+
         return True, cursor.lastrowid
+
+    def get_last_row_id(self):
+        # last_insert_rowid return 0 when no row was inserted
+        query = f"SELECT last_insert_rowid()"
+        cursor = self.conn.execute(query)
+        # Get first element of tuple
+        result = cursor.fetchone()[0]
+        cursor.close()
+
+        if result > 0:
+            return result
+        else:
+            raise IndexError("No last row for this database connection present!")
 
     # TODO one to one doublicate of insert function
     def get_has_or_insert(self, table: str, *args: Tuple[str, ...]):
@@ -344,13 +363,15 @@ class Database:
     def delete(self, table: str, *args: Tuple[str, str]):
         where, vals = self.get_where_and_vals(args)
 
-        if self.has_elem(table, *args):
-            query = f"DELETE FROM {table} WHERE {where}"
-            self.conn.execute(query, vals)
-            self.conn.commit()
-            self.out_text.insert(END, f"From table {table}, {args} was deleted.\n")
-        else:
-            self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
+        # TODO delete if present
+        # if self.has_elem(table, *args):
+        query = f"DELETE FROM {table} WHERE {where}"
+        self.conn.execute(query, vals)
+        self.conn.commit()
+        self.out_text.insert(END, f"From table {table}, {args} was deleted.\n")
+        # else:
+            # TODO no entries were found
+            # self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
 
     def print_table(self, table: str):
         cur = self.conn.execute(f"SELECT * FROM {table}")
@@ -527,7 +548,7 @@ class Database:
             FOREIGN KEY (event_id) \
                 REFERENCES events (eid) ON DELETE CASCADE, \
             FOREIGN KEY (person_id) \
-                REFERENCES persons (pid))"
+                REFERENCES persons (pid) ON DELETE CASCADE)"
         )
 
         self.out_text.insert(END, "All participant entrys were deleted.\n")
@@ -654,20 +675,23 @@ class Database:
     # Subevent related #
     ####################
     # TODO Add check if event is present
-    def test_subevent_input(self, seid: int, title: str, start_date, end_date):
+    def test_subevent_input(self, event_id: int, seid: int, title: str, start_date, end_date):
         if end_date < start_date:
             self.out_text.insert(END, "Could not add Event: end date < start date!\n")
             return False
         if title == "":
             self.out_text.insert(END, "Could not add Event: Missing title!\n")
             return False
+        if event_id < 1:
+            self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
+            return False
         if seid < 1:
             self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
             return False
         return True
 
-    def insert_subevent(self, title: str, start_date, end_date):
-        if not self.test_subevent_input(1, title, start_date, end_date):
+    def insert_subevent(self, event_id: int, title: str, start_date, end_date):
+        if not self.test_subevent_input(1, event_id, title, start_date, end_date):
             return
 
         # TODO move this to input
@@ -676,6 +700,7 @@ class Database:
 
         res, seid = self.insert(
             "subevents",
+            ("event_id", event_id),
             ("title", title),
             ("start_date", start_date),
             ("end_date", end_date),
@@ -686,8 +711,8 @@ class Database:
             self.out_text.insert(END, f"Subevent already present (seid: {seid}).\n")
             self.out_text.insert(END, f"Subevent not added (title: {title}, start: {start_date}, end: {end_date}).\n")
 
-    def insert_subevent_with_id(self, seid: int, title: str, start_date, end_date):
-        if not self.test_subevent_input(seid, title, start_date, end_date):
+    def insert_subevent_with_id(self, seid: int, event_id: int, title: str, start_date, end_date):
+        if not self.test_subevent_input(seid, event_id, title, start_date, end_date):
             return
 
         # TODO move this to input
@@ -697,6 +722,7 @@ class Database:
         res, seid = self.insert_with_id(
             "subevents",
             ("seid", seid),
+            ("event_id", event_id),
             ("title", title),
             ("start_date", start_date),
             ("end_date", end_date),
@@ -707,7 +733,7 @@ class Database:
             self.out_text.insert(END, f"Subevent already present (seid: {seid}).\n")
             self.out_text.insert(END, f"Subevent not added (title: {title}, start: {start_date}, end: {end_date}).\n")
 
-    def update_subevent(self, title, s_date, e_date, n_title, n_s_day, n_s_hour, n_e_day, n_e_hour):
+    def update_subevent(self, event_id: int, title: str, s_date, e_date, n_title, n_s_day, n_s_hour, n_e_day, n_e_hour):
         """
         Update the selected subevent.
         """
@@ -729,16 +755,17 @@ class Database:
 
         self.update(
             "subevents",
+            ("event_id", event_id, event_id),
             ("title", title, n_title),
             ("start_date", s_date, n_s_date),
             ("end_date", e_date, n_e_date),
         )
 
-    def delete_subevent(self, title: str, s_date: str, e_date: str):
+    def delete_subevent(self, event_id: int, title: str, s_date: str, e_date: str):
         """
         Delete the selected subevent.
         """
-        self.delete("subevents", ("title", title), ("start_date", s_date), ("end_date", e_date))
+        self.delete("subevents", ("event_id", event_id), ("title", title), ("start_date", s_date), ("end_date", e_date))
 
     def clean_subevents(self):
         """
@@ -747,9 +774,12 @@ class Database:
         self.conn.execute("DROP TABLE IF EXISTS subevents")
 
         self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS subevents \
-            (seid INTEGER PRIMARY KEY ASC, \
-                title STRING, start_date DATE, end_date DATE)"
+            "CREATE TABLE IF NOT EXISTS subevents( \
+            seid INTEGER PRIMARY KEY ASC, \
+            event_id INT NOT NULL, \
+            title STRING, start_date DATE, end_date DATE, \
+            FOREIGN KEY (event_id) \
+                REFERENCES events (eid) ON DELETE CASCADE)"
         )
 
         self.out_text.insert(END, "All subevent entrys were deleted.\n")
