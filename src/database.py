@@ -40,7 +40,7 @@ class Database:
             "CREATE TABLE IF NOT EXISTS artists(\
             aid INTEGER PRIMARY KEY ASC, \
             person_id INT, make TEXT, model TEXT, \
-            start_date DATE, end_date DATE, \
+            start_date DATE, end_date DATE, time_shift TEXT, \
             FOREIGN KEY (person_id) REFERENCES persons (pid) ON DELETE CASCADE)"
         )
 
@@ -71,6 +71,7 @@ class Database:
                     artist["model"],
                     datetime.datetime.strptime(artist["start"]["date"], "%Y-%m-%d %H:%M:%S"),
                     datetime.datetime.strptime(artist["end"]["date"], "%Y-%m-%d %H:%M:%S"),
+                    artist["timeshift"]["date"],
                 )
 
             for event in data["events"]:
@@ -170,6 +171,9 @@ class Database:
                     },
                     "end": {
                         "date": elem[5],
+                    },
+                    "timeshift": {
+                        "date": elem[6],
                     },
                 }
             )
@@ -320,6 +324,7 @@ class Database:
 
         return True, cursor.lastrowid
 
+    # https://www.alphacodingskills.com/sqlite/notes/sqlite-func-last-insert-rowid.php
     def get_last_row_id(self):
         # last_insert_rowid return 0 when no row was inserted
         query = f"SELECT last_insert_rowid()"
@@ -803,7 +808,7 @@ class Database:
     ##################
     # Artist related #
     ##################
-    def test_artist_input(self, aid: int, pid: int, make: str, model: str, start_date, end_date):
+    def test_artist_input(self, aid: int, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
         if end_date < start_date:
             self.out_text.insert(END, "Could not add Artist: end date < start date!\n")
             return False
@@ -827,8 +832,8 @@ class Database:
 
         return True
 
-    def insert_artist(self, pid: int, make: str, model: str, start_date, end_date):
-        if not self.test_artist_input(1, pid, make, model, start_date, end_date):
+    def insert_artist(self, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
+        if not self.test_artist_input(1, pid, make, model, start_date, end_date, time_shift):
             return
 
         res, aid = self.insert(
@@ -838,18 +843,19 @@ class Database:
             ("model", model),
             ("start_date", start_date),
             ("end_date", end_date),
+            ("time_shift", time_shift),
         )
 
         if res:
-            self.out_text.insert(END, f"Artist added (aid: {aid}, pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}).\n")
+            self.out_text.insert(END, f"Artist added (aid: {aid}, pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
         else:
             self.out_text.insert(END, f"Artist already present (aid: {aid}).\n")
-            self.out_text.insert(END, f"Artist not added (pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}).\n")
+            self.out_text.insert(END, f"Artist not added (pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
 
 
     # TODO
-    def insert_artist_with_id(self, aid: int, pid: int, make: str, model: str, start_date, end_date):
-        if not self.test_artist_input(aid, pid, make, model, start_date, end_date):
+    def insert_artist_with_id(self, aid: int, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
+        if not self.test_artist_input(aid, pid, make, model, start_date, end_date, time_shift):
             return
 
         res, aid = self.insert_with_id(
@@ -860,33 +866,25 @@ class Database:
             ("model", model),
             ("start_date", start_date),
             ("end_date", end_date),
+            ("time_shift", time_shift),
         )
 
         if res:
-            self.out_text.insert(END, f"Artist added (aid: {aid}, pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}).\n")
+            self.out_text.insert(END, f"Artist added (aid: {aid}, pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
         else:
             self.out_text.insert(END, f"Artist already present (aid: {aid}).\n")
-            self.out_text.insert(END, f"Artist not added (pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}).\n")
+            self.out_text.insert(END, f"Artist not added (pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
 
     # TODO check all update methods, if a check is needed is the artist/person present
-    # TODO check if time combine can be done before
     def update_artist(
-            self, 
-            person_id: int, make: str, model: str, s_date, e_date, 
-            n_person_id: int, n_make: str, n_model, n_s_date, n_e_date
+            self,
+            person_id: int, make: str, model: str, s_date, e_date, time_shift: str,
+            n_person_id: int, n_make: str, n_model: str, n_s_date, n_e_date, n_time_shift: str,
         ):
         """
         Update the selected artist.
         """
-        # TODO
-        # n_s_date = datetime.datetime.combine(
-        #     n_s_day, datetime.datetime.min.time()
-        # ) + datetime.timedelta(hours=n_s_hour)
-        # n_e_date = datetime.datetime.combine(
-        #     n_e_day, datetime.datetime.min.time()
-        # ) + datetime.timedelta(hours=n_e_hour)
-
-        if not self.test_artist_input(1, n_person_id, n_make, n_model, n_s_date, n_e_date):
+        if not self.test_artist_input(1, n_person_id, n_make, n_model, n_s_date, n_e_date, time_shift):
             return
 
         self.update(
@@ -896,9 +894,10 @@ class Database:
             ("model", model, n_model),
             ("start_date", s_date, n_s_date),
             ("end_date", e_date, n_e_date),
+            ("time_shift", time_shift, n_time_shift),
         )
 
-    def delete_artist(self, person_id: str, make: str, model: str, s_date, e_date):
+    def delete_artist(self, person_id: str, make: str, model: str, s_date, e_date, time_shift: str):
         """
         Delete the selected artist.
         """
@@ -908,7 +907,8 @@ class Database:
             ("make", make),
             ("model", model),
             ("start_date", s_date),
-            ("end_date", e_date)
+            ("end_date", e_date),
+            ("time_shift", time_shift),
         )
 
     def clean_artists(self):
@@ -921,7 +921,7 @@ class Database:
             "CREATE TABLE IF NOT EXISTS artists(\
             aid INTEGER PRIMARY KEY ASC, \
             person_id INT, make TEXT, model TEXT, \
-            start_date DATE, end_date DATE, \
+            start_date DATE, end_date DATE, time_shift TEXT, \
             FOREIGN KEY (person_id) REFERENCES persons (pid))"
         )
 

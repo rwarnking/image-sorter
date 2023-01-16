@@ -17,7 +17,7 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-from tkinter.ttk import Checkbutton, Combobox, Progressbar, Scrollbar, Separator
+from tkinter.ttk import Checkbutton, Combobox, Progressbar, Scrollbar, Separator, Spinbox
 
 from tktimepicker import AnalogPicker, AnalogThemes, SpinTimePickerOld, constants
 from functools import partial
@@ -138,7 +138,7 @@ class ModifyDBBox(object):
         cb_dbs.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
         cb_dbs.bind("<<ComboboxSelected>>", update_db_gui)
-        # Hovertip(cb_dbs, TooltipDict["cb_dbs"]) TODO
+        Hovertip(cb_dbs, TooltipDict["cb_dbs"])
 
         ########################################
 
@@ -153,10 +153,11 @@ class ModifyDBBox(object):
         self.text_db_add = Text(self.frame_db_add, wrap="none")
         self.text_db_add.pack(fill="both", expand=True)
 
-        button = Button(self.text_db_add, text="Add", command=self.clickAdd, width=5)
-        self.text_db_add.window_create("end", window=button)
-        button = Button(self.text_db_add, text="", width=5, background="white", state="disabled")
-        self.text_db_add.window_create("end", window=button)
+        btn_add = Button(self.text_db_add, text="Add", command=self.clickAdd, width=5)
+        Hovertip(btn_add, TooltipDict["btn_add"])
+        self.text_db_add.window_create("end", window=btn_add)
+        btn_null = Button(self.text_db_add, text="", width=5, background="white", state="disabled")
+        self.text_db_add.window_create("end", window=btn_null)
 
         self.text_db_add.insert("end", " ...")
 
@@ -196,13 +197,15 @@ class ModifyDBBox(object):
             command=lambda: cleanup(),
         )
         btn_clear.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        # Hovertip(btn_clear, TooltipDict["btn_clear"]) # TODO
+        Hovertip(btn_clear, TooltipDict["btn_clear"])
 
-        Button(
+        btn_done = Button(
             self.root,
             text="Done",
             command=self.closed,
-        ).grid(row=self.row(), column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        )
+        btn_done.grid(row=self.row(), column=1, padx=PAD_X, pady=(10, 15), sticky="EW")
+        Hovertip(btn_done, TooltipDict["btn_done"])
 
         center_window(self.root)
 
@@ -226,11 +229,13 @@ class ModifyDBBox(object):
         # Creating label for each artist/event/...
         for i, e in enumerate(list_table_content):
             # https://stackoverflow.com/questions/6920302/
-            button = Button(self.text_db_list, text="Mod", command=partial(self.clickModify, e), width=5)
-            self.text_db_list.window_create("end", window=button)
+            btn_mod = Button(self.text_db_list, text="Mod", command=partial(self.clickModify, e), width=5)
+            Hovertip(btn_mod, TooltipDict["btn_mod"])
+            self.text_db_list.window_create("end", window=btn_mod)
 
-            button = Button(self.text_db_list, text="Del", command=partial(self.clickDelete, e), width=5)
-            self.text_db_list.window_create("end", window=button)
+            btn_del = Button(self.text_db_list, text="Del", command=partial(self.clickDelete, e), width=5)
+            Hovertip(btn_del, TooltipDict["btn_del"])
+            self.text_db_list.window_create("end", window=btn_del)
 
             # Special case because the artist contains a person id
             if str_selection == "artists":
@@ -256,7 +261,7 @@ class ModifyDBBox(object):
         elif str_selection == "artists":
             elm_data = elem.split(" | ")
             # Obacht: elm_data[0] is the index not the name
-            self.db.delete_artist(elm_data[1], elm_data[2], elm_data[3], elm_data[4], elm_data[5])
+            self.db.delete_artist(elm_data[1], elm_data[2], elm_data[3], elm_data[4], elm_data[5], elm_data[6])
         elif str_selection == "persons":
             elm_data = elem.split(" | ")
             self.db.delete_person(elm_data[1])
@@ -316,9 +321,9 @@ class ModifyEventBox(object):
 
         def checkfull(*args):
             if str_e_title_w.get():
-                btn_add.config(state="normal")
+                btn_add_event.config(state="normal")
             else:
-                btn_add.config(state="disabled")
+                btn_add_event.config(state="disabled")
 
         #########
         # Event title input field
@@ -328,7 +333,9 @@ class ModifyEventBox(object):
         str_e_title_w.trace("w", checkfull)
         lbl_e_title = Label(self.root, text="Title: ")
         lbl_e_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(self.root, textvariable=str_e_title_w).grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        ent_e_title = Entry(self.root, textvariable=str_e_title_w)
+        ent_e_title.grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(ent_e_title, TooltipDict["ent_e_title"])
 
         #########
         # Date and time input
@@ -337,7 +344,7 @@ class ModifyEventBox(object):
         lbl_e_sdate = Label(self.root, text="Start: ")
         lbl_e_sdate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         date_e_start = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
         date_e_start.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(date_e_start, TooltipDict["date_e_start"])
@@ -345,12 +352,13 @@ class ModifyEventBox(object):
         tp_e_start = SpinTimePickerOld(self.root)
         tp_e_start.addAll(constants.HOURS24)
         tp_e_start.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_e_start, TooltipDict["tp_e_start"])
 
         # End Date 
         lbl_e_edate = Label(self.root, text="End: ")
         lbl_e_edate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         date_e_end = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
         date_e_end.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(date_e_end, TooltipDict["date_e_end"])
@@ -358,6 +366,7 @@ class ModifyEventBox(object):
         tp_e_end = SpinTimePickerOld(self.root)
         tp_e_end.addAll(constants.HOURS24)
         tp_e_end.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_e_end, TooltipDict["tp_e_end"])
         # This is stupid but I did not find a way to access the variable directly
         for i in range(1, 24):
             tp_e_end._24HrsTime.invoke("buttonup")
@@ -403,10 +412,11 @@ class ModifyEventBox(object):
         self.text_part_new = Text(self.frame_part_new, wrap="none")
         self.text_part_new.pack(fill="both", expand=True)
 
-        button = Button(self.text_part_new, text="Add", command=self.clickAddParticipant, width=5)
-        self.text_part_new.window_create("end", window=button)
-        button = Button(self.text_part_new, text="", width=5, background="white", state="disabled")
-        self.text_part_new.window_create("end", window=button)
+        btn_add_part = Button(self.text_part_new, text="Add", command=self.clickAddParticipant, width=5)
+        self.text_part_new.window_create("end", window=btn_add_part)
+        Hovertip(btn_add_part, TooltipDict["btn_add_part"])
+        btn_none = Button(self.text_part_new, text="", width=5, background="white", state="disabled")
+        self.text_part_new.window_create("end", window=btn_none)
 
         self.text_part_new.insert("end", " ...")
 
@@ -455,10 +465,11 @@ class ModifyEventBox(object):
         self.text_sub_new = Text(self.frame_sub_new, wrap="none")
         self.text_sub_new.pack(fill="both", expand=True)
 
-        button = Button(self.text_sub_new, text="Add", command=self.clickAddSubevent, width=5)
-        self.text_sub_new.window_create("end", window=button)
-        button = Button(self.text_sub_new, text="", width=5, background="white", state="disabled")
-        self.text_sub_new.window_create("end", window=button)
+        btn_add_sube = Button(self.text_sub_new, text="Add", command=self.clickAddSubevent, width=5)
+        self.text_sub_new.window_create("end", window=btn_add_sube)
+        Hovertip(btn_add_sube, TooltipDict["btn_add_sube"])
+        btn_none = Button(self.text_sub_new, text="", width=5, background="white", state="disabled")
+        self.text_sub_new.window_create("end", window=btn_none)
 
         self.text_sub_new.insert("end", " ...")
 
@@ -555,21 +566,24 @@ class ModifyEventBox(object):
         ################
         # Main buttons #
         ################
-        Button(
+        btn_abort = Button(
             self.root,
             text="Abort",
             command=self.closed,
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        )
+        btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_abort, TooltipDict["btn_abort"])
 
         # In update mode the button must not be disabled from the start,
         # because changes in the timecells can not be checked.
-        btn_add = Button(
+        btn_add_event = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
             state="disabled" if elem == "" else "normal",
         )
-        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        btn_add_event.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_add_event, TooltipDict["btn_add_event"])
 
         center_window(self.root)
 
@@ -587,8 +601,9 @@ class ModifyEventBox(object):
         # Creating label for each artist/event/...
         for i, e in enumerate(self.list_new_participants):
             # https://stackoverflow.com/questions/6920302/
-            button = Button(self.text_part_list, text="Del", command=partial(self.clickDeleteParticipant, e), width=5)
-            self.text_part_list.window_create("end", window=button)
+            btn_del_part = Button(self.text_part_list, text="Del", command=partial(self.clickDeleteParticipant, e), width=5)
+            Hovertip(btn_del_part, TooltipDict["btn_del_part"])
+            self.text_part_list.window_create("end", window=btn_del_part)
 
             self.text_part_list.insert("end", " " + e + "\n")
 
@@ -605,8 +620,9 @@ class ModifyEventBox(object):
         # Creating label for each artist/event/...
         for i, e in enumerate(self.list_new_subevents):
             # https://stackoverflow.com/questions/6920302/
-            button = Button(self.text_sub_list, text="Del", command=partial(self.clickDeleteSubevent, e), width=5)
-            self.text_sub_list.window_create("end", window=button)
+            btn_del_sube = Button(self.text_sub_list, text="Del", command=partial(self.clickDeleteSubevent, e), width=5)
+            Hovertip(btn_del_sube, TooltipDict["btn_del_sube"])
+            self.text_sub_list.window_create("end", window=btn_del_sube)
 
             self.text_sub_list.insert("end", " " + e + "\n")
 
@@ -673,9 +689,9 @@ class ModifyArtistBox(object):
             b = sv_a_make.get()
             c = sv_a_model.get()
             if a and b and c:
-                btn_add.config(state="normal")
+                btn_add_art.config(state="normal")
             else:
-                btn_add.config(state="disabled")
+                btn_add_art.config(state="disabled")
 
         # Artist name input field
         # Get a list of all persons to select from
@@ -690,14 +706,14 @@ class ModifyArtistBox(object):
         sv_a_name = StringVar()
         sv_a_name.set(name if elem != "" else "")
         sv_a_name.trace("w", checkfull)
-        cb_person_select = Combobox(self.root, textvariable=sv_a_name)
+        cb_a_person = Combobox(self.root, textvariable=sv_a_name)
         # Write file signatures
-        cb_person_select["values"] = list_persons
+        cb_a_person["values"] = list_persons
         # Place the widget
-        cb_person_select.grid(
+        cb_a_person.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
-        # Hovertip(cb_insig_select, TooltipDict["cb_person_select"]) # TODO
+        Hovertip(cb_a_person, TooltipDict["cb_a_person"])
 
         # Make input field
         sv_a_make = StringVar()
@@ -705,9 +721,11 @@ class ModifyArtistBox(object):
         sv_a_make.trace("w", checkfull)
         lbl_a_make = Label(self.root, text="Make: ")
         lbl_a_make.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(self.root, textvariable=sv_a_make).grid(
+        ent_a_make = Entry(self.root, textvariable=sv_a_make)
+        ent_a_make.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
+        Hovertip(ent_a_make, TooltipDict["ent_a_make"])
 
         # Make input field
         sv_a_model = StringVar()
@@ -715,74 +733,159 @@ class ModifyArtistBox(object):
         sv_a_model.trace("w", checkfull)
         lbl_a_model = Label(self.root, text="Model: ")
         lbl_a_model.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(self.root, textvariable=sv_a_model).grid(
+        ent_a_model = Entry(self.root, textvariable=sv_a_model)
+        ent_a_model.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
+        Hovertip(ent_a_model, TooltipDict["ent_a_model"])
 
         #########
-        # Date Frame (write)
+        # Date and time data
         #########
         # https://stackoverflow.com/questions/4443786/how-do-i-create-a-date-picker-in-tkinter
-        lbl_e_sdate = Label(self.root, text="Start: ")
-        lbl_e_sdate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        date_e_start = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+        lbl_a_sdate = Label(self.root, text="Start: ")
+        lbl_a_sdate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        date_a_start = DateEntry(
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
-        date_e_start.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(date_e_start, TooltipDict["date_e_start"])
+        date_a_start.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(date_a_start, TooltipDict["date_a_start"])
 
-        tp_e_start = SpinTimePickerOld(self.root)
-        tp_e_start.addAll(constants.HOURS24)
-        tp_e_start.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # TODO check if the spintimepicker really is needed if one can instead use the spinboxes used for the timeshift
+        tp_a_start = SpinTimePickerOld(self.root)
+        tp_a_start.addAll(constants.HOURS24)
+        tp_a_start.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_a_start, TooltipDict["tp_a_start"])
 
         # End Date 
-        lbl_e_edate = Label(self.root, text="End: ")
-        lbl_e_edate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        date_e_end = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+        lbl_a_edate = Label(self.root, text="End: ")
+        lbl_a_edate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        date_a_end = DateEntry(
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
-        date_e_end.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(date_e_end, TooltipDict["date_e_end"])
+        date_a_end.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(date_a_end, TooltipDict["date_a_end"])
 
-        tp_e_end = SpinTimePickerOld(self.root)
-        tp_e_end.addAll(constants.HOURS24)
-        tp_e_end.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        tp_a_end = SpinTimePickerOld(self.root)
+        tp_a_end.addAll(constants.HOURS24)
+        tp_a_end.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_a_end, TooltipDict["tp_a_end"])
+
         # This is stupid but I did not find a way to access the variable directly
         for i in range(1, 24):
-            tp_e_end._24HrsTime.invoke("buttonup")
+            tp_a_end._24HrsTime.invoke("buttonup")
         for i in range(1, 60):
-            tp_e_end._minutes.invoke("buttonup")
+            tp_a_end._minutes.invoke("buttonup")
 
+        #############
+        # Timeshift #
+        # https://pythonguides.com/create-date-time-picker-using-python-tkinter/
+        #############
+        lbl_tshift = Label(self.root, text="Timeshift: ")
+        lbl_tshift.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        frame_tshift_vals = Frame(self.root)
+        frame_tshift_vals.grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        sv_tshift_d = StringVar()
+        sv_tshift_d.set("0")
+        lbl_tshift_d = Label(frame_tshift_vals, text="Days: ")
+        lbl_tshift_d.pack(side="left", fill="x", expand=1)
+        sp_a_shiftd = Spinbox(
+            frame_tshift_vals,
+            from_=-365*1000,
+            to=365*1000,
+            textvariable=sv_tshift_d,
+            width=3,
+            justify="left",
+            state="readonly",
+        )
+        sp_a_shiftd.pack(side="left", fill="x", expand=1)
+        Hovertip(sp_a_shiftd, TooltipDict["sp_a_shift"])
+
+        sv_tshift_h = StringVar()
+        sv_tshift_h.set("0")
+        lbl_tshift_h = Label(frame_tshift_vals, text="Hours: ")
+        lbl_tshift_h.pack(side="left", fill="x", expand=1)
+        sp_a_shifth = Spinbox(
+            frame_tshift_vals,
+            from_=-23,
+            to=23,
+            textvariable=sv_tshift_h,
+            width=3,
+            justify="left",
+            state="readonly",
+        )
+        sp_a_shifth.pack(side="left", fill="x", expand=1)
+        Hovertip(sp_a_shifth, TooltipDict["sp_a_shift"])
+
+        sv_tshift_m = StringVar()
+        sv_tshift_m.set("0")
+        lbl_tshift_m = Label(frame_tshift_vals, text="Minutes: ")
+        lbl_tshift_m.pack(side="left", fill="x", expand=1)
+        sp_a_shiftm = Spinbox(
+            frame_tshift_vals,
+            from_=-59,
+            to=59,
+            textvariable=sv_tshift_m,
+            width=3,
+            justify="left",
+            state="readonly",
+        )
+        sp_a_shiftm.pack(side="left", fill="x", expand=1)
+        Hovertip(sp_a_shiftm, TooltipDict["sp_a_shift"])
+
+        sv_tshift_s = StringVar()
+        sv_tshift_s.set("0")
+        lbl_tshift_s = Label(frame_tshift_vals, text="Seconds: ")
+        lbl_tshift_s.pack(side="left", fill="x", expand=1)
+        sp_a_shifts = Spinbox(
+            frame_tshift_vals,
+            from_=-59,
+            to=59,
+            textvariable=sv_tshift_s,
+            width=3,
+            justify="left",
+            state="readonly",
+        )
+        sp_a_shifts.pack(side="left", fill="x", expand=1)
+        Hovertip(sp_a_shifts, TooltipDict["sp_a_shift"])
+
+        #############################################################################
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         if elem != "":
             s_date = datetime.datetime.strptime(elm_a_data[4], "%Y-%m-%d %H:%M:%S")
-            date_e_start.set_date(s_date)
-            while tp_e_start.hours24() < s_date.hour:
-                tp_e_start._24HrsTime.invoke("buttonup")
-            while tp_e_start.minutes() < s_date.minute:
-                tp_e_start._minutes.invoke("buttonup")
+            date_a_start.set_date(s_date)
+            while tp_a_start.hours24() < s_date.hour:
+                tp_a_start._24HrsTime.invoke("buttonup")
+            while tp_a_start.minutes() < s_date.minute:
+                tp_a_start._minutes.invoke("buttonup")
 
             e_date = datetime.datetime.strptime(elm_a_data[5], "%Y-%m-%d %H:%M:%S")
-            # TODO for some reason does 2100 not get to the gui
-            # -> it is possible to have 2100 but the gui does shorten it to 31/12/00 so -> 2000
-            # 31/12/2100 works check if there is a setting
-            date_e_end.set_date(e_date)
-            while tp_e_end.hours24() > e_date.hour:
-                tp_e_end._24HrsTime.invoke("buttondown")
-            while tp_e_end.minutes() > e_date.minute:
-                tp_e_end._minutes.invoke("buttondown")
+            date_a_end.set_date(e_date)
+            while tp_a_end.hours24() > e_date.hour:
+                tp_a_end._24HrsTime.invoke("buttondown")
+            while tp_a_end.minutes() > e_date.minute:
+                tp_a_end._minutes.invoke("buttondown")
+
+            d, h, m, s = [x for x in elm_a_data[6].split(":")]
+            sv_tshift_s.set(s)
+            sv_tshift_m.set(m)
+            sv_tshift_h.set(h)
+            sv_tshift_d.set(d)
 
         def add():
             s_date = datetime.datetime.combine(
-                date_e_start.get_date(), datetime.datetime.min.time()
-            ) + datetime.timedelta(hours=tp_e_start.hours24(), minutes=tp_e_start.minutes())
+                date_a_start.get_date(), datetime.datetime.min.time()
+            ) + datetime.timedelta(hours=tp_a_start.hours24(), minutes=tp_a_start.minutes())
             e_date = datetime.datetime.combine(
-                date_e_end.get_date(), datetime.datetime.min.time()
-            ) + datetime.timedelta(hours=tp_e_end.hours24(), minutes=tp_e_end.minutes())
-            if elem == "":
+                date_a_end.get_date(), datetime.datetime.min.time()
+            ) + datetime.timedelta(hours=tp_a_end.hours24(), minutes=tp_a_end.minutes())
+            # Create time shift string from input spinboxes
+            time_shift = sv_tshift_d.get() + ":" + sv_tshift_h.get() + ":" + sv_tshift_m.get() + ":" + sv_tshift_s.get()
 
+            if elem == "":
                 # Call a function that returns the id of the person and adds the person
                 # if it is not yet present in the database
                 p_id = self.db.get_has_or_insert("persons", ("name", sv_a_name.get()))[1]
@@ -793,6 +896,7 @@ class ModifyArtistBox(object):
                     sv_a_model.get(),
                     s_date,
                     e_date,
+                    time_shift,
                 )
             else:
                 # Call a function that returns the id of the person and adds the person
@@ -805,33 +909,38 @@ class ModifyArtistBox(object):
                     elm_a_data[3],
                     elm_a_data[4],
                     elm_a_data[5],
+                    elm_a_data[6],
                     p_id,
                     sv_a_make.get(),
                     sv_a_model.get(),
                     s_date,
                     e_date,
+                    time_shift,
                 )
 
             self.changed = True
             self.root.destroy()
 
-        Button(
+        btn_abort = Button(
             self.root,
             text="Abort",
             command=self.closed,
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        )
+        btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_abort, TooltipDict["btn_abort"])
 
         # In update mode the button must not be disabled from the start,
         # because changes in the timecells can not be checked.
         # TODO it is possible to have empty time cells currently and the timepicker 
         # does not check for this itself
-        btn_add = Button(
+        btn_add_art = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
             state="disabled" if elem == "" else "normal",
         )
-        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        btn_add_art.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_add_art, TooltipDict["btn_add_art"])
 
         center_window(self.root)
 
@@ -871,9 +980,9 @@ class ModifyParticipantBox(object):
 
         def checkfull(*args):
             if sv_p_name.get():
-                btn_add.config(state="normal")
+                btn_add_part.config(state="normal")
             else:
-                btn_add.config(state="disabled")
+                btn_add_part.config(state="disabled")
 
         # Artist name input field
         # Get a list of all persons to select from
@@ -889,14 +998,14 @@ class ModifyParticipantBox(object):
         sv_p_name = StringVar()
         sv_p_name.set(name if elem != "" else "")
         sv_p_name.trace("w", checkfull)
-        cb_person_select = Combobox(self.root, textvariable=sv_p_name)
+        cb_part_person = Combobox(self.root, textvariable=sv_p_name)
         # Write file signatures
-        cb_person_select["values"] = list_persons
+        cb_part_person["values"] = list_persons
         # Place the widget
-        cb_person_select.grid(
+        cb_part_person.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
-        # Hovertip(cb_insig_select, TooltipDict["cb_person_select"]) # TODO
+        Hovertip(cb_part_person, TooltipDict["cb_part_person"])
 
         #########
         # Date Frame (write)
@@ -905,27 +1014,30 @@ class ModifyParticipantBox(object):
         lbl_p_sdate = Label(self.root, text="Start: ")
         lbl_p_sdate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         date_p_start = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
         date_p_start.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(date_p_start, TooltipDict["date_e_start"])
+        Hovertip(date_p_start, TooltipDict["date_p_start"])
 
         tp_p_start = SpinTimePickerOld(self.root)
         tp_p_start.addAll(constants.HOURS24)
         tp_p_start.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_p_start, TooltipDict["tp_p_start"])
 
         # End Date 
         lbl_p_edate = Label(self.root, text="End: ")
         lbl_p_edate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         date_p_end = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
         date_p_end.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(date_p_end, TooltipDict["date_e_end"])
+        Hovertip(date_p_end, TooltipDict["date_p_end"])
 
         tp_p_end = SpinTimePickerOld(self.root)
         tp_p_end.addAll(constants.HOURS24)
         tp_p_end.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_p_end, TooltipDict["tp_p_end"])
+        
         # This is stupid but I did not find a way to access the variable directly
         for i in range(1, 24):
             tp_p_end._24HrsTime.invoke("buttonup")
@@ -965,23 +1077,27 @@ class ModifyParticipantBox(object):
             self.changed = True
             self.root.destroy()
 
-        Button(
+        btn_abort = Button(
             self.root,
             text="Abort",
             command=self.closed,
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        )
+        btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_abort, TooltipDict["btn_abort"])
 
         # In update mode the button must not be disabled from the start,
         # because changes in the timecells can not be checked.
         # TODO it is possible to have empty time cells currently and the timepicker 
         # does not check for this itself
-        btn_add = Button(
+        btn_add_part = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
             state="disabled" if elem == "" else "normal",
         )
-        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        # TODO ew vs EW
+        btn_add_part.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_add_part, TooltipDict["btn_add_part"])
 
         center_window(self.root)
 
@@ -1033,8 +1149,9 @@ class ModifySubeventBox(object):
         sv_se_title.trace("w", checkfull)
         lbl_se_title = Label(self.root, text="Title: ")
         lbl_se_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(self.root, textvariable=sv_se_title).grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        # Hovertip(cb_insig_select, TooltipDict["cb_person_select"]) # TODO
+        ent_se_title = Entry(self.root, textvariable=sv_se_title)
+        ent_se_title.grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(ent_se_title, TooltipDict["ent_se_title"])
 
         #########
         # Date Frame (write)
@@ -1043,27 +1160,30 @@ class ModifySubeventBox(object):
         lbl_se_sdate = Label(self.root, text="Start: ")
         lbl_se_sdate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         date_se_start = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
         date_se_start.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(date_se_start, TooltipDict["date_e_start"])
+        Hovertip(date_se_start, TooltipDict["date_se_start"])
 
         tp_se_start = SpinTimePickerOld(self.root)
         tp_se_start.addAll(constants.HOURS24)
         tp_se_start.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_se_start, TooltipDict["tp_se_start"])
 
         # End Date 
         lbl_se_edate = Label(self.root, text="End: ")
         lbl_se_edate.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         date_se_end = DateEntry(
-            self.root, width=12, background="darkblue", foreground="white", borderwidth=2
+            self.root, width=12, background="darkblue", foreground="white", borderwidth=2, date_pattern="mm/dd/yyyy"
         )
         date_se_end.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(date_se_end, TooltipDict["date_e_end"])
+        Hovertip(date_se_end, TooltipDict["date_se_end"])
 
         tp_se_end = SpinTimePickerOld(self.root)
         tp_se_end.addAll(constants.HOURS24)
         tp_se_end.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(tp_se_end, TooltipDict["tp_se_end"])
+        
         # This is stupid but I did not find a way to access the variable directly
         for i in range(1, 24):
             tp_se_end._24HrsTime.invoke("buttonup")
@@ -1082,9 +1202,7 @@ class ModifySubeventBox(object):
                 tp_se_start._minutes.invoke("buttonup")
 
             e_date = datetime.datetime.strptime(elem_se_data[3], "%Y-%m-%d %H:%M:%S")
-            # TODO for some reason does 2100 not get to the gui
-            # -> it is possible to have 2100 but the gui does shorten it to 31/12/00 so -> 2000
-            # 31/12/2100 works check if there is a setting
+
             date_se_end.set_date(e_date)
             while tp_se_end.hours24() > e_date.hour:
                 tp_se_end._24HrsTime.invoke("buttondown")
@@ -1103,23 +1221,26 @@ class ModifySubeventBox(object):
             self.changed = True
             self.root.destroy()
 
-        Button(
+        btn_abort = Button(
             self.root,
             text="Abort",
             command=self.closed,
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        )
+        btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_abort, TooltipDict["btn_abort"])
 
         # In update mode the button must not be disabled from the start,
         # because changes in the timecells can not be checked.
         # TODO it is possible to have empty time cells currently and the timepicker 
         # does not check for this itself
-        btn_add = Button(
+        btn_add_sube = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
             state="disabled" if elem == "" else "normal",
         )
-        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        btn_add_sube.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_add_sube, TooltipDict["btn_add_sube"])
 
         center_window(self.root)
 
@@ -1156,9 +1277,9 @@ class ModifyPersonBox(object):
 
         def checkfull(*args):
             if sv_p_name.get():
-                btn_add.config(state="normal")
+                btn_add_psn.config(state="normal")
             else:
-                btn_add.config(state="disabled")
+                btn_add_psn.config(state="disabled")
 
         # Person name input field
         sv_p_name = StringVar()
@@ -1166,9 +1287,11 @@ class ModifyPersonBox(object):
         sv_p_name.trace("w", checkfull)
         lbl_p_name = Label(self.root, text="Name: ")
         lbl_p_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Entry(self.root, textvariable=sv_p_name).grid(
+        ent_p_name = Entry(self.root, textvariable=sv_p_name)
+        ent_p_name.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
+        Hovertip(ent_p_name, TooltipDict["ent_p_name"])
 
         def add():
             if elem == "":
@@ -1184,19 +1307,22 @@ class ModifyPersonBox(object):
             self.changed = True
             self.root.destroy()
 
-        Button(
+        btn_abort = Button(
             self.root,
             text="Abort",
             command=self.closed,
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        )
+        btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        btn_add = Button(
+        btn_add_psn = Button(
             self.root,
             text="Add" if elem == "" else "Update",
             command=add,
             state="disabled",
         )
-        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        btn_add_psn.grid(row=self.row(), column=3, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Hovertip(btn_add_psn, TooltipDict["btn_add_psn"])
 
         center_window(self.root)
 
