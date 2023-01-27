@@ -54,9 +54,11 @@ TooltipDict = {
     # Add/Mod subevent window
     "ent_se_title": "Enter the title of the subevent.",
     "date_se_start": "Select the start day of the subevent.",
-    "tp_se_start": "Select the start time of the subevent.",
+    "hs_se_start": "Select the start hour of the subevent.",
+    "ms_se_start": "Select the start minute of the subevent.",
     "date_se_end": "Select the end day of the subevent.",
-    "tp_se_end": "Select the end time of the subevent.",
+    "hs_se_end": "Select the end hour of the subevent.",
+    "ms_se_end": "Select the end minute of the subevent.",
     # Add/Mod artist window
     "cb_a_person": "Enter or select the person that is the artist.",
     "ent_a_make": "Set the camera make of the artist.",
@@ -67,9 +69,11 @@ TooltipDict = {
     "tp_a_end": "Select the end time of the artist.",
     "sp_a_shift": "Enter a time correction for the time stamp of all images of this artist.",
     "btn_add_art": "Add this artist to the database.",
+    "btn_update_art": "Update this artists data.",
     # Add/Mod person window
     "ent_p_name": "Enter or modify the name of the person.",
     "btn_add_psn": "Add this person to the database.",
+    "btn_update_psn": "Update this persons name.",
     # Misc
     "btn_abort": "Close this window and return to the previous one \
         \nwithout applying any changes.",

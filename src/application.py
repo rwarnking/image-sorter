@@ -66,8 +66,9 @@ class MainApp:
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_details(window)
 
-        self.run_button = Button(window, text="Dew it", command=lambda: self.run(window))
-        self.run_button.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
+        btn_run = Button(window, text="Dew it", command=lambda: self.run(window))
+        btn_run.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
+        Hovertip(btn_run, TooltipDict["btn_run"])
 
         self.db.set_out_text(self.details_text)
 
@@ -211,7 +212,7 @@ class MainApp:
 
     def init_database_system(self, window):
         def create_modifydb_box(dir):
-            box = ModifyDBBox(
+            ModifyDBBox(
                 "Modify Database",
                 "Inspect, modify, add and delete entries from the database.",
                 self.db,
@@ -219,87 +220,15 @@ class MainApp:
             )
 
         # Load events from file
-        btn_modify_database = Button(
+        btn_mod_db = Button(
             window,
             text="Modify Database",
             command=lambda: create_modifydb_box(self.meta_info.event_src),
         )
-        btn_modify_database.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_mod_db.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_mod_db, TooltipDict["btn_mod_db"])
 
     def init_checkboxes(self, window):
-        #########
-        # Time shift combobox
-        #########
-        frame_tshift_sel = Frame(window)
-        frame_tshift_sel.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        lbl_tshift_sel = Label(frame_tshift_sel, text="Time Shift: ")
-        lbl_tshift_sel.pack(side="left", fill="x", expand=1)
-        list_shift_actions = ["Forward", "None", "Backward"]
-        self.meta_info.shift_selection.set(list_shift_actions[1])
-
-        cb_shift_select = Combobox(frame_tshift_sel, textvariable=self.meta_info.shift_selection)
-        # Write event values from database
-        cb_shift_select["values"] = list_shift_actions
-        # Prevent typing a value
-        cb_shift_select["state"] = "readonly"
-        # Place the widget
-        cb_shift_select.pack(side="left", fill="x", expand=1)
-        Hovertip(cb_shift_select, TooltipDict["cb_shift_select"])
-
-        #########
-        # Time shift values
-        #########
-        vcmd = window.register(lambda P: str.isdigit(P) or P == "")
-        frame_tshift_vals = Frame(window)
-        frame_tshift_vals.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
-        lbl_tshift_d = Label(frame_tshift_vals, text="Days: ")
-        lbl_tshift_d.pack(side="left", fill="x", expand=1)
-        Entry(
-            frame_tshift_vals,
-            textvariable=self.meta_info.shift_days,
-            width=3,
-            justify="right",
-            validate="all",
-            validatecommand=(vcmd, "%P"),
-        ).pack(side="left", fill="x", expand=1)
-
-        lbl_tshift_h = Label(frame_tshift_vals, text="Hours: ")
-        lbl_tshift_h.pack(side="left", fill="x", expand=1)
-        Entry(
-            frame_tshift_vals,
-            textvariable=self.meta_info.shift_hours,
-            width=3,
-            justify="right",
-            validate="all",
-            validatecommand=(vcmd, "%P"),
-        ).pack(side="left", fill="x", expand=1)
-
-        lbl_tshift_m = Label(frame_tshift_vals, text="Minutes: ")
-        lbl_tshift_m.pack(side="left", fill="x", expand=1)
-        Entry(
-            frame_tshift_vals,
-            textvariable=self.meta_info.shift_minutes,
-            width=3,
-            justify="right",
-            validate="all",
-            validatecommand=(vcmd, "%P"),
-        ).pack(side="left", fill="x", expand=1)
-
-        lbl_tshift_s = Label(frame_tshift_vals, text="Seconds: ")
-        lbl_tshift_s.pack(side="left", fill="x", expand=1)
-        Entry(
-            frame_tshift_vals,
-            textvariable=self.meta_info.shift_seconds,
-            width=3,
-            justify="right",
-            validate="all",
-            validatecommand=(vcmd, "%P"),
-        ).pack(side="left", fill="x", expand=1)
-
-        ###################
-        # General buttons #
-        ###################
         Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
             row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
         )

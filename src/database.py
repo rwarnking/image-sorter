@@ -5,6 +5,8 @@ from re import sub
 from tkinter import END
 from typing import Dict, List, Tuple, Union
 
+from error_messages import WarningCodes
+
 
 class Database:
     def __init__(self, path: str = "database.db"):
@@ -132,12 +134,13 @@ class Database:
             json_data["subevents"].append(
                 {
                     "seid": elem[0],
-                    "title": elem[1],
+                    "event_id": elem[1],
+                    "title": elem[2],
                     "start": {
-                        "date": elem[2],
+                        "date": elem[3],
                     },
                     "end": {
-                        "date": elem[3],
+                        "date": elem[4],
                     },
                 }
             )
@@ -262,6 +265,7 @@ class Database:
         return result
 
     # TODO checken das bei has elem auch immer das ganze array uebergeben wird
+    # TODO rename to has ()
     def has_elem(self, table: str, *args: Tuple[str, ...]) -> bool:
         where, vals = self.get_where_and_vals(args)
         if where == "":
@@ -477,7 +481,7 @@ class Database:
     #######################
     # Participant related #
     #######################
-    # TODO checkts that the person and event exist? or this done automatically?
+    # TODO checks that the person and event exist? or this done automatically?
     def test_participant_input(self, paid: int, person_id: int, event_id: int, start_date, end_date):
         if end_date < start_date:
             self.out_text.insert(END, "Could not add Event: end date < start date!\n")
@@ -491,6 +495,24 @@ class Database:
         if paid < 1:
             self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
             return False
+
+        # TODO
+        # Since a person can only be at one place at once all participant entries
+        # with the same person id are checked if they have overlapping time dates
+        for part in self.get("participants", ("person_id", person_id)):
+            # Check if start date lies in time frame 
+            if part[3] < start_date and part[4] > start_date:
+                self.out_text.insert(END, "Could not add Event: This persons is already somewhere else (start date overlaps)!\n")
+                return False
+            # Check if end date lies in time frame
+            if part[3] < end_date and part[4] > end_date:
+                self.out_text.insert(END, "Could not add Event: This persons is already somewhere else (end date overlaps)!\n")
+                return False
+            # Check if start date being smaller and end date being bigger than compared time frame
+            if part[3] > start_date and part[4] < end_date:
+                self.out_text.insert(END, "Could not add Event: This persons is already somewhere else (complete time frame overlaps)!\n")
+                return False
+
         return True
 
     # TODO person and event id vertausch
@@ -532,6 +554,30 @@ class Database:
             self.out_text.insert(END, f"Participant already present (eid: {paid}).\n")
             self.out_text.insert(END, f"Participant not added (person_id: {person_id}, event_id: {event_id}, start: {start_date}, end: {end_date}).\n")
 
+    # Since a person can only be at one place at once all participant entries
+    # with the same person name are checked if they have overlapping time dates
+    # TODO write wrapper method for this, very similar to test_artist_time_frame
+    def test_participant_time_frame(self, name: str, start_date, end_date):
+        # TODO unsafe
+        person_id = self.get("persons", ("name", name))[0][0]
+
+        for part in self.get("participants", ("person_id", person_id)):
+            s_date = datetime.datetime.strptime(part[3], "%Y-%m-%d %H:%M:%S")
+            e_date = datetime.datetime.strptime(part[4], "%Y-%m-%d %H:%M:%S")
+            # Check if start date lies in time frame 
+            if s_date < start_date and start_date < e_date:
+                return WarningCodes.WARNING_DATE_OVERLAP_START
+            # Check if end date lies in time frame
+            if s_date < end_date and end_date < e_date:
+                return WarningCodes.WARNING_DATE_OVERLAP_END
+            # Check if start date being smaller and end date being bigger than compared time frame
+            if start_date < s_date and e_date < end_date:
+                return WarningCodes.WARNING_DATE_OVERLAP_BOTH
+            # Check if the start date lies beyond the end date
+            if start_date > end_date:
+                return WarningCodes.WARNING_DATE_SWAP
+
+        return None
 
     # TODO unused & untested?
     def delete_participant(self, person_id: int, event_id: int, start_date, end_date):
@@ -641,9 +687,9 @@ class Database:
     def delete_event(self, title: str, s_date: str, e_date: str):
         """
         Delete the selected event.
+        Its subevents and participants are automatically deleted too.
         """
         self.delete("events", ("title", title), ("start_date", s_date), ("end_date", e_date))
-        # TODO if main event delete subevents needed?
 
     def clean_events(self):
         """
@@ -808,6 +854,24 @@ class Database:
     ##################
     # Artist related #
     ##################
+    def test_artist_time_frame(self, person_id: int, make: str, model: str, start_date, end_date):
+        for artist in self.get("artists", ("person_id", person_id), ("make", make), ("model", model)):
+            s_date = datetime.datetime.strptime(artist[4], "%Y-%m-%d %H:%M:%S")
+            e_date = datetime.datetime.strptime(artist[5], "%Y-%m-%d %H:%M:%S")
+            # Check if start date lies in time frame
+            if s_date <= start_date and start_date < e_date:
+                return WarningCodes.WARNING_DATE_OVERLAP_START
+            # Check if end date lies in time frame
+            if s_date < end_date and end_date <= e_date:
+                return WarningCodes.WARNING_DATE_OVERLAP_END
+            # Check if start date being smaller and end date being bigger than compared time frame
+            if start_date <= s_date and e_date <= end_date:
+                return WarningCodes.WARNING_DATE_OVERLAP_BOTH
+            # Check if the start date lies beyond the end date
+            if start_date > end_date:
+                return WarningCodes.WARNING_DATE_SWAP
+        return None
+
     def test_artist_input(self, aid: int, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
         if end_date < start_date:
             self.out_text.insert(END, "Could not add Artist: end date < start date!\n")
