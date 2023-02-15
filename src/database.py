@@ -5,18 +5,24 @@ from re import sub
 from tkinter import END
 from typing import Dict, List, Tuple, Union
 
-from error_messages import WarningCodes
+from debug_messages import InfoCodes
+from helper import test_time_frame
+from collections.abc import Iterable
 
 
 class Database:
+    """
+    A participant: participant_id, person_id, event_id, start_date, end_date
+    It was decided to link to a person instead of an artist, since like this:
+    1. there can be attending persons, which are not an artist
+    2. it is not necessary to have N participants for a person, that 
+       uses multiple (N) divices
+    """
     def __init__(self, path: str = "database.db"):
         self.conn = sqlite3.connect(path)
         self.conn.execute("PRAGMA foreign_keys = 1")
         self.create_tables()
         self.conn.commit()
-
-    def set_out_text(self, out_text):
-        self.out_text = out_text
 
     def create_tables(self):
         self.conn.execute(
@@ -31,7 +37,7 @@ class Database:
             event_id INT NOT NULL, \
             title STRING, start_date DATE, end_date DATE, \
             FOREIGN KEY (event_id) \
-                REFERENCES events (eid) ON DELETE CASCADE)"
+                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)"
         )
 
         self.conn.execute(
@@ -43,7 +49,7 @@ class Database:
             aid INTEGER PRIMARY KEY ASC, \
             person_id INT, make TEXT, model TEXT, \
             start_date DATE, end_date DATE, time_shift TEXT, \
-            FOREIGN KEY (person_id) REFERENCES persons (pid) ON DELETE CASCADE)"
+            FOREIGN KEY (person_id) REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)"
         )
 
         self.conn.execute("CREATE TABLE IF NOT EXISTS participants (\
@@ -51,9 +57,9 @@ class Database:
             person_id INT NOT NULL, event_id INT NOT NULL, \
             start_date DATE, end_date DATE, \
             FOREIGN KEY (event_id) \
-                REFERENCES events (eid) ON DELETE CASCADE, \
+                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE, \
             FOREIGN KEY (person_id) \
-                REFERENCES persons (pid) ON DELETE CASCADE)"
+                REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)"
         )
 
     def load_from_file(self, file):
@@ -101,6 +107,7 @@ class Database:
                     datetime.datetime.strptime(participant["start"]["date"], "%Y-%m-%d %H:%M:%S"),
                     datetime.datetime.strptime(participant["end"]["date"], "%Y-%m-%d %H:%M:%S"),
                 )
+        return InfoCodes.LOAD_SUCCESS            
 
     def save_to_file(self, file):
         """
@@ -192,61 +199,72 @@ class Database:
 
         with open(file, "w") as outfile:
             json.dump(json_data, outfile, indent=4)
-        self.out_text.insert(END, f"All tables were saved to file {file}.\n")
+        return InfoCodes.SAVE_SUCCESS
 
-    # Unused
     def clean_all(self):
-        self.clean_events()
-        self.clean_artists()
-        self.clean_persons()
-        self.clean_participants()
+        """
+        OBACHT: Unused
+        """
+        self.clean("events")
+        self.clean("artists")
+        self.clean("persons")
+        self.clean("participants")
+        self.clean("subevents")
 
-        self.out_text.insert(END, "All table entrys were deleted.\n")
+        return InfoCodes.CLEAN_ALL_SUCCESS
 
-    ######################
-    # Generell functions #
-    ######################
+    ###############################################################################################
+    # Generell functions
+    ###############################################################################################
+    def assert_tuple_list(self, list):
+        """
+        Assertion function to guarantee that the the argument is a list of valid touples.
+        """
+        assert isinstance(list, Iterable), "Argument is not iterable!"
+        assert len(list) > 0, "List is to short, no elements found!"
+        for e in list:
+            assert isinstance(e, Tuple), f"Element of list ({e}) is not a tuple."
+            assert len(e) == 2 or len(e) == 3, f"Element of list ({e}) is to short."
+            assert e[0] != "", f"First part of list-element ({e}) is an empty string."
+            assert isinstance(e[0], str), f"First part of list-element ({e}) is not a string."
+            assert e[1] != "", f"Second part of list-element ({e}) is an empty string."
+            assert e[1] is not None, f"Second part of list-element ({e}) is none."
+
     def get_setter_qmarks_vals(self, args: Tuple[Tuple[str, ...], ...]):
+        self.assert_tuple_list(args)
         setter: str = ""
         qmarks: str = ""
         vals: Tuple[Union[str, datetime.datetime], ...] = ()
         for pair in args:
-            if pair[1] == "":
-                self.out_text.insert(END, f"Ignored attr {pair[0]} (Missing value)!\n")
-            else:
-                if setter != "":
-                    setter += ", "
-                    qmarks += ", "
-                setter += pair[0]
-                qmarks += "?"
-                vals += (pair[1],)
+            if setter != "":
+                setter += ", "
+                qmarks += ", "
+            setter += pair[0]
+            qmarks += "?"
+            vals += (pair[1],)
         return setter, qmarks, vals
 
     def get_where_and_vals(self, args: Tuple[Tuple[str, ...], ...]):
+        self.assert_tuple_list(args)
         where: str = ""
         vals: Tuple[Union[str, datetime.datetime], ...] = ()
         for pair in args:
-            if pair[1] == "":
-                self.out_text.insert(END, f"Ignored attr {pair[0]} (Missing value)!\n")
-            else:
-                if where != "":
-                    where += "AND "
-                where += pair[0] + "=? "
-                vals += (pair[1],)
+            if where != "":
+                where += "AND "
+            where += pair[0] + "=? "
+            vals += (pair[1],)
 
         return where, vals
 
     def get_setter(self, args: Tuple[Tuple[str, ...], ...]):
+        self.assert_tuple_list(args)
         setter: str = ""
         vals: Tuple[Union[str, datetime.datetime], ...] = ()
         for pair in args:
-            if pair[2] == "":
-                self.out_text.insert(END, f"Ignored attr {pair[0]} (Missing value)!\n")
-            else:
-                if setter != "":
-                    setter += ", "
-                setter += pair[0] + "=? "
-                vals += (pair[2],)
+            if setter != "":
+                setter += ", "
+            setter += pair[0] + "=? "
+            vals += (pair[2],)
         return setter, vals
 
     def get_all(self, table: str):
@@ -257,6 +275,8 @@ class Database:
 
     def get(self, table: str, *args: Tuple[str, str]):
         where, vals = self.get_where_and_vals(args)
+        assert where != ""
+        assert len(vals) > 0
 
         query = f"SELECT * FROM {table} WHERE {where}"
         cur = self.conn.execute(query, vals)
@@ -264,73 +284,102 @@ class Database:
         cur.close()
         return result
 
-    # TODO checken das bei has elem auch immer das ganze array uebergeben wird
-    # TODO rename to has ()
-    def has_elem(self, table: str, *args: Tuple[str, ...]) -> bool:
-        where, vals = self.get_where_and_vals(args)
-        if where == "":
-            return False
-
-        # TODO use get function
-        query = f"SELECT * FROM {table} WHERE {where}"
-        cur = self.conn.execute(query, vals)
+    def get_by_date(self, table: str, date: datetime.datetime):
+        """
+        Get all elements from the table with the specified date.
+        """
+        cur = self.conn.execute(
+            f"SELECT * FROM {table} WHERE start_date<=? AND end_date>=?",
+            (date, date),
+        )
         result = cur.fetchall()
         cur.close()
+        return result
+
+    def has(self, table: str, *args: Tuple[str, ...]) -> bool:
+        """
+        This function test the given table if it contains an element
+        with the given attributes. Obviously the input must match the
+        columns of the table.
+        There are no individual table functions for checking this,
+        since it is unpredictable which attributes the user might want
+        to test against. For example if the function would require
+        make and model of an artist, the user could not just check against
+        the model. This function does allow such special cases.
+        """
+        result = self.get(table, *args)
 
         # Return the id if present
-        if len(result) > 0:
-            return result[0][0]
-        return False
+        return result[0][0] if len(result) > 0 else False
 
     def insert(self, table: str, *args: Tuple[str, ...]):
         setter, qmarks, vals = self.get_setter_qmarks_vals(args)
 
         # If the element is not already present add
-        has_elem = self.has_elem(table, *args)
-        if not has_elem:
+        if not self.has(table, *args):
             query = f"INSERT INTO {table} ({setter}) VALUES ({qmarks})"
-            cur = self.conn.execute(query, vals)
+            self.conn.execute(query, vals)
             self.conn.commit()
-            return True, cur.lastrowid
+            return InfoCodes.ADD_SUCCESS
         else:
-            return False, has_elem
+            return InfoCodes.ADD_ERROR
 
-    # TODO test this !!!
     def insert_with_id(self, table: str, *args: Tuple[str, ...]):
+        """
+        This function adds an element to the table with the specified id.
+        This should only be used, if the it is important to keep the id,
+        for example when the user has predefinied data which reuses the id.
+        In case the user wants to load a complete database from a file,
+        this would be the case, since there are already references between
+        the different elements.
+
+        Steps of the function:
+        1. Check wether an identical element is already present, in which case nothing happens.
+        2. Check wether the id is already taken by another element.
+           In this case the present element is shifted to another id,
+           and all its references must also be adjusted.
+        3. Check wether the element is present using a different id.
+           In this case the element is shifted to the new id,
+           which is guaranteed to be unused since we would have shifted it in 2 otherwise.
+           All the present references to the old id must also be shifted.
+        4. Lastly the element is added.
+
+        Currently this function is only used for loading from a file.
+        Other use is discuraged.
+        """
         setter, qmarks, vals = self.get_setter_qmarks_vals(args)
 
-        # If the element is not already present add
-        # Check if the element is present with the same id
-        has_elem = self.has_elem(table, *args)
-        if has_elem:
-            # Do not add since the element is already present
-            return False, has_elem
+        # If the element is already present with the same id it is not added
+        if self.has(table, *args):
+            return InfoCodes.ADD_ERROR
 
-        # Check if the id is taken
-        has_elem = self.has_elem(table, args[0])
-        if has_elem:
-            # Shift the element with the same id
-            # TODO this does not work since sqlite does not fill empty slots
-            count = len(self.get_all(table))
+        # If the id is already taken the present element is shifted out of the way.
+        if has_elem:= self.has(table, args[0]):
+            # Shift the element to the biggest index
+            # All elements with reference to the old element are also shifted via ON UPDATE CASCADE
+            count = self.get_biggest_row_id(table)
             self.update(table, (args[0][0], has_elem, count + 1))
 
-        # Check if it is present under another id
-        has_elem = self.has_elem(table, *args[1:])
-        if has_elem:
-            # Shift the element to the current id
+        # If the insertion element is present in the table using a different id,
+        # it should be shifted to the new one. The new id is guaranteed to be available,
+        # since the potential element was shifted in the previos step.
+        if has_elem:= self.has(table, *args[1:]):
+            # All elements with reference to the old element are also shifted via ON UPDATE CASCADE
             self.update(table, (args[0][0], has_elem, args[0][1]))
-            return False, args[0][1]
+            return InfoCodes.ADD_SUCCESS_AFTER_SHIFT
 
         # Add the element since it is not yet in the table
         query = f"INSERT INTO {table} ({setter}) VALUES ({qmarks})"
-        cursor = self.conn.execute(query, vals)
+        self.conn.execute(query, vals)
         self.conn.commit()
 
-        return True, cursor.lastrowid
+        return InfoCodes.ADD_SUCCESS
 
-    # https://www.alphacodingskills.com/sqlite/notes/sqlite-func-last-insert-rowid.php
     def get_last_row_id(self):
-        # last_insert_rowid return 0 when no row was inserted
+        """
+        https://www.alphacodingskills.com/sqlite/notes/sqlite-func-last-insert-rowid.php
+        """
+        # last_insert_rowid returns (0,) when no row was inserted
         query = f"SELECT last_insert_rowid()"
         cursor = self.conn.execute(query)
         # Get first element of tuple
@@ -342,12 +391,32 @@ class Database:
         else:
             raise IndexError("No last row for this database connection present!")
 
+    def get_biggest_row_id(self, table):
+        """
+        Returns the biggest index available for the table.
+        OBACHT: It is not possible to just use the length of the table for this,
+        since the user could add 3 elements and delete one,
+        then the table would be two long and the resulting index 3, 
+        but the needed index is 4.
+        https://stackoverflow.com/questions/23742208/fetch-the-last-row-of-a-cursor-with-sqlite
+        """
+        query = f"SELECT * FROM {table} ORDER BY 1 DESC LIMIT 1"
+        cursor = self.conn.execute(query)
+        result = cursor.fetchone()
+        cursor.close()
+
+        if result:
+            # Get first element of tuple
+            return result[0]
+        else:
+            raise IndexError("No last row for this database connection present!")
+
     # TODO one to one doublicate of insert function
     def get_has_or_insert(self, table: str, *args: Tuple[str, ...]):
         setter, qmarks, vals = self.get_setter_qmarks_vals(args)
 
         # If the element is not already present add
-        has_elem = self.has_elem(table, *args)
+        has_elem = self.has(table, *args)
         if not has_elem:
             query = f"INSERT INTO {table} ({setter}) VALUES ({qmarks})"
             cur = self.conn.execute(query, vals)
@@ -361,546 +430,73 @@ class Database:
         setter, vals2 = self.get_setter(args)
         vals = vals2 + vals1
 
-        if self.has_elem(table, *args):
+        if self.has(table, *args):
             query = f"UPDATE {table} SET {setter} WHERE {where}"
             self.conn.execute(query, vals)
             self.conn.commit()
-            self.out_text.insert(END, f"From table {table}, {args} was updated.\n")
+            return InfoCodes.MOD_SUCCESS
         else:
-            self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
+            return InfoCodes.MOD_ERROR
 
     def delete(self, table: str, *args: Tuple[str, str]):
         where, vals = self.get_where_and_vals(args)
 
-        # TODO delete if present
-        # if self.has_elem(table, *args):
-        query = f"DELETE FROM {table} WHERE {where}"
-        self.conn.execute(query, vals)
-        self.conn.commit()
-        self.out_text.insert(END, f"From table {table}, {args} was deleted.\n")
-        # else:
-            # TODO no entries were found
-            # self.out_text.insert(END, f"In table {table}, {args} was not found.\n")
+        if self.has(table, *args):
+            query = f"DELETE FROM {table} WHERE {where}"
+            self.conn.execute(query, vals)
+            self.conn.commit()
+            return InfoCodes.DEL_SUCCESS
+        else:
+            return InfoCodes.DEL_ERROR
+
+    def clean(self, table):
+        """
+        Delete all entries of this database table.
+        """
+        self.conn.execute(f"DROP TABLE IF EXISTS {table}")
+
+        # Since this is a generic function it is sadly necessary to
+        # call the function to create all tables.
+        # (There are no function for creating each solo table)
+        self.create_tables()
+
+        return InfoCodes.CLEAN_SUCCESS
 
     def print_table(self, table: str):
+        """
+        Debugging function for printing the table contents to the console.
+        """
         cur = self.conn.execute(f"SELECT * FROM {table}")
-        result = cur.fetchall()
+        res = cur.fetchall()
         cur.close()
-        if len(result) == 0:
-            self.out_text.insert(END, f"{table} table empty.\n")
-        else: 
-            self.out_text.insert(END, f"Content of table {table}.\n")
-            for r in result:
-                self.out_text.insert(END, str(r) + "\n")
 
-        # TODO autoscroll text box by using this
-        # Scroll text to the end
-        self.out_text.yview(END)
-
-    ##################
-    # Person related #
-    ##################
-    def test_person_input(self, pid: int, name: str):
-        if name == "":
-            self.out_text.insert(END, "Could not add Person: Missing name!\n")
-            return False
-        if pid < 1:
-            self.out_text.insert(END, "Could not add Person: Id must be greater than 0!\n")
-            return False
-        return True
-
-    def insert_person(self, name: str):
-        if not self.test_person_input(1, name):
-            return
-
-        res, pid = self.insert(
-            "persons",
-            ("name", name),
-        )
-        if res:
-            self.out_text.insert(END, f"Person added (pid: {pid}, name: {name}).\n")
-        else:
-            self.out_text.insert(END, f"Person already present (pid: {pid}).\n")
-            self.out_text.insert(END, f"Person not added (name: {name}).\n")
-
-    def insert_person_with_id(self, pid: int, name: str):
-        if not self.test_person_input(pid, name):
-            return
-
-        res, pid = self.insert_with_id(
-            "persons",
-            ("pid", pid),
-            ("name", name),
-        )
-        if res:
-            self.out_text.insert(END, f"Person added (pid: {pid}, name: {name}).\n")
-        else:
-            self.out_text.insert(END, f"Person already present (pid: {pid}).\n")
-            self.out_text.insert(END, f"Person not added (name: {name}).\n")
-
-    def update_person(self, name: str, n_name: str):
-        """
-        Update the selected person.
-        """
-        if not self.test_person_input(1, n_name):
-            return
-
-        # Remove unwanted characters
-        # TODO + sql injection?
-        str(n_name).replace(" ", "")
-        str(n_name).replace("-", "")
-        str(n_name).replace("_", "")
-
-        self.update(
-            "persons",
-            ("name", name, n_name),
-        )
-
-    # TODO unused?
-    def delete_person(self, name: str):
-        """
-        Delete the selected event.
-        """
-        self.delete("persons", ("name", name))
-
-    def clean_persons(self):
-        """
-        Delete all persons in the database.
-        """
-        self.conn.execute("DROP TABLE IF EXISTS persons")
-
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS persons (pid INTEGER PRIMARY KEY ASC, name STRING)"
-        )
-
-        self.out_text.insert(END, "All person entrys were deleted.\n")
-
-    def print_persons(self):
-        self.print_table("persons")
-
-    #######################
-    # Participant related #
-    #######################
-    # TODO checks that the person and event exist? or this done automatically?
-    def test_participant_input(self, paid: int, person_id: int, event_id: int, start_date, end_date):
-        if end_date < start_date:
-            self.out_text.insert(END, "Could not add Event: end date < start date!\n")
-            return False
-        if person_id < 1:
-            self.out_text.insert(END, "Could not add Event: Person Id must be greater than 0!\n")
-            return False
-        if event_id < 1:
-            self.out_text.insert(END, "Could not add Event: Event Id must be greater than 0!\n")
-            return False
-        if paid < 1:
-            self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
-            return False
-
-        # TODO
-        # Since a person can only be at one place at once all participant entries
-        # with the same person id are checked if they have overlapping time dates
-        for part in self.get("participants", ("person_id", person_id)):
-            # Check if start date lies in time frame 
-            if part[3] < start_date and part[4] > start_date:
-                self.out_text.insert(END, "Could not add Event: This persons is already somewhere else (start date overlaps)!\n")
-                return False
-            # Check if end date lies in time frame
-            if part[3] < end_date and part[4] > end_date:
-                self.out_text.insert(END, "Could not add Event: This persons is already somewhere else (end date overlaps)!\n")
-                return False
-            # Check if start date being smaller and end date being bigger than compared time frame
-            if part[3] > start_date and part[4] < end_date:
-                self.out_text.insert(END, "Could not add Event: This persons is already somewhere else (complete time frame overlaps)!\n")
-                return False
-
-        return True
-
-    # TODO person and event id vertausch
-    def insert_participant(self, person_id: int, event_id: int, start_date, end_date):
-        if not self.test_participant_input(1, person_id, event_id, start_date, end_date):
-            return
-
-        res, paid = self.insert(
-            "participants",
-            ("person_id", person_id),
-            ("event_id", event_id),
-            ("start_date", start_date),
-            ("end_date", end_date),
-        )
-
-        if res:
-            self.out_text.insert(END, f"Participant added (eid: {paid}, person_id: {person_id}, event_id: {event_id}, start: {start_date}, end: {end_date}).\n")
-        else:
-            self.out_text.insert(END, f"Participant already present (eid: {paid}).\n")
-            self.out_text.insert(END, f"Participant not added (person_id: {person_id}, event_id: {event_id}, start: {start_date}, end: {end_date}).\n")
-
-    def insert_participant_with_id(self, paid: int, person_id: int, event_id: int, start_date, end_date):
-        if not self.test_participant_input(paid, person_id, event_id, start_date, end_date):
-            return
-
-        res, paid = self.insert_with_id(
-            "participants",
-            ("paid", paid),
-            ("person_id", person_id),
-            ("event_id", event_id),
-            ("start_date", start_date),
-            ("end_date", end_date),
-        )
-
-        # TODO additional information like person name and eventtitle
-        if res:
-            self.out_text.insert(END, f"Participant added (eid: {paid}, person_id: {person_id}, event_id: {event_id}, start: {start_date}, end: {end_date}).\n")
-        else:
-            self.out_text.insert(END, f"Participant already present (eid: {paid}).\n")
-            self.out_text.insert(END, f"Participant not added (person_id: {person_id}, event_id: {event_id}, start: {start_date}, end: {end_date}).\n")
-
-    # Since a person can only be at one place at once all participant entries
-    # with the same person name are checked if they have overlapping time dates
-    # TODO write wrapper method for this, very similar to test_artist_time_frame
-    def test_participant_time_frame(self, name: str, start_date, end_date):
-        # TODO unsafe
-        person_id = self.get("persons", ("name", name))[0][0]
-
-        for part in self.get("participants", ("person_id", person_id)):
-            s_date = datetime.datetime.strptime(part[3], "%Y-%m-%d %H:%M:%S")
-            e_date = datetime.datetime.strptime(part[4], "%Y-%m-%d %H:%M:%S")
-            # Check if start date lies in time frame 
-            if s_date < start_date and start_date < e_date:
-                return WarningCodes.WARNING_DATE_OVERLAP_START
-            # Check if end date lies in time frame
-            if s_date < end_date and end_date < e_date:
-                return WarningCodes.WARNING_DATE_OVERLAP_END
-            # Check if start date being smaller and end date being bigger than compared time frame
-            if start_date < s_date and e_date < end_date:
-                return WarningCodes.WARNING_DATE_OVERLAP_BOTH
-            # Check if the start date lies beyond the end date
-            if start_date > end_date:
-                return WarningCodes.WARNING_DATE_SWAP
-
-        return None
-
-    # TODO unused & untested?
-    def delete_participant(self, person_id: int, event_id: int, start_date, end_date):
-        """
-        Delete the selected participant.
-        """
-        self.delete("persons", ("event_id", event_id), ("person_id", person_id), ("start_date", start_date), ("end_date", end_date))
-
-    def clean_participants(self):
-        """
-        Delete all participants in the database.
-        """
-        self.conn.execute("DROP TABLE IF EXISTS participants")
-
-        self.conn.execute("CREATE TABLE IF NOT EXISTS participants (\
-            paid INTEGER PRIMARY KEY ASC, \
-            person_id INT NOT NULL, event_id INT NOT NULL, \
-            start_date DATE, end_date DATE, \
-            FOREIGN KEY (event_id) \
-                REFERENCES events (eid) ON DELETE CASCADE, \
-            FOREIGN KEY (person_id) \
-                REFERENCES persons (pid) ON DELETE CASCADE)"
-        )
-
-        self.out_text.insert(END, "All participant entrys were deleted.\n")
-
-    def print_participants(self):
-        self.print_table("participants")
-
-    #################
-    # Event related #
-    #################
-    def test_event_input(self, eid: int, title: str, start_date, end_date):
-        if end_date < start_date:
-            self.out_text.insert(END, "Could not add Event: end date < start date!\n")
-            return False
-        if title == "":
-            self.out_text.insert(END, "Could not add Event: Missing title!\n")
-            return False
-        if eid < 1:
-            self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
-            return False
-        return True
-
-    def insert_event(self, title: str, start_date, end_date):
-        if not self.test_event_input(1, title, start_date, end_date):
-            return
-
-        # TODO move this to input
-        title = sub(r"[^\w\s]", "", title)
-        title = str(title).replace(" ", "")
-
-        res, eid = self.insert(
-            "events",
-            ("title", title),
-            ("start_date", start_date),
-            ("end_date", end_date),
-        )
-        if res:
-            self.out_text.insert(END, f"Event added (eid: {eid}, title: {title}, start: {start_date}, end: {end_date}).\n")
-        else:
-            self.out_text.insert(END, f"Event already present (eid: {eid}).\n")
-            self.out_text.insert(END, f"Event not added (title: {title}, start: {start_date}, end: {end_date}).\n")
-
-    # TODO insert methods are very similar
-    def insert_event_with_id(self, eid: int, title: str, start_date, end_date):
-        if not self.test_event_input(eid, title, start_date, end_date):
-            return
-
-        # TODO move this to input
-        title = sub(r"[^\w\s]", "", title)
-        title = str(title).replace(" ", "")
-
-        res, eid = self.insert_with_id(
-            "events",
-            ("eid", eid),
-            ("title", title),
-            ("start_date", start_date),
-            ("end_date", end_date)
-        )
-        if res:
-            self.out_text.insert(END, f"Event added (eid: {eid}, title: {title}, start: {start_date}, end: {end_date}).\n")
-        else:
-            self.out_text.insert(END, f"Event already present (eid: {res}).\n")
-            self.out_text.insert(END, f"Event not added (title: {title}, start: {start_date}, end: {end_date}).\n")
-
-    def update_event(self, title, s_date, e_date, n_title, n_s_date, n_e_date):
-        """
-        Update the selected event.
-        """
-        if not self.test_event_input(1, title, n_s_date, n_e_date):
-            return
-
-        # Remove unwanted characters
-        # TODO + sql injection?
-        str(n_title).replace(" ", "")
-        str(n_title).replace("-", "")
-        str(n_title).replace("_", "")
-
-        self.update(
-            "events",
-            ("title", title, n_title),
-            ("start_date", s_date, n_s_date),
-            ("end_date", e_date, n_e_date),
-        )
-
-    def delete_event(self, title: str, s_date: str, e_date: str):
-        """
-        Delete the selected event.
-        Its subevents and participants are automatically deleted too.
-        """
-        self.delete("events", ("title", title), ("start_date", s_date), ("end_date", e_date))
-
-    def clean_events(self):
-        """
-        Delete all events in the database.
-        """
-        self.conn.execute("DROP TABLE IF EXISTS events")
-
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events \
-            (eid INTEGER PRIMARY KEY ASC, \
-                title STRING, start_date DATE, end_date DATE)"
-        )
-
-        self.out_text.insert(END, "All event entrys were deleted.\n")
-
-    # TODO make dynamic getter method
-    def get_event(self, date: datetime.datetime):
-        """
-        Get the event with the specified date.
-        """
-        cur = self.conn.execute(
-            "SELECT * \
-            FROM events WHERE start_date<=? AND end_date>=?",
-            (date, date),
-        )
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    def print_events(self):
-        self.print_table("events")
-
-    ####################
-    # Subevent related #
-    ####################
-    # TODO Add check if event is present
-    def test_subevent_input(self, event_id: int, seid: int, title: str, start_date, end_date):
-        if end_date < start_date:
-            self.out_text.insert(END, "Could not add Event: end date < start date!\n")
-            return False
-        if title == "":
-            self.out_text.insert(END, "Could not add Event: Missing title!\n")
-            return False
-        if event_id < 1:
-            self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
-            return False
-        if seid < 1:
-            self.out_text.insert(END, "Could not add Event: Id must be greater than 0!\n")
-            return False
-        return True
-
-    def insert_subevent(self, event_id: int, title: str, start_date, end_date):
-        if not self.test_subevent_input(1, event_id, title, start_date, end_date):
-            return
-
-        # TODO move this to input
-        title = sub(r"[^\w\s]", "", title)
-        title = str(title).replace(" ", "")
-
-        res, seid = self.insert(
-            "subevents",
-            ("event_id", event_id),
-            ("title", title),
-            ("start_date", start_date),
-            ("end_date", end_date),
-        )
-        if res:
-            self.out_text.insert(END, f"Subevent added (seid: {seid}, title: {title}, start: {start_date}, end: {end_date}).\n")
-        else:
-            self.out_text.insert(END, f"Subevent already present (seid: {seid}).\n")
-            self.out_text.insert(END, f"Subevent not added (title: {title}, start: {start_date}, end: {end_date}).\n")
-
-    def insert_subevent_with_id(self, seid: int, event_id: int, title: str, start_date, end_date):
-        if not self.test_subevent_input(seid, event_id, title, start_date, end_date):
-            return
-
-        # TODO move this to input
-        title = sub(r"[^\w\s]", "", title)
-        title = str(title).replace(" ", "")
-
-        res, seid = self.insert_with_id(
-            "subevents",
-            ("seid", seid),
-            ("event_id", event_id),
-            ("title", title),
-            ("start_date", start_date),
-            ("end_date", end_date),
-        )
-        if res:
-            self.out_text.insert(END, f"Subevent added (seid: {seid}, title: {title}, start: {start_date}, end: {end_date}).\n")
-        else:
-            self.out_text.insert(END, f"Subevent already present (seid: {seid}).\n")
-            self.out_text.insert(END, f"Subevent not added (title: {title}, start: {start_date}, end: {end_date}).\n")
-
-    def update_subevent(self, event_id: int, title: str, s_date, e_date, n_title, n_s_day, n_s_hour, n_e_day, n_e_hour):
-        """
-        Update the selected subevent.
-        """
-        n_s_date = datetime.datetime.combine(
-            n_s_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=n_s_hour)
-        n_e_date = datetime.datetime.combine(
-            n_e_day, datetime.datetime.min.time()
-        ) + datetime.timedelta(hours=n_e_hour)
-
-        if not self.test_subevent_input(1, n_title, n_s_date, n_e_date):
-            return
-
-        # Remove unwanted characters
-        # TODO + sql injection?
-        str(n_title).replace(" ", "")
-        str(n_title).replace("-", "")
-        str(n_title).replace("_", "")
-
-        self.update(
-            "subevents",
-            ("event_id", event_id, event_id),
-            ("title", title, n_title),
-            ("start_date", s_date, n_s_date),
-            ("end_date", e_date, n_e_date),
-        )
-
-    def delete_subevent(self, event_id: int, title: str, s_date: str, e_date: str):
-        """
-        Delete the selected subevent.
-        """
-        self.delete("subevents", ("event_id", event_id), ("title", title), ("start_date", s_date), ("end_date", e_date))
-
-    def clean_subevents(self):
-        """
-        Delete all subevents in the database.
-        """
-        self.conn.execute("DROP TABLE IF EXISTS subevents")
-
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS subevents( \
-            seid INTEGER PRIMARY KEY ASC, \
-            event_id INT NOT NULL, \
-            title STRING, start_date DATE, end_date DATE, \
-            FOREIGN KEY (event_id) \
-                REFERENCES events (eid) ON DELETE CASCADE)"
-        )
-
-        self.out_text.insert(END, "All subevent entrys were deleted.\n")
-
-    def get_subevent(self, date: datetime.datetime):
-        """
-        Get the event with the specified date.
-        """
-        cur = self.conn.execute(
-            "SELECT * \
-            FROM subevents WHERE start_date<=? AND end_date>=?",
-            (date, date),
-        )
-        result = cur.fetchall()
-        cur.close()
-        return result
-
-    def print_events(self):
-        self.print_table("subevents")
-
-    ##################
-    # Artist related #
-    ##################
-    def test_artist_time_frame(self, person_id: int, make: str, model: str, start_date, end_date):
-        for artist in self.get("artists", ("person_id", person_id), ("make", make), ("model", model)):
-            s_date = datetime.datetime.strptime(artist[4], "%Y-%m-%d %H:%M:%S")
-            e_date = datetime.datetime.strptime(artist[5], "%Y-%m-%d %H:%M:%S")
-            # Check if start date lies in time frame
-            if s_date <= start_date and start_date < e_date:
-                return WarningCodes.WARNING_DATE_OVERLAP_START
-            # Check if end date lies in time frame
-            if s_date < end_date and end_date <= e_date:
-                return WarningCodes.WARNING_DATE_OVERLAP_END
-            # Check if start date being smaller and end date being bigger than compared time frame
-            if start_date <= s_date and e_date <= end_date:
-                return WarningCodes.WARNING_DATE_OVERLAP_BOTH
-            # Check if the start date lies beyond the end date
-            if start_date > end_date:
-                return WarningCodes.WARNING_DATE_SWAP
-        return None
-
-    def test_artist_input(self, aid: int, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
-        if end_date < start_date:
-            self.out_text.insert(END, "Could not add Artist: end date < start date!\n")
-            return False
-        if make == "":
-            self.out_text.insert(END, "Could not add Artist: Missing make!\n")
-            return False
-        if model == "":
-            self.out_text.insert(END, "Could not add Artist: Missing model!\n")
-            return False
-        if pid < 1:
-            self.out_text.insert(END, "Could not add Artist: Person Id must be greater than 0!\n")
-            return False
-        if aid < 1:
-            self.out_text.insert(END, "Could not add Artist: Id must be greater than 0!\n")
-            return False
-
-        # # Check if person is not present
-        # if not self.has_elem("persons", ("pid", pid)):
-        #     self.out_text.insert(END, f"Could not add Artist: Person (pid: {pid}) not found in table!\n")
-        #     return
-
-        return True
-
-    def insert_artist(self, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
-        if not self.test_artist_input(1, pid, make, model, start_date, end_date, time_shift):
-            return
-
-        res, aid = self.insert(
+        print(f"Table {table} is empty." if len(res) == 0 else f"Contents of table {table}:")
+        for e in res:
+            print(str(e))
+
+    ###############################################################################################
+    # Artist related
+    ###############################################################################################
+    def assert_artist(
+        self, pid: int, make: str, model: str, start_date, end_date, time_shift: str, aid: int = 1
+    ):
+        assert aid > 0, f"Artist id ({aid}) smaller than 1 or not an int."
+        assert pid > 0, f"Person id ({pid}) smaller than 1 or not an int."
+        assert self.has("persons", ("pid", pid)), f"Could not find person: {pid}."
+        assert make != "", f"Make is an empty string."
+        assert isinstance(make, str), f"Make ({make}) is not of type string."
+        assert model != "", f"Model is an empty string."
+        assert isinstance(model, str), f"Model ({model}) is not of type string."
+        assert time_shift != "", f"Timeshift is an empty string."
+        assert isinstance(time_shift, str), f"Timeshift ({time_shift}) is not of type string."
+        assert start_date < end_date, f"End date ({end_date}) < start date ({start_date})!"
+
+    def insert_artist(
+        self, pid: int, make: str, model: str, start_date, end_date, time_shift: str
+    ):
+        self.assert_artist(pid, make, model, start_date, end_date, time_shift)
+
+        return self.insert(
             "artists",
             ("person_id", pid),
             ("make", make),
@@ -910,19 +506,12 @@ class Database:
             ("time_shift", time_shift),
         )
 
-        if res:
-            self.out_text.insert(END, f"Artist added (aid: {aid}, pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
-        else:
-            self.out_text.insert(END, f"Artist already present (aid: {aid}).\n")
-            self.out_text.insert(END, f"Artist not added (pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
+    def insert_artist_with_id(
+        self, aid: int, pid: int, make: str, model: str, start_date, end_date, time_shift: str
+    ):
+        self.assert_artist(pid, make, model, start_date, end_date, time_shift, aid)
 
-
-    # TODO
-    def insert_artist_with_id(self, aid: int, pid: int, make: str, model: str, start_date, end_date, time_shift: str):
-        if not self.test_artist_input(aid, pid, make, model, start_date, end_date, time_shift):
-            return
-
-        res, aid = self.insert_with_id(
+        return self.insert_with_id(
             "artists",
             ("aid", aid),
             ("person_id", pid),
@@ -933,25 +522,21 @@ class Database:
             ("time_shift", time_shift),
         )
 
-        if res:
-            self.out_text.insert(END, f"Artist added (aid: {aid}, pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
-        else:
-            self.out_text.insert(END, f"Artist already present (aid: {aid}).\n")
-            self.out_text.insert(END, f"Artist not added (pid: {pid}, make: {make}, model: {model}, start: {start_date}, end: {end_date}, timeshift: {time_shift}).\n")
-
-    # TODO check all update methods, if a check is needed is the artist/person present
     def update_artist(
             self,
             person_id: int, make: str, model: str, s_date, e_date, time_shift: str,
             n_person_id: int, n_make: str, n_model: str, n_s_date, n_e_date, n_time_shift: str,
         ):
         """
-        Update the selected artist.
+        Wrapper function to update an artist. The given arguments specify the attributes
+        of the artist that shall be updated and how its new values look like.
+        @return Returns a warning in case the artist was not found.
         """
-        if not self.test_artist_input(1, n_person_id, n_make, n_model, n_s_date, n_e_date, time_shift):
-            return
+        self.assert_artist(person_id, make, model, s_date, e_date, time_shift)
+        self.assert_artist(n_person_id, n_make, n_model, n_s_date, n_e_date, n_time_shift)
 
-        self.update(
+        # Update returns a warning in case the element was not found.
+        return self.update(
             "artists",
             ("person_id", person_id, n_person_id),
             ("make", make, n_make),
@@ -961,11 +546,13 @@ class Database:
             ("time_shift", time_shift, n_time_shift),
         )
 
-    def delete_artist(self, person_id: str, make: str, model: str, s_date, e_date, time_shift: str):
+    def delete_artist(self, person_id: int, make: str, model: str, s_date, e_date, time_shift: str):
         """
-        Delete the selected artist.
+        Delete the specified artist.
         """
-        self.delete(
+        self.assert_artist(person_id, make, model, s_date, e_date, time_shift)
+
+        return self.delete(
             "artists",
             ("person_id", person_id),
             ("make", make),
@@ -975,34 +562,289 @@ class Database:
             ("time_shift", time_shift),
         )
 
-    def clean_artists(self):
+    def test_artist_time_frame(self, artist_id: int, person_id: int, make: str, model: str, start_date, end_date):
         """
-        Delete all artists in the database.
+        Test the timeframe of an artist against the timeframes of each identical artist in the database.
+        If this is only an artist update, the artist id is used to skip
+        the timeframe of this artist which is already present in the database.
+
+        Does not check against time_frame_swap, since this should be done beforehand.
+        The time_shift is not needed, since it should only be applied to the images, not the time frames.
         """
-        self.conn.execute("DROP TABLE IF EXISTS artists")
+        self.assert_artist(artist_id if artist_id else 1, person_id, make, model, start_date, end_date, "_")
 
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS artists(\
-            aid INTEGER PRIMARY KEY ASC, \
-            person_id INT, make TEXT, model TEXT, \
-            start_date DATE, end_date DATE, time_shift TEXT, \
-            FOREIGN KEY (person_id) REFERENCES persons (pid))"
-        )
+        for artist in self.get("artists", ("person_id", person_id), ("make", make), ("model", model)):
+            s_date = datetime.datetime.strptime(artist[4], "%Y-%m-%d %H:%M:%S")
+            e_date = datetime.datetime.strptime(artist[5], "%Y-%m-%d %H:%M:%S")
 
-        self.out_text.insert(END, "All artist entrys were deleted.\n")
+            # Do not test against itself
+            if artist_id == artist[0]:
+                continue
 
-    # def has_artist(self, name: str, make: str, model: str):
-    #     """
-    #     Check if there is an artist with the specified name, make and model.
-    #     """
-    #     result = False
-    #     lst_persons = self.db.get_person_by_name(name)
-
-    #     for p in lst_persons:
-    #         # Get first attribute (pid) and use it for the check
-    #         if self.db.has_elem("artists", ("person_id", p[0]), ("make", make), ("model", model)):
-    #             return (p[0], make, model)
-    #     return result
+            if err:= test_time_frame(s_date, e_date, start_date, end_date):
+                return err
+        return None
 
     def print_artists(self):
         self.print_table("artists")
+
+    ###############################################################################################
+    # Person related
+    ###############################################################################################
+    def assert_person(self, name: str, pid: int = 1):
+        assert pid > 0, f"Person_id ({pid}) smaller than 1 or not an int."
+        assert name != "", f"Name is an empty string."
+        assert isinstance(name, str), f"Name ({name}) is not of type string."
+
+    def insert_person(self, name: str):
+        self.assert_person(name)
+
+        return self.insert("persons", ("name", name))
+
+    def insert_person_with_id(self, pid: int, name: str):
+        self.assert_person(name, pid)
+
+        return self.insert_with_id("persons", ("pid", pid), ("name", name))
+
+    def update_person(self, name: str, n_name: str):
+        """
+        Wrapper function to update a person. The given argument specifies the name
+        of the person that shall be updated and what its new name is.
+        @return Returns a warning in case the person was not found.
+        """
+        self.assert_person(name)
+        self.assert_person(n_name)
+
+        return self.update("persons", ("name", name, n_name))
+
+    def delete_person(self, name: str):
+        """
+        Delete the specified event.
+        """
+        self.assert_person(name)
+
+        return self.delete("persons", ("name", name))
+
+    def print_persons(self):
+        self.print_table("persons")
+
+    ###############################################################################################
+    # Event related
+    ###############################################################################################
+    def assert_event(self, title: str, start_date, end_date, eid: int = 1):
+        assert eid > 0, f"Event_id ({eid}) smaller than 1 or not an int."
+        assert title != "", f"Title is an empty string."
+        assert isinstance(title, str), f"Title ({title}) is not of type string."
+        assert start_date < end_date, f"End date ({end_date}) < start date ({start_date})!"
+
+    def insert_event(self, title: str, start_date, end_date):
+        self.assert_event(title, start_date, end_date)
+
+        return self.insert(
+            "events",
+            ("title", title),
+            ("start_date", start_date),
+            ("end_date", end_date),
+        )
+
+    def insert_event_with_id(self, eid: int, title: str, start_date, end_date):
+        self.assert_event(title, start_date, end_date, eid)
+
+        return self.insert_with_id(
+            "events",
+            ("eid", eid),
+            ("title", title),
+            ("start_date", start_date),
+            ("end_date", end_date)
+        )
+
+    def update_event(self, title, s_date, e_date, n_title, n_s_date, n_e_date):
+        """
+        Wrapper function to update an event. The given arguments specify the attributes
+        of the event that shall be updated and how its new values look like.
+        @return Returns a warning in case the event was not found.
+        """
+        self.assert_event(title, s_date, e_date)
+        self.assert_event(n_title, n_s_date, n_e_date)
+
+        return self.update(
+            "events",
+            ("title", title, n_title),
+            ("start_date", s_date, n_s_date),
+            ("end_date", e_date, n_e_date),
+        )
+
+    def delete_event(self, title: str, s_date: str, e_date: str):
+        """
+        Delete the specified event.
+        Its subevents and participants are automatically deleted too.
+        """
+        self.assert_event(title, s_date, e_date)
+
+        return self.delete("events", ("title", title), ("start_date", s_date), ("end_date", e_date))
+
+    def print_events(self):
+        self.print_table("events")
+
+    ###############################################################################################
+    # Subevent related
+    ###############################################################################################
+    def assert_subevent(self, event_id: int, title: str, start_date, end_date, seid: int = 1):
+        assert seid > 0, f"Subevent_id ({seid}) smaller than 1 or not an int."
+        assert event_id > 0, f"Event_id ({event_id}) smaller than 1 or not an int."
+        assert self.has("events", ("eid", event_id)), f"Could not find event: {event_id}."
+        assert title != "", f"Title is an empty string."
+        assert isinstance(title, str), f"Title ({title}) is not of type string."
+        assert start_date < end_date, f"End date ({end_date}) < start date ({start_date})!"
+
+    def insert_subevent(self, event_id: int, title: str, start_date, end_date):
+        self.assert_subevent(event_id, title, start_date, end_date)
+
+        return self.insert(
+            "subevents",
+            ("event_id", event_id),
+            ("title", title),
+            ("start_date", start_date),
+            ("end_date", end_date),
+        )
+
+    def insert_subevent_with_id(self, seid: int, event_id: int, title: str, start_date, end_date):
+        self.assert_subevent(event_id, title, start_date, end_date, seid)
+
+        return self.insert_with_id(
+            "subevents",
+            ("seid", seid),
+            ("event_id", event_id),
+            ("title", title),
+            ("start_date", start_date),
+            ("end_date", end_date),
+        )
+
+    def update_subevent(
+        self, event_id: int, title: str, s_date, e_date, n_title: str, n_s_date, n_e_date
+    ):
+        """
+        OBACHT: unused function
+        Wrapper function to update a subevent. The given arguments specify the attributes
+        of the subevent that shall be updated and how its new values look like.
+        @return Returns a warning in case the subevent was not found.
+        """
+        self.assert_subevent(event_id, title, s_date, e_date)
+        self.assert_subevent(event_id, n_title, n_s_date, n_e_date)
+
+        return self.update(
+            "subevents",
+            ("event_id", event_id, event_id),
+            ("title", title, n_title),
+            ("start_date", s_date, n_s_date),
+            ("end_date", e_date, n_e_date),
+        )
+
+    def delete_subevent(self, event_id: int, title: str, s_date: str, e_date: str):
+        """
+        OBACHT: unused function
+        Delete the specified subevent.
+        """
+        self.assert_subevent(event_id, title, s_date, e_date)
+
+        return self.delete(
+            "subevents",
+            ("event_id", event_id),
+            ("title", title),
+            ("start_date", s_date),
+            ("end_date", e_date),
+        )
+
+    def print_events(self):
+        self.print_table("subevents")
+
+    ###############################################################################################
+    # Participant related
+    ###############################################################################################
+    def assert_participant(self, person_id: int, event_id: int, start_date, end_date, paid: int = 1):
+        assert paid > 0, f"Participant_id ({paid}) smaller than 1 or not an int."
+        assert person_id > 0, f"Person_id ({person_id}) smaller than 1 or not an int."
+        assert self.has("persons", ("pid", person_id)), f"Could not find person: {person_id}."
+        assert event_id > 0, f"Event_id ({event_id}) smaller than 1 or not an int."
+        assert self.has("events", ("eid", event_id)), f"Could not find event_id: {event_id}."
+        assert start_date < end_date, f"End date ({end_date}) < start date ({start_date})!"
+
+    def insert_participant(self, person_id: int, event_id: int, start_date, end_date):
+        self.assert_participant(person_id, event_id, start_date, end_date)
+
+        return self.insert(
+            "participants",
+            ("person_id", person_id),
+            ("event_id", event_id),
+            ("start_date", start_date),
+            ("end_date", end_date),
+        )
+
+    def insert_participant_with_id(self, paid: int, person_id: int, event_id: int, start_date, end_date):
+        self.assert_participant(person_id, event_id, start_date, end_date, paid)
+
+        return self.insert_with_id(
+            "participants",
+            ("paid", paid),
+            ("person_id", person_id),
+            ("event_id", event_id),
+            ("start_date", start_date),
+            ("end_date", end_date),
+        )
+
+    def update_participant(
+            self, person_id: int, event_id: int, s_date, e_date, n_s_date, n_e_date
+        ):
+        """
+        OBACHT: unused function
+        Wrapper function to update a participant. The given arguments specify the attributes
+        of the participant that shall be updated and how its new values look like.
+        @return Returns a warning in case the participant was not found.
+        """
+        self.assert_participant(person_id, event_id, s_date, e_date)
+        self.assert_participant(person_id, event_id, n_s_date, n_e_date)
+
+        return self.update(
+            "participants",
+            ("person_id", person_id, person_id),
+            ("event_id", event_id, event_id),
+            ("start_date", s_date, n_s_date),
+            ("end_date", e_date, n_e_date),
+        )
+
+    def delete_participant(self, person_id: int, event_id: int, start_date, end_date):
+        """
+        Delete the specified participant.
+        OBACHT: unused function
+        """
+        self.assert_participant(person_id, event_id, start_date, end_date)
+
+        return self.delete(
+            "persons",
+            ("event_id", event_id),
+            ("person_id", person_id),
+            ("start_date", start_date),
+            ("end_date", end_date),
+        )
+
+    def test_participant_time_frame(self, name: str, start_date, end_date):
+        """
+        Test the timeframe of the particiapnt against the timeframes of each participant
+        with the same name in the database.
+
+        Does not check against time_frame_swap, since this should be done beforehand.
+        """
+        if person_id:= self.has("persons", ("name", name)):
+            for part in self.get("participants", ("person_id", person_id)):
+                s_date = datetime.datetime.strptime(part[3], "%Y-%m-%d %H:%M:%S")
+                e_date = datetime.datetime.strptime(part[4], "%Y-%m-%d %H:%M:%S")
+
+                if err:= test_time_frame(s_date, e_date, start_date, end_date):
+                    return err
+
+            return None
+        else:
+            raise ValueError(f"Person with name {name} could not found!")
+
+    def print_participants(self):
+        self.print_table("participants")

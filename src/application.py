@@ -1,4 +1,3 @@
-import datetime
 import os
 import sys
 import threading
@@ -7,10 +6,8 @@ from tkinter import (
     HORIZONTAL,
     RIGHT,
     Button,
-    Entry,
     Frame,
     Label,
-    StringVar,
     Text,
     Tk,
     filedialog,
@@ -26,7 +23,8 @@ from meta_information import MetaInformation
 from sorter import Sorter
 from tkcalendar import DateEntry
 from tooltips import TooltipDict
-from modifydbbox import ModifyDBBox
+from guiboxes.modifydbbox import ModifyDBBox
+
 
 PAD_X = 20
 PAD_Y = (10, 0)
@@ -70,7 +68,9 @@ class MainApp:
         btn_run.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
         Hovertip(btn_run, TooltipDict["btn_run"])
 
-        self.db.set_out_text(self.details_text)
+        # Stretch the gui, when the window size is adjusted
+        window.grid_columnconfigure(1, weight=2)
+        window.grid_columnconfigure(2, weight=1)
 
         lt_window(window)
 
@@ -122,6 +122,10 @@ class MainApp:
             self.file_label.config(text=f"Finished file {f_count} of {f_count_max} files.")
             self.time_label.config(text="")
             window.after(50, lambda: self.listen_for_result(window))
+
+        # TODO Test
+        # Scroll text to the end
+        self.details_text.yview(END)
 
     ###############################################################################################
     # Initialization functions
@@ -211,10 +215,9 @@ class MainApp:
         Hovertip(cb_foldersig_select, TooltipDict["cb_foldersig_select"])
 
     def init_database_system(self, window):
-        def create_modifydb_box(dir):
+        def create_modifydb_box():
             ModifyDBBox(
                 "Modify Database",
-                "Inspect, modify, add and delete entries from the database.",
                 self.db,
                 self.meta_info,
             )
@@ -223,7 +226,7 @@ class MainApp:
         btn_mod_db = Button(
             window,
             text="Modify Database",
-            command=lambda: create_modifydb_box(self.meta_info.event_src),
+            command=lambda: create_modifydb_box(),
         )
         btn_mod_db.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_mod_db, TooltipDict["btn_mod_db"])

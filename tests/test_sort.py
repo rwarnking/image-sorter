@@ -29,8 +29,7 @@ class TestSort(unittest.TestCase):
 
         # load database
         self.db = Database()
-        self.db.set_out_text(details_text)
-        self.db.insert_events(join(TEST_DIR, "events.json"))
+        self.db.insert_events(join(TEST_DIR, "events.json")) # TODO
         self.db.insert_artists(join(TEST_DIR, "artists.json"))
 
         for idx, settings in enumerate(self.get_settings_list(meta_info)):

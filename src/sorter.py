@@ -16,6 +16,7 @@ from messagebox import MessageBox
 META = 1
 NAME = 2
 
+# TODO remove whitespaces in event title for folder structure
 
 class Sorter:
     def __init__(self, meta_info):
@@ -160,7 +161,7 @@ class Sorter:
 
         print(img_date, img_artist, img_make, img_model)
 
-        lst_events = self.db.get_event(img_date)
+        lst_events = self.db.get_by_date("events", img_date)
         print("Event List")
         print(lst_events)
 

@@ -10,7 +10,6 @@ class MetaInformation:
         self.file_count = 0
         self.file_count_max = 1
 
-        self.shift_timedata = IntVar()
         self.modify_meta = IntVar()
         self.recursive = IntVar()
         self.recursive.set(1)
@@ -31,16 +30,6 @@ class MetaInformation:
         self.folder_signature = StringVar()
         self.folder_signature.set(self.get_supported_folder_signatures()[0])
 
-        self.shift_days = StringVar()
-        self.shift_days.set("0")
-        self.shift_hours = StringVar()
-        self.shift_hours.set("0")
-        self.shift_minutes = StringVar()
-        self.shift_minutes.set("0")
-        self.shift_seconds = StringVar()
-        self.shift_seconds.set("0")
-        self.shift_selection = StringVar()
-
         self.event_action = StringVar()
         self.artist_action = StringVar()
 
@@ -49,33 +38,22 @@ class MetaInformation:
 
         self.text_queue = queue.Queue()
 
-    def set_dirs(self, img_src, img_tgt, event_src, event_tgt, artist_src, artist_tgt):
+    def set_dirs(self, img_src, img_tgt, db_src, db_tgt):
         self.img_src = StringVar()
         self.img_src.set(img_src)
         self.img_tgt = StringVar()
         self.img_tgt.set(img_tgt)
 
-        self.event_src = StringVar()
-        if isfile(join(event_src, "events.json")):
-            self.event_src.set(join(event_src, "events.json"))
+        self.sv_db_src = StringVar()
+        if isfile(join(db_src, "db.json")):
+            self.sv_db_src.set(join(db_src, "db.json"))
         else:
-            self.event_src.set("C:\\")
-        self.event_tgt = StringVar()
-        if isfile(join(event_tgt, "events.json")):
-            self.event_tgt.set(join(event_tgt, "events.json"))
+            self.sv_db_src.set("C:\\")
+        self.sv_db_tgt = StringVar()
+        if isfile(join(db_tgt, "db.json")):
+            self.sv_db_tgt.set(join(db_tgt, "db.json"))
         else:
-            self.event_tgt.set("C:\\")
-
-        self.artist_src = StringVar()
-        if isfile(join(artist_src, "artists.json")):
-            self.artist_src.set(join(artist_src, "artists.json"))
-        else:
-            self.artist_src.set("C:\\")
-        self.artist_tgt = StringVar()
-        if isfile(join(artist_tgt, "artists.json")):
-            self.artist_tgt.set(join(artist_tgt, "artists.json"))
-        else:
-            self.artist_tgt.set("C:\\")
+            self.sv_db_tgt.set("C:\\")
 
     def get_supported_file_signatures(self):
         return [

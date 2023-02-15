@@ -1,0 +1,31 @@
+{
+    "events": [
+    ],
+    "subevents": [
+    ],
+    "participants": [
+    ],
+    "artists": [
+        {
+            "aid": 1,
+            "person_id": 1,
+            "make": "test_make_2",
+            "model": "test_model_2",
+            "start": {
+                "date": "2022-06-01 03:56:34"
+            },
+            "end": {
+                "date": "2100-12-31 10:25:24"
+            },
+            "timeshift": {
+                "date": "0:0:0:0"
+            }
+        }
+    ],
+    "persons": [
+        {
+            "pid": 1,
+            "name": "artist1"
+        }
+    ]
+}

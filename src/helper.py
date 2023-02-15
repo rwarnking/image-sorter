@@ -1,4 +1,4 @@
-from error_messages import WarningArray, WarningCodes
+from debug_messages import WarningArray, WarningCodes
 
 
 def center_window(window):
@@ -30,8 +30,12 @@ def lt_window(window):
     window.geometry(window_geometry)
 
 
+def limit_input(S):
+    return str.isalpha(S) or S == " " or str.isdigit(S)
+
+
 def test_time_frame(frame_start, frame_end, test_frame_start, test_frame_end):
-    # Check if start date lies in time frame    
+    # Check if start date lies in time frame
     if frame_start <= test_frame_start and test_frame_start < frame_end:
         return WarningCodes.WARNING_DATE_OVERLAP_START
     # Check if end date lies in time frame
@@ -40,7 +44,21 @@ def test_time_frame(frame_start, frame_end, test_frame_start, test_frame_end):
     # Check if start date being smaller and end date being bigger than compared time frame
     if test_frame_start <= frame_start and frame_end <= test_frame_end:
         return WarningCodes.WARNING_DATE_OVERLAP_BOTH
-    # Check if the end date lies before the start date
+    return None
+
+
+def test_time_frame_outside(frame_start, frame_end, test_frame_start, test_frame_end):
+    if test_frame_start < frame_start and frame_end < test_frame_end:
+        return WarningCodes.WARNING_DATE_OUTSIDE_BOTH
+    # Check if start date lies outside time frame
+    if test_frame_start < frame_start:
+        return WarningCodes.WARNING_DATE_OUTSIDE_START
+    if frame_end < test_frame_end:
+        return WarningCodes.WARNING_DATE_OUTSIDE_START
+    return None
+
+
+def test_time_frame_swap(test_frame_start, test_frame_end):
     if test_frame_end < test_frame_start:
         return WarningCodes.WARNING_DATE_SWAP
     return None
