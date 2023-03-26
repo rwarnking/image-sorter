@@ -58,8 +58,12 @@ class ModifySubeventBox(BaseBox):
         # TimeFrameSelector #
         #####################
         self.tfs = TimeFrameSelector(self.root, self.row_idx, startdate_parent, enddate_parent)
-        self.tfs.bind(self.validate_input)
+        self.tfs.set_start_date(startdate_parent)
+        self.tfs.set_end_date(enddate_parent)
         self.row_idx += 2
+        
+        # Bind after setting the values to avoid triggering the callback
+        self.tfs.bind(self.validate_input)
 
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")

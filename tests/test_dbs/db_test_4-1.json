@@ -1,0 +1,121 @@
+{
+    "events": [
+        {
+            "eid": 1,
+            "title": "Ostern",
+            "start": {
+                "date": "2020-04-12 06:07:08"
+            },
+            "end": {
+                "date": "2020-04-13 12:13:14"
+            }
+        },
+        {
+            "eid": 2,
+            "title": "Umzug",
+            "start": {
+                "date": "2020-07-01 00:00:00"
+            },
+            "end": {
+                "date": "2020-07-10 23:59:59"
+            }
+        },
+        {
+            "eid": 3,
+            "title": "Weihnachten",
+            "start": {
+                "date": "2020-12-24 00:00:00"
+            },
+            "end": {
+                "date": "2020-12-26 23:59:59"
+            }
+        }
+    ],
+    "subevents": [
+        {
+            "seid": 1,
+            "event_id": 1,
+            "title": "Day1",
+            "start": {
+                "date": "2020-12-24 12:13:14"
+            },
+            "end": {
+                "date": "2020-12-24 23:22:21"
+            }
+        }
+    ],
+    "participants": [
+        {
+            "paid": 1,
+            "person_id": 1,
+            "event_id": 1,
+            "start": {
+                "date": "2020-12-24 07:21:56"
+            },
+            "end": {
+                "date": "2020-12-24 09:54:01"
+            }
+        }
+    ],
+    "artists": [
+        {
+            "aid": 1,
+            "person_id": 1,
+            "make": "samsung",
+            "model": "SM-G800F",
+            "start": {
+                "date": "2022-06-01 03:56:34"
+            },
+            "end": {
+                "date": "2100-12-31 10:25:24"
+            },
+            "timeshift": {
+                "date": "0:0:0:0"
+            }
+        },
+        {
+            "aid": 2,
+            "person_id": 2,
+            "make": "Motorola",
+            "model": "Moto G (4)",
+            "start": {
+                "date": "2022-06-01 00:00:00"
+            },
+            "end": {
+                "date": "2100-12-31 23:59:59"
+            },
+            "timeshift": {
+                "date": "0:0:0:0"
+            }
+        },
+        {
+            "aid": 3,
+            "person_id": 3,
+            "make": "HUAWEI",
+            "model": "HMA-L29",
+            "start": {
+                "date": "2022-06-01 00:00:00"
+            },
+            "end": {
+                "date": "2100-12-31 23:59:59"
+            },
+            "timeshift": {
+                "date": "0:-1:-2:-3"
+            }
+        }
+    ],
+    "persons": [
+        {
+            "pid": 1,
+            "name": "artist1"
+        },
+        {
+            "pid": 2,
+            "name": "artist2"
+        },
+        {
+            "pid": 3,
+            "name": "artist3"
+        }
+    ]
+}

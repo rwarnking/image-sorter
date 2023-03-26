@@ -78,6 +78,8 @@ class ModifyParticipantBox(BaseBox):
         # TimeFrameSelector #
         #####################
         self.tfs = TimeFrameSelector(self.root, self.row_idx, startdate_parent, enddate_parent)
+        self.tfs.set_start_date(startdate_parent)
+        self.tfs.set_end_date(enddate_parent)
         self.row_idx += 2
 
         # Bind after setting the values to avoid triggering the callback

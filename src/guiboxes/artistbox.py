@@ -103,8 +103,8 @@ class ModifyArtistBox(BaseBox):
         self.row_idx += 2
 
         if self.start_date is not None and self.end_date is not None:
-            self.tfs.set_start_date(self.start_date, "%Y-%m-%d %H:%M:%S")
-            self.tfs.set_end_date(self.end_date, "%Y-%m-%d %H:%M:%S")
+            self.tfs.set_start_date_s(self.start_date, "%Y-%m-%d %H:%M:%S")
+            self.tfs.set_end_date_s(self.end_date, "%Y-%m-%d %H:%M:%S")
 
         # Bind after setting the values to avoid triggering the callback
         self.tfs.bind(self.validate_input)

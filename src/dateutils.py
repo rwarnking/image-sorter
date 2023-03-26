@@ -89,13 +89,13 @@ class DateSelector:
         lbl_date = Label(root, text=data["label"] + ": ")
         lbl_date.grid(row=data["row_idx"], column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
         self.date_entry = DateEntry(
-            root, 
-            width=12, 
-            background="darkblue", 
-            foreground="white", 
-            borderwidth=2, 
-            date_pattern="mm/dd/yyyy", 
-            mindate=data["date_min"], 
+            root,
+            width=12,
+            background="darkblue",
+            foreground="white",
+            borderwidth=2,
+            date_pattern="mm/dd/yyyy",
+            mindate=data["date_min"],
             maxdate=data["date_max"],
         )
         self.date_entry.grid(row=data["row_idx"], column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -153,8 +153,8 @@ class TimeFrameSelector:
             "label": "Start",
             "date_min": date_min,
             "date_max": date_max,
-            "hour": 0,
-            "minute": 0,
+            "hour": date_min.hour if date_min else 0,
+            "minute": date_min.minute if date_min else 0,
             "tt_date": "date_se_start",
             "tt_hour": "hs_se_start",
             "tt_minute": "ms_se_start",
@@ -166,8 +166,8 @@ class TimeFrameSelector:
             "label": "End",
             "date_min": date_min,
             "date_max": date_max,
-            "hour": 23,
-            "minute": 59,
+            "hour": date_max.hour if date_max else 23,
+            "minute": date_max.minute if date_max else 59,
             "tt_date": "date_se_end",
             "tt_hour": "hs_se_end",
             "tt_minute": "ms_se_end",
@@ -205,13 +205,13 @@ class TimeFrameSelector:
     def set_start_date(self, date):
         self.ds_start.set_date(date)
 
-    def set_start_date(self, date: str, pattern: str):
+    def set_start_date_s(self, date: str, pattern: str):
         self.ds_start.set_date(datetime.datetime.strptime(date, pattern))
 
     def set_end_date(self, date):
         self.ds_end.set_date(date)
 
-    def set_end_date(self, date: str, pattern: str):
+    def set_end_date_s(self, date: str, pattern: str):
         self.ds_end.set_date(datetime.datetime.strptime(date, pattern))
 
     # def set_start_day(self, day):

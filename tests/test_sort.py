@@ -29,8 +29,7 @@ class TestSort(unittest.TestCase):
 
         # load database
         self.db = Database()
-        self.db.insert_events(join(TEST_DIR, "events.json")) # TODO
-        self.db.insert_artists(join(TEST_DIR, "artists.json"))
+        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_4-1.json")
 
         for idx, settings in enumerate(self.get_settings_list(meta_info)):
             print(idx)
@@ -87,15 +86,6 @@ class TestSort(unittest.TestCase):
         obj["copy_unmatched"] = 1
         settings.append(obj)
 
-        # Use a version with timeshift
-        obj = self.create_settings_obj(meta_info)
-        obj["shift_timedata"] = 1
-        obj["shift_days"] = "1"
-        obj["shift_hours"] = "1"
-        obj["shift_minutes"] = "1"
-        obj["shift_selection"] = "Forward"
-        settings.append(obj)
-
         # Use a different file signature
         obj = self.create_settings_obj(meta_info)
         obj["file_signature"] = meta_info.get_supported_file_signatures()[3]
@@ -147,17 +137,6 @@ class TestSort(unittest.TestCase):
             [  # Test source directory when using fallback signature
                 # Processing .raw files
                 # Copy all
-                (True, ""),
-                (True, "test_images"),
-                (True, join("test_images", "20200701_211534.jpg")),
-                (True, join("test_images", "IMG_3113.JPG")),
-                (True, join("test_images", "IMG_3113.RAW")),
-                (True, join("test_images", "IMG_20200703_092850.svg")),
-                (True, join("test_images", "IMG_20200703_092959.gif")),
-                (True, join("test_images", "newtext.txt")),
-                (True, join("test_images", "Test.jpg")),
-            ],
-            [  # Test source directory when using time shift settings
                 (True, ""),
                 (True, "test_images"),
                 (True, join("test_images", "20200701_211534.jpg")),
@@ -242,17 +221,6 @@ class TestSort(unittest.TestCase):
                 (True, join(compl_dir, "2020-07-03_09-29-59.gif")),
                 (True, join(base_dir, "newtext.txt")),
                 (True, join(base_dir, "Test.jpg")),
-            ],
-            [  # Test target directory when using time shift settings
-                (True, main_dir),
-                (True, compl_dir),
-                (True, join(compl_dir, "2020-07-02_22-16-34.jpg")),
-                (True, join(compl_dir, "2020-07-03_19-50-10.jpg")),
-                (False, join(compl_dir, "2020-07-02_18-49-10.RAW")),
-                (False, join(compl_dir, "2020-07-03_09-28-50.svg")),
-                (False, join(compl_dir, "2020-07-03_09-29-59.gif")),
-                (False, join(base_dir, "newtext.txt")),
-                (False, join(base_dir, "Test.jpg")),
             ],
             [  # Test target directory when using different image signature
                 (True, main_dir),

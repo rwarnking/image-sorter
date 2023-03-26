@@ -54,7 +54,7 @@ def test_time_frame_outside(frame_start, frame_end, test_frame_start, test_frame
     if test_frame_start < frame_start:
         return WarningCodes.WARNING_DATE_OUTSIDE_START
     if frame_end < test_frame_end:
-        return WarningCodes.WARNING_DATE_OUTSIDE_START
+        return WarningCodes.WARNING_DATE_OUTSIDE_END
     return None
 
 
