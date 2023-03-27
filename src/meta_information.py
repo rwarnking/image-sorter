@@ -11,17 +11,19 @@ class MetaInformation:
         self.file_count_max = 1
 
         self.modify_meta = IntVar()
+        self.modify_meta.set(1)
         self.recursive = IntVar()
         self.recursive.set(1)
         self.copy_files = IntVar()
         self.copy_files.set(1)
-        self.copy_unmatched = IntVar()
-        self.copy_unmatched.set(1)
-        self.process_raw = IntVar()
-        self.process_raw.set(1)
+        self.process_unmatched = IntVar()
+        self.process_unmatched.set(1)
+        self.require_artist = IntVar()
+        self.require_artist.set(1)
+        self.process_samename = IntVar()
+        self.process_samename.set(1)
         self.dont_ask_again = BooleanVar()
         self.dont_ask_again.set(False)
-        self.fallback_sig = IntVar()
 
         self.in_signature = StringVar()
         self.in_signature.set(self.get_read_choices()[0])
@@ -80,7 +82,12 @@ class MetaInformation:
         ]
 
     def get_read_choices(self):
-        return ["IMG-Meta-Info", "IMG-File-Name"]
+        return [
+            "Metadata, fallback: Filename",
+            "Filename, fallback: Metadata",
+            "Metadata only",
+            "Filename only",
+        ]
 
     # TODO remove file extension and dollar sign since there could be more information
     # in the filename which should just be ignored

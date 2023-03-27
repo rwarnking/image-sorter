@@ -284,13 +284,20 @@ class Database:
         cur.close()
         return result
 
-    def get_by_date(self, table: str, date: datetime.datetime):
+    def get_by_date(self, table: str, date: datetime.datetime, *args):
         """
         Get all elements from the table with the specified date.
         """
+        where = "start_date<=? AND end_date>=?"
+        vals = (date, date)
+        if args:
+            opt_where, opt_vals = self.get_where_and_vals(args)
+            where += " AND " + opt_where
+            vals += opt_vals
+
         cur = self.conn.execute(
-            f"SELECT * FROM {table} WHERE start_date<=? AND end_date>=?",
-            (date, date),
+            f"SELECT * FROM {table} WHERE {where}",
+            vals,
         )
         result = cur.fetchall()
         cur.close()
@@ -571,7 +578,7 @@ class Database:
         Does not check against time_frame_swap, since this should be done beforehand.
         The time_shift is not needed, since it should only be applied to the images, not the time frames.
         """
-        self.assert_artist(artist_id if artist_id else 1, person_id, make, model, start_date, end_date, "_")
+        self.assert_artist(person_id, make, model, start_date, end_date, "_", artist_id if artist_id else 1)
 
         for artist in self.get("artists", ("person_id", person_id), ("make", make), ("model", model)):
             s_date = datetime.datetime.strptime(artist[4], "%Y-%m-%d %H:%M:%S")

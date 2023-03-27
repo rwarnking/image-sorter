@@ -13,7 +13,7 @@ from tkinter import (
     filedialog,
     messagebox,
 )
-from tkinter.ttk import Checkbutton, Combobox, Progressbar, Scrollbar, Separator
+from tkinter.ttk import Checkbutton, Combobox, Progressbar, Scrollbar, Separator, Radiobutton
 
 # own imports
 from database import Database
@@ -25,9 +25,7 @@ from tkcalendar import DateEntry
 from tooltips import TooltipDict
 from guiboxes.modifydbbox import ModifyDBBox
 
-
-PAD_X = 20
-PAD_Y = (10, 0)
+from guiboxes.basebox import PAD_X, PAD_Y
 
 # https://stackoverflow.com/questions/404744/
 if getattr(sys, "frozen", False):
@@ -167,29 +165,21 @@ class MainApp:
         Hovertip(btn_tgt, TooltipDict["btn_tgt"])
 
     def init_signatures(self, window):
-        list_in_choices = self.meta_info.get_read_choices()
+        lst_input_options = self.meta_info.get_read_choices()
         list_file_choices = self.meta_info.get_supported_file_signatures()
         list_folder_choices = self.meta_info.get_supported_folder_signatures()
 
         lbl = Label(window, text="Input data:")
-        lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        lbl.grid(row=self.row_idx, column=0, padx=PAD_X, sticky="EW")
 
-        cb_insig_select = Combobox(window, textvariable=self.meta_info.in_signature)
-        # Write file signatures
-        cb_insig_select["values"] = list_in_choices
-        # Prevent typing a value
-        cb_insig_select["state"] = "readonly"
-        # Place the widget
-        cb_insig_select.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        # Assign width
-        cb_insig_select["width"] = len(max(list_in_choices, key=len))
-        Hovertip(cb_insig_select, TooltipDict["cb_insig_select"])
+        for pattern in lst_input_options:
+            Radiobutton(
+                window, text=pattern, variable=self.meta_info.in_signature, value=pattern
+            ).grid(
+                row=self.row(), column=1, padx=PAD_X, sticky="W"
+            )
 
-        Checkbutton(window, text="Use fallback data", variable=self.meta_info.fallback_sig).grid(
-            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
-
-        lbl = Label(window, text="Output file/folder:")
+        lbl = Label(window, text="Pattern for output-files:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         cb_filesig_select = Combobox(window, textvariable=self.meta_info.file_signature)
@@ -198,10 +188,13 @@ class MainApp:
         # Prevent typing a value
         cb_filesig_select["state"] = "readonly"
         # Place the widget
-        cb_filesig_select.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        cb_filesig_select.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Assign width
         cb_filesig_select["width"] = len(max(list_file_choices, key=len))
         Hovertip(cb_filesig_select, TooltipDict["cb_filesig_select"])
+
+        lbl = Label(window, text="Pattern for event folder:")
+        lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         cb_foldersig_select = Combobox(window, textvariable=self.meta_info.folder_signature)
         # Write folder signatures
@@ -209,7 +202,7 @@ class MainApp:
         # Prevent typing a value
         cb_foldersig_select["state"] = "readonly"
         # Place the widget
-        cb_foldersig_select.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        cb_foldersig_select.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Assign width
         cb_foldersig_select["width"] = len(max(list_folder_choices, key=len))
         Hovertip(cb_foldersig_select, TooltipDict["cb_foldersig_select"])
@@ -232,25 +225,31 @@ class MainApp:
         Hovertip(btn_mod_db, TooltipDict["btn_mod_db"])
 
     def init_checkboxes(self, window):
-        Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
-
-        Checkbutton(window, text="Process raw files", variable=self.meta_info.process_raw).grid(
-            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
-
-        Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
 
         Checkbutton(
-            window, text="Copy unmatched files", variable=self.meta_info.copy_unmatched
+            window, text="Process folder recursively", variable=self.meta_info.recursive
+        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+                
+        Checkbutton(
+            window, text="Process unmatched files", variable=self.meta_info.process_unmatched
         ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
 
         Checkbutton(
-            window, text="Recursive file/folder processing", variable=self.meta_info.recursive
+            window, text="Process same name files", variable=self.meta_info.process_samename
         ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        Checkbutton(
+            window, text="Require artist for .jpg", variable=self.meta_info.require_artist
+        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
+            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
+
+        # TODO use radiobutton with move / copy
+        Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(
+            row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
 
     def init_progressindicator(self, window):
         # Update to get the correct width for the progressbar
