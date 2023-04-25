@@ -7,7 +7,8 @@ from tkinter import messagebox
 
 import piexif
 from database import Database
-from messagebox import MessageBox
+from guiboxes.messagebox import MessageBox
+from guiboxes.selectionbox import SelectionBox
 from helper import test_time_frame_outside
 
 # from PIL import Image
@@ -41,6 +42,7 @@ class Sorter:
         self.require_artist = self.meta_info.require_artist.get()
         self.process_samename = self.meta_info.process_samename.get()
         self.modify_meta = self.meta_info.modify_meta.get()
+        self.overwrite_meta = self.meta_info.overwrite_meta.get()
 
         self.in_signature = self.meta_info.in_signature.get()
         self.file_signature = self.meta_info.file_signature.get()
@@ -57,7 +59,7 @@ class Sorter:
         # If only the root directory should be processed
         file_dirs = [source_dir]
         file_counts = len([1 for f in os.listdir(source_dir) if isfile(join(source_dir, f))])
-        # Override if the folder should be processed recursive
+        # Overwrite if the folder should be processed recursive
         if self.meta_info.recursive.get() == 1:
             dir_info = [(len(files), cur_path) for cur_path, d, files in os.walk(source_dir)]
             file_counts, file_dirs = zip(*dir_info)
@@ -75,23 +77,41 @@ class Sorter:
 
         for file_dir in file_dirs:
             # Get all files in the directory
-            filelist = [f for f in os.listdir(file_dir) if isfile(join(file_dir, f))]
+            self.filelist = [f for f in os.listdir(file_dir) if isfile(join(file_dir, f))]
 
             if len(os.listdir(file_dir)) == 0:
                 messagebox.showinfo(message=f"Found empty folder: {file_dir}!", title="Error")
 
+            # Sort file list so that the .jpg are in the front and getting processed first
+            self.filelist.sort(key=lambda f: os.path.splitext(f)[1].lower() != ".jpg")
+
             # Iterate the files
-            for file in filelist:
-                self.meta_info.file_count += self.process_file(file, file_dir, target_dir)
+            for idx, file in enumerate(self.filelist):
+                if file is None:
+                    assert self.process_samename > 0
+                    continue
+                self.meta_info.file_count += self.process_file(file, file_dir, target_dir, idx)
 
         self.meta_info.text_queue.put("Finished sorting.\n")
         self.meta_info.finished = True
 
-    def process_file(self, f_name_cpl_old: str, src_dir: str, tgt_dir: str):
+    def process_file(self, f_name_cpl_old: str, src_dir: str, tgt_dir: str, file_idx: int):
         """
-        Process:
-        TODO
+        This function processes the given file to either be moved or copied
+        to a folder that is created using the information given by the file name
+        or metadata.
+        For this the date of the file is extracted by either parsing the filename or
+        using the metadata. In case no date could be extracted the file is moved/copied
+        to a misc folder. Otherwise the date is used to query the database for an event.
+        Should the file be a .jpg the metadata is used to obtain information of the artist.
+        With the date and artist information the event might be determined more clearly.
+        Following this a subevent might be obtained.
+        Finally the new filename is generated, the folder are created and the file is moved.
+        At the end the artist information is saved in the metadata if possible.
+
+        Obacht: Some features can be disabled via the GUI.
         """
+        count = 1
         event_dir = "misc"
         e_title = None
         a_name2 = None
@@ -99,36 +119,68 @@ class Sorter:
         # Get name and extension of file
         f_name_old, f_ext = os.path.splitext(f_name_cpl_old)
         f_ext = f_ext.lower()
+        f_name_cpl_old = f_name_old + f_ext
 
         # Parse date from either metadata or file name
         f_date = self.get_img_date(src_dir, f_name_cpl_old, f_ext)
+        
+        self.meta_info.text_queue.put(f"No matching event found for file: {f_date}.\n")
 
+        # Optional TODO: Add support for other metadata like .mp4 exif
+        ###########################################################################################
+        # Process files with date information
+        ###########################################################################################
+        # If a date was parseable try to get an event with it
         if f_date:
-
-            # TODO
-            e_id, e_title, e_start, e_end = self.get_event_by_date(f_date)
-
+            ##################
+            # JPG processing #
+            ##################
             if f_ext == ".jpg":
                 # Get all available file information from metadata
-                a_name1, a_make, a_model = self.get_img_artist(src_dir, f_name_cpl_old, f_ext)
+                a_name1, a_make, a_model = self.get_img_artist(src_dir, f_name_cpl_old)
                 # Afterwards get event data
                 # Also returns possible author name and image date with applied shift 
                 if result:= self.get_event_by_artist(f_name_cpl_old, f_date, a_make, a_model):
                     e_id, e_title, e_start, e_end, a_name2, f_date = result
-                    # TODO check a_name1 == a_name2
-                # Do not process file when GUI option is deselected
-                elif self.require_artist > 0:
-                    # Disable access to new foldername
-                    e_title = None
 
-            # TODO
-            # se_title, se_start, se_end = self.get_subevent_by_dateid(f_date, e_id)
+                    # Check that the artist did not change
+                    if a_name1 and a_name1 != a_name2:
+                        # TODO test this
+                        box = SelectionBox(
+                            title="Warning: Artist names differ!",
+                            message="The artist name in the metadata did not match the artist name of the event.",
+                            actioncall="Select artist:",
+                            options=[a_name1, a_name2]
+                        )
+                        # Userselection: Discard event information like title and name
+                        if box.choice.get() == a_name1:
+                            e_title = None
+                            a_name2 = a_name1
+                # If it was not possible to get an event via the artist use the date
+                else:
+                    e_id, e_title, e_start, e_end = self.get_event_by_date(f_name_cpl_old, f_date)
+
+            ######################
+            # Non JPG processing #
+            ######################
+            # If the file is not a .jpg use the date to extract the event
+            else:
+                e_id, e_title, e_start, e_end = self.get_event_by_date(f_name_cpl_old, f_date)
+
+            ########################################
+            # Subevent search and folder creationg #
+            ########################################
+            # If an event was found search for a matching subevent and overwrite data accordingly
+            if e_id and e_title:
+                if result:= self.get_subevent_by_dateid(f_date, e_id):
+                    e_title += " - " + result[0]
+                    e_start, e_end = result[1:3]
 
             # Create year folder
             self.create_folder(tgt_dir, str(f_date.year))
             tgt_dir = join(tgt_dir, str(f_date.year))
 
-            # Override event_dir if there is one
+            # Overwrite event_dir if there is one
             if e_title and e_start and e_end:
                 event_dir = self.get_new_foldername(e_title, e_start, e_end)
             # Otherwise the file is ignored or moved into a misc folder inside the year directory
@@ -138,29 +190,35 @@ class Sorter:
                 # Do not process file when GUI option is deselected
                 if self.process_unmatched == 0:
                     self.meta_info.text_queue.put("Did not move or copy file!\n")
-                    return 1
+                    return count
+        ###########################################################################################
+        # Process files without date information
+        ###########################################################################################
         else:
             self.meta_info.text_queue.put(f"Found incompatible file: {f_name_cpl_old}.\n")
             # Do not process file when GUI option is deselected
             if self.process_unmatched == 0:
                 self.meta_info.text_queue.put("Did not move or copy file!\n")
-                return 1
+                return count
 
+        ###########################################################################################
+        # Finalization
+        ###########################################################################################
         # Create event folder
         self.create_folder(tgt_dir, event_dir)
 
-        # TODO
+        # Do not process file when GUI option is deselected
+        if self.require_artist > 0 and event_dir != "misc":
+            tgt_dir = join(tgt_dir, event_dir)
+            event_dir = "no_artist"
+            # Create event folder
+            self.create_folder(tgt_dir, event_dir)
+
+        # Parse the date to get the new file name. The output pattern is specified using the GUI.
         if f_date:
             f_name_new, f_name_cpl_new = self.get_file_name(join(tgt_dir, event_dir), f_date, f_ext)
         else:
-            f_name_cpl_new = f_name_cpl_old
-
-        # TODO In case same-name-files should be processed,
-        # the filelist is searched for a file with the same name (different fileending).
-        # It there is one, modify the name in the same way as the current file.
-        # TODO return number of modified files 
-        # if (self.process_samename > 0):
-            # return count
+            f_name_new, f_name_cpl_new = f_name_old, f_name_cpl_old
 
         #####################
         # Move or copy file #
@@ -168,56 +226,89 @@ class Sorter:
         tgt_dir = join(tgt_dir, event_dir)
         self.move_or_copy_image(tgt_dir, src_dir, f_name_cpl_old, f_name_cpl_new)
 
+        ####################################
+        # Move or copy similar named files #
+        ####################################
+        if self.process_samename > 0 and self.file_signature != "Foldername_Number":
+            # Iterate the files in the same directory
+            for idx, file in enumerate(self.filelist[file_idx + 1 : ]):
+                if file is None:
+                    continue
+                # Extract file ending
+                tmp_name, tmp_ext = os.path.splitext(file.lower())
+                # If the file has the same name but is a different file and is not a .jpg
+                if tmp_name == f_name_old.lower() and tmp_ext != ".jpg" and tmp_ext != f_ext:
+                    count += 1
+                    self.move_or_copy_image(tgt_dir, src_dir, file, f_name_new + tmp_ext)
+                    self.filelist[file_idx + idx + 1] = None
+
+        assert not (self.process_samename == 1 and self.file_signature == "Foldername_Number")
+
         ###################
         # Modify metadata #
         ###################
         # Only modifies the file in the new folder not the original
-        if self.modify_meta > 0 and f_ext == ".jpg" and e_title and a_name2 and f_date:
-            self.modify_metadata_piexif(join(tgt_dir, f_name_cpl_new), e_title, a_name2, f_date)
-            # self.modify_metadata_pyexiv2(join(event_dir, new_name_ext), event_name)
-            # self.modify_metadata_exif(join(event_dir, new_name_ext), event_name)
-            # self.modify_metadata_pil(join(event_dir, new_name_ext), event_name)
+        if self.modify_meta > 0 and f_ext == ".jpg":
+            meta_fields = [
+                {
+                    "dict": "0th",
+                    "key": piexif.ImageIFD.ImageDescription,
+                    "value": e_title
+                },
+                {
+                    "dict": "0th",
+                    "key": piexif.ImageIFD.Artist,
+                    "value": a_name2
+                },
+                {
+                    "dict": "Exif",
+                    "key": piexif.ExifIFD.DateTimeOriginal,
+                    "value": f_date
+                }
+            ]
+            self.modify_metadata_piexif(join(tgt_dir, f_name_cpl_new), meta_fields)
 
-        return 1
+        return count
     
-    def get_event_by_date(self, date):
+    def get_event_by_date(self, f_name_cpl_old: str, date):
         # Get a list of all events using the given date
         lst_events = self.db.get_by_date("events", date)
 
         if len(lst_events) == 0:
             return (False, False, False, False)
-        # TODO
-        # if len(lst_events) > 0:
-            # let user select
 
-        # TODO just return lst_events[0][0:3]?
-        return (
-            lst_events[0][0], # e_id
-            lst_events[0][1], # e_title
-            lst_events[0][2], # e_start
-            lst_events[0][3], # e_end
-        )
+        select = 0
+        # Let the user select the event if more than one matched.
+        # Do not process .jpg's
+        if len(lst_events) > 1:
+            box = SelectionBox(
+                title="Warning: Multiple events match!",
+                message=f"The given file ({f_name_cpl_old}) matches multiple events.",
+                actioncall="Select event:",
+                options=[str(i) + " | " + e[1] for i, e in enumerate(lst_events)]
+            )
+            select = int(box.choice.get().split(" | ")[0])
+
+        # Order: e_id, e_title, e_start, e_end
+        return lst_events[select][0:4]
 
     # Get subevent if present
     def get_subevent_by_dateid(self, date, e_id):
         # There can only be one subevent so there is no need to manually select it
         lst_subevent = self.db.get_by_date("subevents", date, ("event_id", e_id))
         assert(len(lst_subevent) < 2)
-        # Override result if subevent exists
-        if len(lst_subevent) == 1:
-            # TODO just return lst_events[0][1:3]?
-            return (
-                lst_subevent[0][1], # se_title
-                lst_subevent[0][2], # se_start
-                lst_subevent[0][3], # se_end
-            )
-        else:
-            return (None, None, None)
 
-    # TODO rename old_name to filename
-    def get_event_by_artist(self, old_name: str, date, make: str, model: str):
+        # Overwrite result if subevent exists
+        if len(lst_subevent) == 1:
+            # Order: se_title, se_start, se_end
+            return lst_subevent[0][2:5]
+        else:
+            return False
+
+    def get_event_by_artist(self, filename: str, date, make: str, model: str):
         # In case one of the values is False or None
-        if not (old_name and date and make and model):
+        if not (filename and date and make and model):
+            self.meta_info.text_queue.put(f"No make or model data found for file: {filename}.\n")
             return False
 
         ########################
@@ -227,11 +318,9 @@ class Sorter:
         lst_artists = self.db.get("artists", ("make", make), ("model", model))
         # If there was no matching artist found, print error
         if len(lst_artists) < 1:
-            self.meta_info.text_queue.put(f"No matching artist found for file: {old_name}.\n")
+            self.meta_info.text_queue.put(f"No matching artist found for file: {filename}.\n")
             return False
 
-        print("Artist List:")
-        print(lst_artists)
         lst_final = []
         for artist in lst_artists:
             shift = artist[6].split(":")
@@ -248,73 +337,58 @@ class Sorter:
 
             # Check if this artist matches the time frame itselft
             if test_time_frame_outside(s_date, e_date, shifted_date, shifted_date):
-                print(f"Dropped artist {artist}")
                 continue
 
             # Get a list of all events using the shifted date of this artist 
             lst_events = self.db.get_by_date("events", shifted_date)
 
-            print("Event list:")
-            print(lst_events)
-
             # Finally the artist and event list are cross referenced to reduce the pool of candidates.
-            # TODO rename e to event
-            for e in lst_events:
+            for event in lst_events:
                 # Get all participants for the tested event
-                # TODO might be possible to use a database join here
-                lst_parts = self.db.get("participants", ("event_id", e[0]))
-                print("Participant list")
-                print(lst_parts)
+                # Optional TODO: might be possible to use a database join here
+                lst_parts = self.db.get("participants", ("event_id", event[0]))
 
                 for p in lst_parts:
                     # Check if pid of participant matches with the current artist
                     # Use person id for both
                     if p[1] == artist[1]:
-                        name = self.db.get("persons", ("pid", p[1]))[0][1]
-                        # TODO remove artist?
-                        lst_final.append((e, artist, name, shifted_date))
+                        # Check that the participation timeframe matches the image date
+                        p_s_date = datetime.datetime.strptime(p[3], "%Y-%m-%d %H:%M:%S")
+                        p_e_date = datetime.datetime.strptime(p[4], "%Y-%m-%d %H:%M:%S")
+                        if test_time_frame_outside(p_s_date, p_e_date, shifted_date, shifted_date):
+                            continue
 
-        print("Final list:")
-        print(lst_final)
+                        name = self.db.get("persons", ("pid", p[1]))[0][1]
+                        lst_final.append((event, name, shifted_date))
 
         # If there was no matching event and artist combo found print error
         if len(lst_final) < 1:
             self.meta_info.text_queue.put(
-                f"No matching combination of artist and event found for file: {old_name}.\n"
+                f"No matching combination of artist and event found for file: {filename}.\n"
             )
             return False
 
-        final_selection = lst_final[0]
+        select = 0
         # If more than one artist or event is left over
         # the user need to manually select the right one.
         if len(lst_final) > 1:
-            self.meta_info.text_queue.put(f"To many matching events found for file: {old_name}.\n")
-            return False
+            self.meta_info.text_queue.put(f"To many matching events found for file: {filename}.\n")
 
-        print("Success!")
-        print(final_selection)
+            box = SelectionBox(
+                title="Warning: Multiple events/artists match!",
+                message=f"The given file ({filename}) matches multiple event-artist combinations.",
+                actioncall="Select the correct combination:",
+                options=[str(i) + " | " + e[0][1] + " | " + e[1] for i, e in enumerate(lst_final)]
+            )
+            select = int(box.choice.get().split(" | ")[0])
 
-        ###########################
-        # Get subevent if present #
-        ###########################
-        # TODO remove subevent from here
-        # There can only be one subevent so there is no need to manually select it
-        subevent_list = self.db.get_by_date("subevents", date, ("event_id", final_selection[0][0]))
-        assert(len(subevent_list) < 2)
-        # Get subevent if exists
-        sub_event = subevent_list[0] if len(subevent_list) > 0 else None
-        print("Subevent: ", sub_event)
-
-        # TODO substitute if subevent was found
-        # if sub_event:
-        #     final_selection[0] = sub_event
         return (
-            final_selection[0][0], # e_id
-            final_selection[0][1], # e_title
-            final_selection[0][2], # e_start
-            final_selection[0][3], # e_end
-            final_selection[2], # name of artist
-            final_selection[3], # date
+            lst_final[select][0][0], # e_id
+            lst_final[select][0][1], # e_title
+            lst_final[select][0][2], # e_start
+            lst_final[select][0][3], # e_end
+            lst_final[select][1], # name of artist
+            lst_final[select][2], # date
         )
 
     def create_folder(self, tgt_dir, folder_name):
@@ -334,16 +408,15 @@ class Sorter:
         assert f_date
         assert f_ext
         # Rename file with the defined template
-        # TODO switch parameter
-        new_name = self.get_new_filename(f_date, event_dir)
-        new_name_ext = self.get_new_filename(f_date, event_dir) + f_ext
+        new_name = self.get_new_filename(event_dir, f_date)
+        new_name_ext = self.get_new_filename(event_dir, f_date) + f_ext
 
         # Check if the file already exists
         if os.path.exists(os.path.join(event_dir, new_name_ext)):
             if not self.meta_info.dont_ask_again.get():
                 box = MessageBox(
                     title="Warning: Filename already taken!",
-                    message="Override file? Adding number to name otherwise.",
+                    message="Overwrite file? Adding number to name otherwise.",
                     meta_info=self.meta_info,
                 )
                 self.confirm = box.choice
@@ -357,6 +430,7 @@ class Sorter:
         return (new_name, new_name_ext)
 
     def move_or_copy_image(self, event_dir, src_dir, name_cpl_old, name_cpl_new):
+        assert isfile(join(src_dir, name_cpl_old))
         try:
             if self.copy_files > 0:
                 # Copy file
@@ -369,31 +443,30 @@ class Sorter:
         except OSError:
             messagebox.showinfo(message=f"Movement of file {name_cpl_old} failed", title="Error")
 
-    def get_img_artist(self, src_dir, f_name, f_ext):
-        assert f_ext == ".jpg"
+    def get_img_artist(self, src_dir, f_name):
+        assert f_name.endswith(".jpg")
         try:
             exif_dict = piexif.load(join(src_dir, f_name))
             # If present get the artist from metadata
-            a_name = self.get_exif_value(exif_dict, piexif.ImageIFD.Artist)
+            a_name = self.get_exif_value(exif_dict, "0th", piexif.ImageIFD.Artist)
             # Get make and model from metadata
-            a_make = self.get_exif_value(exif_dict, piexif.ImageIFD.Make)
-            a_model = self.get_exif_value(exif_dict, piexif.ImageIFD.Model)
+            a_make = self.get_exif_value(exif_dict, "0th", piexif.ImageIFD.Make)
+            a_model = self.get_exif_value(exif_dict, "0th", piexif.ImageIFD.Model)
             return a_name, a_make, a_model
         except FileNotFoundError:
             self.meta_info.text_queue.put(f"File {f_name} could not be found.\n")
             return None, None, None
 
-    # TODO custom dict param
-    def get_exif_value(self, exif_dict, key):
+    def get_exif_value(self, exif_dict, dict1, key):
         if (
-            key in exif_dict["0th"]
-            and len((exif_dict["0th"][key]).decode("ascii")) > 0
+            key in exif_dict[dict1]
+            and len((exif_dict[dict1][key]).decode("ascii")) > 0
         ):
-            return str(exif_dict["0th"][key], "ascii")
+            return str(exif_dict[dict1][key], "ascii")
         else:
-            return False
+            return None
 
-    def get_img_date(self, source_dir, file, file_extension, fallback=0):
+    def get_img_date(self, source_dir, file, file_extension):
         """
         Obtains the creation date of the image by either accessing the meta data,
         or using the filename to parse the correct date.
@@ -421,7 +494,6 @@ class Sorter:
         date = False
 
         # Check if the file has metadata that can be parsed
-        # TODO add support for .mp4 exif
         if file_extension == ".jpg":
             try:
                 exif_dict = piexif.load(join(source_dir, file))
@@ -436,7 +508,6 @@ class Sorter:
                         ms = exif_dict["Exif"][piexif.ExifIFD.SubSecTimeOriginal]
                         val += "." + str(ms, "ascii")
                         date = datetime.datetime.strptime(val, "%Y:%m:%d %H:%M:%S.%f")
-            # TODO which exceptions?
             except FileNotFoundError:
                 self.meta_info.text_queue.put(f"File {file} could not be found.\n")
             except KeyError:
@@ -454,20 +525,27 @@ class Sorter:
         date = False
 
         regex_list = self.meta_info.get_signature_regex()
-        regex_num_list = self.meta_info.get_num_signature_regex()
         strptime_list = self.meta_info.get_signature_strptime()
         assert len(regex_list) == len(strptime_list)
 
-        for regex, regex_num, strptime in zip(regex_list, regex_num_list, strptime_list):
-            if re.search(regex_num, file) is not None:
-                file = file.rsplit("_", 1)[0] + file_extension
+        # Test the file name against all supported regex
+        # In case a valid regex was found use the strp-string to parse the date.
+        for regex, strptime in zip(regex_list, strptime_list):
+            # Get the match using the current regex
+            if match:= re.search(regex, file):
+                match = match.group(1) + file_extension
 
-            if re.search(regex, file) is not None:
+                if regex == r"^\w{3}_\d{8}_\d{6}":
+                    strptime = "%Y%m%d_%H%M%S"
+
+                if strptime == "":
+                    return date
+
                 try:
-                    date = datetime.datetime.strptime(file, strptime + file_extension)
+                    date = datetime.datetime.strptime(match, strptime + file_extension)
                 except ValueError:
                     self.meta_info.text_queue.put(
-                        f"Time data not readable for file: {file}.\n"
+                        f"Time data not readable for file: {file}, {strptime}, {file_extension}, {date}.\n"
                     )
                 return date
 
@@ -478,9 +556,12 @@ class Sorter:
 
         return date
 
-    def get_new_foldername(self, e_name, e_start, e_end):
+    def get_new_foldername(self, e_title, e_start, e_end):
+        """
+        Note: e_title already consits of event and subevent title
+        """
         # Replace all whitespaces to prevent spaces in path
-        event_name = e_name.replace(" ", "")
+        event_title = e_title.replace(" ", "")
         start_date = datetime.datetime.strptime(e_start, "%Y-%m-%d %H:%M:%S")
         end_date = datetime.datetime.strptime(e_end, "%Y-%m-%d %H:%M:%S")
 
@@ -500,37 +581,34 @@ class Sorter:
         foldername = ""
         sig = self.meta_info.get_supported_folder_signatures()
 
-        # BIG TODO
-        subevent_name = ""
-
         if self.folder_signature == sig[0]:
-            foldername = year + "_[" + span + "]_" + event_name + subevent_name
+            foldername = year + "_[" + span + "]_" + event_title
         elif self.folder_signature == sig[1]:
-            foldername = year + "[" + span + "]_" + event_name + subevent_name
+            foldername = year + "[" + span + "]_" + event_title
         elif self.folder_signature == sig[2]:
-            foldername = "[" + year + "][" + span + "][" + event_name + subevent_name + "]"
+            foldername = "[" + year + "][" + span + "][" + event_title + "]"
         elif self.folder_signature == sig[3]:
             lst = span.split("-")
             center = "[" + lst[0] + "]-[" + lst[1] + "]" if len(lst) == 2 else "[" + lst[0] + "]"
-            foldername = "[" + year + "]" + center + "[" + event_name + subevent_name + "]"
+            foldername = "[" + year + "]" + center + "[" + event_title + "]"
         elif self.folder_signature == sig[4]:
-            foldername = year + "[" + span + "]" + event_name + subevent_name
+            foldername = year + "[" + span + "]" + event_title
         elif self.folder_signature == sig[5]:
-            foldername = year + "_" + span + "_" + event_name + subevent_name
+            foldername = year + "_" + span + "_" + event_title
         elif self.folder_signature == sig[6]:
-            foldername = year + "'" + span + "'" + event_name + subevent_name
+            foldername = year + "'" + span + "'" + event_title
         elif self.folder_signature == sig[7]:
             month = s_month_id if s_month_id == e_month_id else s_month_id + "-" + e_month_id
-            foldername = year + "_" + month + "_" + event_name + subevent_name
+            foldername = year + "_" + month + "_" + event_title
         elif self.folder_signature == sig[8]:
-            foldername = year + "_" + event_name + subevent_name
+            foldername = year + "_" + event_title
         elif self.folder_signature == sig[9]:
-            foldername = event_name + subevent_name
+            foldername = event_title
 
         return foldername
 
     # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
-    def get_new_filename(self, date, event_dir):
+    def get_new_filename(self, event_dir, date):
         filename = ""
         sig = self.meta_info.get_supported_file_signatures()
 
@@ -545,28 +623,22 @@ class Sorter:
         elif self.file_signature == sig[3]:
             filename = date.strftime("IMG_%Y%m%d_%H%M%S")
         elif self.file_signature == sig[4]:
-            filename = date.ctime()
-            filename = filename.replace(":", "-")
+            filename = date.strftime("%a %b %d %H-%M-%S %Y")
         else:
-            number = str(
-                len(
-                    [
-                        name
-                        for name in os.listdir(event_dir)
-                        if os.path.isfile(join(event_dir, name))
-                    ]
-                )
-                + 1
-            )
-            filename = date.strftime("%m-%B-%d_") + number
+            number = len(
+                [
+                    name
+                    for name in os.listdir(event_dir)
+                    if os.path.isfile(join(event_dir, name))
+                ]
+            ) + 1
+            event_dir = re.sub(r"[/\\]no_artist", "", event_dir)
+            folder_name = re.split(r"[/\\]", event_dir)[-1]
+            filename = f"{folder_name}_{number:03d}"
 
         return filename
 
-    # TODO write more general approach
-    # For entry in dict
-    # if key in exif_dict[dict] or overwrite
-    #     exif_dict[dict][key] = data
-    def modify_metadata_piexif(self, file_with_path, title, artist, date):
+    def modify_metadata_piexif(self, file_with_path, meta_fields):
         """
         Use piexif to load the exif metadata from the image
         and store it in the copy by using insert.
@@ -575,167 +647,50 @@ class Sorter:
         Source: https://stackoverflow.com/questions/53543549/
         Since piexif is only sparsely maintained
         an alternate function is implemented using pyexiv2.
+
+        The function processes all objects in meta_fields and tries to
+        assign the value to the given dict/key.
         """
         try:
             exif_dict = piexif.load(file_with_path)
+        except FileNotFoundError:
+            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
+            return
+        
+        for elem in meta_fields:
+            d = elem["dict"]
+            k = elem["key"]
+            v = elem["value"]
 
-            if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
-                exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
+            # In case the value was None do not process it
+            if not v:
+                continue
 
-            # TODO add checkbox for overwriting meta data
-            if (
-                piexif.ImageIFD.Artist not in exif_dict["0th"]
-                or len((exif_dict["0th"][piexif.ImageIFD.Artist]).decode("ascii")) < 1
-            ):
-                exif_dict["0th"][piexif.ImageIFD.Artist] = artist
-
-            # If enabled set the datetime metadata
-            if date:
+            # Special case: value is a datetime object -> convert to string
+            if isinstance(v, datetime.date):
                 # Create string from datetime object
-                datestr = date.strftime("%Y:%m:%d %H:%M:%S")
+                v = v.strftime("%Y:%m:%d %H:%M:%S")
                 # Convert to binary
-                datestr = datestr.encode("ascii")
-                # Write back to the buffer
-                exif_dict["Exif"][piexif.ExifIFD.DateTimeOriginal] = datestr
+                v = v.encode("ascii")
+            else:
+                assert isinstance(v, str)
+
+            # how-do-you-modify-xpkeywords-using-piexif
+            # https://stackoverflow.com/questions/59856199/
+            if (
+                k == piexif.ImageIFD.XPTitle or # For 'Titel' entry
+                k == piexif.ImageIFD.XPComment or # For 'Kommentar' entry
+                k == piexif.ImageIFD.XPSubject # For 'Betreff' entry
+            ):
+                v = v.encode("utf-16le")
+
+            if (
+                self.overwrite_meta > 0
+                or k not in exif_dict[d]
+                or len((exif_dict[d][k]).decode("ascii")) < 1
+            ):
+                exif_dict[d][k] = v
 
             # Write back to the file
             exif_bytes = piexif.dump(exif_dict)
             piexif.insert(exif_bytes, file_with_path)
-
-        except FileNotFoundError:
-            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
-
-    def modify_metadata_pyexiv2(self, file_with_path, title=""):
-        """
-        This function uses pyexiv2 to modify the exif metadata.
-        This method prevents the image data from being decompressed and potentially altered.
-        Documentation: https://github.com/LeoHsiao1/pyexiv2
-        Source: https://stackoverflow.com/questions/53543549/
-        """
-        try:
-            with ImgMeta(  # noqa: F821 # pylint: disable=undefined-variable
-                file_with_path
-            ) as img_meta:
-
-                T_KEY = "Exif.Image.ImageDescription"
-                img_meta.modify_exif({T_KEY: title})
-
-                exif = img_meta.read_exif()
-                try:
-                    make = exif["Exif.Image.Make"]
-                    model = exif["Exif.Image.Model"]
-                except KeyError:
-                    raise
-
-                artist = self.db.get_artist(make, model)
-                if len(artist) == 1:
-                    A_KEY = "Exif.Image.Artist"
-                    img_meta.modify_exif({A_KEY: artist[0][0]})
-
-        except FileNotFoundError:
-            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
-
-    def modify_metadata_exif(self, file_with_path, title=""):
-        """
-        This function uses exif to modify the exif metadata.
-        This method prevents the image data from being decompressed and potentially altered.
-        Sadly the lib is only sparsely maintained and using it might leed to corrupted data
-        when adding metadata, similar to this issue: https://gitlab.com/TNThieding/exif/-/issues/68
-        Therefore it is discuraged to use this function.
-        Documentation: https://gitlab.com/TNThieding/exif
-        """
-        try:
-            with open(file_with_path, "rb") as img_file:
-                img = Image2(img_file)  # noqa: F821 # pylint: disable=undefined-variable
-
-            # Add description and title
-            img.image_description = title
-
-            # Add artist information
-            make = img.make
-            model = img.model
-            artist = self.db.get_artist(make, model)
-            if len(artist) == 1:
-                # TODO [0][0]
-                img.artist = artist[0][0]
-
-            # Overwrite image with modified EXIF metadata to an image file
-            with open(file_with_path, "wb") as new_image_file:
-                new_image_file.write(img.get_file())
-
-        except FileNotFoundError:
-            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
-
-    def modify_metadata_pil(self, file_with_path, title=""):
-        """
-        This function uses piexif in combination with pillow to modify the exif metadata.
-        Sadly the pillow lib does decompress the image
-        even though we only want to change the metadata.
-        Therefore it is discuraged to use this function.
-        Documentation: https://pillow.readthedocs.io/en/stable/index.html
-        Expl: https://towardsdatascience.com/read-and-edit-image-metadata-with-python-f635398cd991
-        """
-        try:
-            img = Image.open(file_with_path)  # noqa: F821 # pylint: disable=undefined-variable
-
-            exif_dict = piexif.load(img.info["exif"])
-
-            if piexif.ImageIFD.ImageDescription not in exif_dict["0th"]:
-                exif_dict["0th"][piexif.ImageIFD.ImageDescription] = title
-
-            if piexif.ImageIFD.Artist not in exif_dict["0th"]:
-                make = exif_dict["0th"][piexif.ImageIFD.Make]
-                model = exif_dict["0th"][piexif.ImageIFD.Model]
-                artist = self.db.get_artist(str(make, "ascii"), str(model, "ascii"))
-                if len(artist) == 1:
-                    # TODO [0][0]
-                    exif_dict["0th"][piexif.ImageIFD.Artist] = artist[0][0]
-
-            exif_bytes = piexif.dump(exif_dict)
-
-            # https://jdhao.github.io/2019/07/20/pil_jpeg_image_quality/
-            img.save(
-                file_with_path,
-                exif=exif_bytes,
-                quality="keep",
-                dpi=img.info["dpi"],
-                subsampling="keep",
-                qtables="keep",
-                icc_profile=img.info.get("icc_profile"),
-                optimize=False,
-            )
-
-        except FileNotFoundError:
-            self.meta_info.text_queue.put(f"File {file_with_path} could not modify metadata.\n")
-
-    def debug_print_metadata(self, file):
-        img = Image.open(file)  # noqa: F821 # pylint: disable=undefined-variable
-        exif_dict = piexif.load(img.info["exif"])
-
-        m_data = exif_dict["0th"]
-        tmp_dict = piexif.ImageIFD.__dict__
-
-        for k in m_data:
-            for e in tmp_dict:
-                if k == tmp_dict[e]:
-                    print(e, m_data[k])
-
-        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-
-        m_data = exif_dict["Exif"]
-        tmp_dict = piexif.ExifIFD.__dict__
-
-        for k in m_data:
-            for e in tmp_dict:
-                if k == tmp_dict[e]:
-                    print(e, m_data[k])
-
-        print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
-
-        m_data = exif_dict["1st"]
-        tmp_dict = piexif.ImageIFD.__dict__
-
-        for k in m_data:
-            for e in tmp_dict:
-                if k == tmp_dict[e]:
-                    print(e, m_data[k])

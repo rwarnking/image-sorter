@@ -2,7 +2,9 @@ import os
 import sys
 import threading
 from tkinter import (
+    DISABLED,
     END,
+    NORMAL,
     HORIZONTAL,
     RIGHT,
     Button,
@@ -110,18 +112,17 @@ class MainApp:
             while not self.meta_info.text_queue.empty():
                 self.details_text.insert(END, self.meta_info.text_queue.get(0))
         else:
-            # self.meta_info.update_estimated_time()
-            # s = int(self.meta_info.timer.estimated_time % 60)
-            # m = int(self.meta_info.timer.estimated_time / 60)
-            # self.time_label.config(
-            #     text=f"Processing Data. Estimated rest time: {m} minutes and {s} seconds."
-            # )
-
             self.file_label.config(text=f"Finished file {f_count} of {f_count_max} files.")
-            self.time_label.config(text="")
+            # Update the time expected for processing all files
+            self.meta_info.update_estimated_time(f_count_max - f_count)
+            s = self.meta_info.get_estimated_time_s()
+            m = self.meta_info.get_estimated_time_m()
+            self.time_label.config(
+                text=f"Processing Files. Estimated rest time: {m} minutes and {s} seconds."
+            )
+
             window.after(50, lambda: self.listen_for_result(window))
 
-        # TODO Test
         # Scroll text to the end
         self.details_text.yview(END)
 
@@ -134,7 +135,7 @@ class MainApp:
             if filename != "":
                 dir.set(filename)
 
-        self.meta_info.set_dirs(APP_PATH, APP_PATH, APP_PATH, APP_PATH, APP_PATH, APP_PATH)
+        self.meta_info.set_dirs(APP_PATH, APP_PATH, APP_PATH, APP_PATH)
 
         # Source directory
         lbl1 = Label(window, text="Source directory:")
@@ -234,21 +235,41 @@ class MainApp:
             window, text="Process unmatched files", variable=self.meta_info.process_unmatched
         ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
 
-        Checkbutton(
+        # Add a checkbof for processing files with the same name
+        # This checkbox is disabled when "Foldername_Number" is active
+        cb_samenam = Checkbutton(
             window, text="Process same name files", variable=self.meta_info.process_samename
-        ).grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        )
+        cb_samenam.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        def on_change(index, value, op):
+            if self.meta_info.file_signature.get() == "Foldername_Number":
+                cb_samenam.config(state=DISABLED)
+                self.meta_info.process_samename.set(0)
+            else:
+                cb_samenam.config(state=NORMAL)
+        self.meta_info.file_signature.trace('w', on_change)
 
         Checkbutton(
             window, text="Require artist for .jpg", variable=self.meta_info.require_artist
         ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
 
         Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
-            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
+            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
         )
 
-        # TODO use radiobutton with move / copy
-        Checkbutton(window, text="Copy images", variable=self.meta_info.copy_files).grid(
-            row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        Checkbutton(window, text="Overwrite metadata", variable=self.meta_info.overwrite_meta).grid(
+            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
+
+        Radiobutton(
+            window, text="Copy files", variable=self.meta_info.copy_files, value=1
+        ).grid(
+            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
+        )
+        Radiobutton(
+            window, text="Move files", variable=self.meta_info.copy_files, value=0
+        ).grid(
+            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
         )
 
     def init_progressindicator(self, window):
@@ -272,7 +293,7 @@ class MainApp:
 
     def init_details(self, window):
         # Details Menu
-        helper_frame = Frame(window, width=window.winfo_width() - PAD_X * 2, height=100)
+        helper_frame = Frame(window, width=window.winfo_width() + 100 - PAD_X * 2, height=250)
         helper_frame.pack_propagate(False)
         helper_frame.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y)
 

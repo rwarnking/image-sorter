@@ -418,7 +418,7 @@ class Database:
         else:
             raise IndexError("No last row for this database connection present!")
 
-    # TODO one to one doublicate of insert function
+    # TODO doublicate of insert function
     def get_has_or_insert(self, table: str, *args: Tuple[str, ...]):
         setter, qmarks, vals = self.get_setter_qmarks_vals(args)
 

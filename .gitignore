@@ -6,6 +6,8 @@
 *.db
 
 src/*.json
+tests/result_images
+tests/test_images
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

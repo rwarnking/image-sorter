@@ -1,7 +1,7 @@
 # Image Sorter
 
-[<img alt="Unit tests" src="https://img.shields.io/github/workflow/status/rwarnking/image-sorter/Run%20Python%20Tests?label=Build&logo=github&style=for-the-badge" height="23">](https://github.com/rwarnking/image-sorter/actions/workflows/pytests.yml)
-[<img alt="Linting status of master" src="https://img.shields.io/github/workflow/status/rwarnking/image-sorter/Lint%20Code%20Base?label=Linter&style=for-the-badge" height="23">](https://github.com/marketplace/actions/super-linter)
+[<img alt="Unit tests" src="https://img.shields.io/github/actions/workflow/status/rwarnking/image-sorter/pytests.yml?label=Tests&logo=github&style=for-the-badge" height="23">](https://github.com/rwarnking/image-sorter/actions/workflows/pytests.yml)
+[<img alt="Linting status of master" src="https://img.shields.io/github/actions/workflow/status/rwarnking/image-sorter/linter.yml?label=Linter&style=for-the-badge" height="23">](https://github.com/marketplace/actions/super-linter)
 [<img alt="Version" src="https://img.shields.io/github/v/release/rwarnking/image-sorter?style=for-the-badge" height="23">](https://github.com/rwarnking/image-sorter/releases/latest)
 [<img alt="Licence" src="https://img.shields.io/github/license/rwarnking/image-sorter?style=for-the-badge" height="23">](https://github.com/rwarnking/image-sorter/blob/main/LICENSE)
 
