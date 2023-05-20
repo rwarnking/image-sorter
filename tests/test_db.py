@@ -3,7 +3,8 @@ import pathmagic  # noqa isort:skip
 import datetime
 import os
 import unittest
-from tkinter import Text, Tk
+from os.path import isfile, join
+from typing import Union
 
 from database import Database
 
@@ -11,6 +12,11 @@ from database import Database
 class TestDB(unittest.TestCase):
     def test_run(self):
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+        DB_DIR = join(TEST_DIR, "test_dbs")
+
+        # Delete old db file if present
+        if isfile(join(TEST_DIR, "database.db")):
+            os.remove(join(TEST_DIR, "database.db"))
 
         self.db = Database()
 
@@ -30,7 +36,7 @@ class TestDB(unittest.TestCase):
         # Load from file 1 #
         ####################
         # Check if not empty after insert from file
-        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_1-1.json")
+        self.db.load_from_file(join(DB_DIR, "db_test_1-1.json"))
         for table in table_list:
             self.db_not_empty_test(table[0], table[1])
 
@@ -42,7 +48,7 @@ class TestDB(unittest.TestCase):
         ####################
         # Load from file 2 #
         ####################
-        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_2-1.json")
+        self.db.load_from_file(join(DB_DIR, "db_test_2-1.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 1, "artist1")
@@ -51,7 +57,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(len(artists) == 1)
         self.artist_test(artists[0], 1, 1, "test_make_1", "test_model_1")
 
-        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_2-2.json")
+        self.db.load_from_file(join(DB_DIR, "db_test_2-2.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 2)
         self.person_test(persons[0], 1, "artist2")
@@ -69,7 +75,7 @@ class TestDB(unittest.TestCase):
         ####################
         # Load from file 3 #
         ####################
-        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_3-1.json")
+        self.db.load_from_file(join(DB_DIR, "db_test_3-1.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 3, "artist1")
@@ -78,7 +84,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(len(artists) == 1)
         self.artist_test(artists[0], 1, 3, "test_make_1", "test_model_1")
 
-        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_3-2.json")
+        self.db.load_from_file(join(DB_DIR, "db_test_3-2.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 1, "artist1")
@@ -87,7 +93,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(len(artists) == 1)
         self.artist_test(artists[0], 1, 1, "test_make_1", "test_model_1")
 
-        self.db.load_from_file(TEST_DIR + "/test_dbs/db_test_3-3.json")
+        self.db.load_from_file(join(DB_DIR, "db_test_3-3.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 1, "artist1")
@@ -130,10 +136,7 @@ class TestDB(unittest.TestCase):
         self.db_not_empty_test("events", 1)
 
         event_id = self.db.get(
-            "events", 
-            ("title", "test_title"), 
-            ("start_date", start_date), 
-            ("end_date", end_date)
+            "events", ("title", "test_title"), ("start_date", start_date), ("end_date", end_date)
         )[0][0]
 
         person_id = self.db.get("persons", ("name", "test_name"))[0][0]
@@ -158,10 +161,10 @@ class TestDB(unittest.TestCase):
         # Save to file #
         ################
         # Check if file exists after save
-        self.db.save_to_file(TEST_DIR + "/db2.json")
+        self.db.save_to_file(join(TEST_DIR, "db2.json"))
         print(TEST_DIR)
         print(TEST_DIR + "/db2.json")
-        self.assertTrue(os.path.exists(TEST_DIR + "/db2.json"))
+        self.assertTrue(os.path.exists(join(TEST_DIR, "db2.json")))
 
         # Check if empty after clean
         self.db.delete_event("test_title", start_date, end_date)
@@ -187,17 +190,24 @@ class TestDB(unittest.TestCase):
         self.db.delete_artist(p_id, "test_make", "test_model", start_date, end_date, time_shift)
         self.db_empty_test("artists")
 
-    def person_test(self, person, pid, name):
+        # Delete database
+        self.db.close()
+        if isfile(join(TEST_DIR, "database.db")):
+            os.remove(join(TEST_DIR, "database.db"))
+
+    def person_test(self, person: list[Union[str, int]], pid: int, name: str):
         self.assertTrue(person[0] == pid)
         self.assertTrue(person[1] == name)
 
-    def artist_test(self, artist, aid, pid, make, model):
+    def artist_test(
+        self, artist: list[Union[str, int]], aid: int, pid: int, make: str, model: str
+    ):
         self.assertTrue(artist[0] == aid)
         self.assertTrue(artist[1] == pid)
         self.assertTrue(artist[2] == make)
         self.assertTrue(artist[3] == model)
 
-    def db_not_empty_test(self, table: str, size):
+    def db_not_empty_test(self, table: str, size: int):
         res = self.db.get_all(table)
         self.assertTrue(len(res) == size)
 

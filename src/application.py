@@ -1,46 +1,50 @@
 import os
 import sys
 import threading
+from idlelib.tooltip import Hovertip
 from tkinter import (
     DISABLED,
     END,
-    NORMAL,
     HORIZONTAL,
+    NORMAL,
     RIGHT,
     Button,
     Frame,
     Label,
+    StringVar,
     Text,
     Tk,
     filedialog,
     messagebox,
 )
-from tkinter.ttk import Checkbutton, Combobox, Progressbar, Scrollbar, Separator, Radiobutton
+from tkinter.ttk import Checkbutton, Combobox, Progressbar, Radiobutton, Scrollbar, Separator
 
 # own imports
 from database import Database
+from guiboxes.basebox import PAD_X, PAD_Y, WINDOW_W
+from guiboxes.modifydbbox import ModifyDBBox
 from helper import lt_window
-from idlelib.tooltip import Hovertip
 from meta_information import MetaInformation
 from sorter import Sorter
-from tkcalendar import DateEntry
 from tooltips import TooltipDict
-from guiboxes.modifydbbox import ModifyDBBox
-
-from guiboxes.basebox import PAD_X, PAD_Y
 
 # https://stackoverflow.com/questions/404744/
 if getattr(sys, "frozen", False):
     # If the application is run as a bundle, the PyInstaller bootloader
-    # extends the sys module by a flag frozen=True and sets the app
-    # path into variable _MEIPASS'.
-    APP_PATH = sys._MEIPASS  # type: ignore
+    # extends the sys module by a flag frozen=True and sets the app path
+    APP_PATH = os.path.dirname(sys.executable)
 else:
     APP_PATH = os.path.dirname(os.path.abspath(__file__))
 
+TMAIN_H = 250
+TMAIN_W = WINDOW_W - 2 * PAD_X
+
 
 class MainApp:
-    def __init__(self, window):
+    def __init__(self, window: Tk):
+        """
+        Initialize all GUI elements as well as the metainformation and database object.
+        """
         self.meta_info = MetaInformation()
 
         self.row_idx = 0
@@ -75,10 +79,12 @@ class MainApp:
         lt_window(window)
 
     def row(self):
+        """Keep track of the row the GUI is in."""
         self.row_idx += 1
         return self.row_idx - 1
 
-    def run(self, window):
+    def run(self, window: Tk):
+        """Main application loop that starts the sorting thread on keypress."""
         if not self.meta_info.finished:
             messagebox.showinfo(message="Modification is already happening.", title="Error")
             window.after(50, lambda: self.listen_for_result(window))
@@ -94,7 +100,8 @@ class MainApp:
         self.new_thread.start()
         window.after(50, lambda: self.listen_for_result(window))
 
-    def listen_for_result(self, window):
+    def listen_for_result(self, window: Tk):
+        """Update the GUI on the number of files processed and how many are still left."""
         f_count = self.meta_info.file_count
         f_count_max = self.meta_info.file_count_max
 
@@ -129,8 +136,10 @@ class MainApp:
     ###############################################################################################
     # Initialization functions
     ###############################################################################################
-    def init_resource_folder(self, window):
-        def browse_button(dir):
+    def init_resource_folder(self, window: Tk):
+        """Add GUI elemtens for source and target directory."""
+
+        def browse_button(dir: StringVar):
             filename = filedialog.askdirectory(initialdir=dir.get())
             if filename != "":
                 dir.set(filename)
@@ -165,7 +174,8 @@ class MainApp:
         btn_tgt.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_tgt, TooltipDict["btn_tgt"])
 
-    def init_signatures(self, window):
+    def init_signatures(self, window: Tk):
+        """Add GUI elements for read and write signatures."""
         lst_input_options = self.meta_info.get_read_choices()
         list_file_choices = self.meta_info.get_supported_file_signatures()
         list_folder_choices = self.meta_info.get_supported_folder_signatures()
@@ -174,11 +184,11 @@ class MainApp:
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, sticky="EW")
 
         for pattern in lst_input_options:
-            Radiobutton(
+            rbtn_input = Radiobutton(
                 window, text=pattern, variable=self.meta_info.in_signature, value=pattern
-            ).grid(
-                row=self.row(), column=1, padx=PAD_X, sticky="W"
             )
+            rbtn_input.grid(row=self.row(), column=1, padx=PAD_X, sticky="W")
+            Hovertip(rbtn_input, TooltipDict["rbtn_" + pattern])
 
         lbl = Label(window, text="Pattern for output-files:")
         lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -189,7 +199,9 @@ class MainApp:
         # Prevent typing a value
         cb_filesig_select["state"] = "readonly"
         # Place the widget
-        cb_filesig_select.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        cb_filesig_select.grid(
+            row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
         # Assign width
         cb_filesig_select["width"] = len(max(list_file_choices, key=len))
         Hovertip(cb_filesig_select, TooltipDict["cb_filesig_select"])
@@ -203,12 +215,16 @@ class MainApp:
         # Prevent typing a value
         cb_foldersig_select["state"] = "readonly"
         # Place the widget
-        cb_foldersig_select.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        cb_foldersig_select.grid(
+            row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
         # Assign width
         cb_foldersig_select["width"] = len(max(list_folder_choices, key=len))
         Hovertip(cb_foldersig_select, TooltipDict["cb_foldersig_select"])
 
-    def init_database_system(self, window):
+    def init_database_system(self, window: Tk):
+        """Add GUI button to open the database menu."""
+
         def create_modifydb_box():
             ModifyDBBox(
                 "Modify Database",
@@ -222,57 +238,74 @@ class MainApp:
             text="Modify Database",
             command=lambda: create_modifydb_box(),
         )
-        btn_mod_db.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        btn_mod_db.grid(
+            row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
         Hovertip(btn_mod_db, TooltipDict["btn_mod_db"])
 
-    def init_checkboxes(self, window):
-
-        Checkbutton(
+    def init_checkboxes(self, window: Tk):
+        """Add GUI checkboxes for additional settings, like require artist or similar."""
+        cb_recursive = Checkbutton(
             window, text="Process folder recursively", variable=self.meta_info.recursive
-        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-                
-        Checkbutton(
+        )
+        cb_recursive.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(cb_recursive, TooltipDict["cb_recursive"])
+
+        cb_unmatched = Checkbutton(
             window, text="Process unmatched files", variable=self.meta_info.process_unmatched
-        ).grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+        )
+        cb_unmatched.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(cb_unmatched, TooltipDict["cb_unmatched"])
 
         # Add a checkbof for processing files with the same name
         # This checkbox is disabled when "Foldername_Number" is active
-        cb_samenam = Checkbutton(
+        cb_samename = Checkbutton(
             window, text="Process same name files", variable=self.meta_info.process_samename
         )
-        cb_samenam.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        cb_samename.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(cb_samename, TooltipDict["cb_samename"])
+
         def on_change(index, value, op):
             if self.meta_info.file_signature.get() == "Foldername_Number":
-                cb_samenam.config(state=DISABLED)
+                cb_samename.config(state=DISABLED)
                 self.meta_info.process_samename.set(0)
             else:
-                cb_samenam.config(state=NORMAL)
-        self.meta_info.file_signature.trace('w', on_change)
+                cb_samename.config(state=NORMAL)
 
-        Checkbutton(
-            window, text="Require artist for .jpg", variable=self.meta_info.require_artist
-        ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+        self.meta_info.file_signature.trace("w", on_change)
 
-        Checkbutton(window, text="Modify metadata", variable=self.meta_info.modify_meta).grid(
-            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
+        cb_reqartist = Checkbutton(
+            window, text="Require artist", variable=self.meta_info.require_artist
         )
+        cb_reqartist.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(cb_reqartist, TooltipDict["cb_reqartist"])
 
-        Checkbutton(window, text="Overwrite metadata", variable=self.meta_info.overwrite_meta).grid(
-            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W"
+        cb_modmeta = Checkbutton(
+            window, text="Modify metadata", variable=self.meta_info.modify_meta
         )
+        cb_modmeta.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(cb_modmeta, TooltipDict["cb_modmeta"])
 
-        Radiobutton(
+        cb_overmeta = Checkbutton(
+            window, text="Overwrite metadata", variable=self.meta_info.overwrite_meta
+        )
+        cb_overmeta.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(cb_overmeta, TooltipDict["cb_overmeta"])
+
+        rbtn_copy = Radiobutton(
             window, text="Copy files", variable=self.meta_info.copy_files, value=1
-        ).grid(
-            row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W"
         )
-        Radiobutton(
-            window, text="Move files", variable=self.meta_info.copy_files, value=0
-        ).grid(
-            row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W"
-        )
+        rbtn_copy.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(rbtn_copy, TooltipDict["rbtn_copyfile"])
 
-    def init_progressindicator(self, window):
+        rbtn_move = Radiobutton(
+            window, text="Move files", variable=self.meta_info.copy_files, value=0
+        )
+        rbtn_move.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y, sticky="W")
+        Hovertip(rbtn_move, TooltipDict["rbtn_movefile"])
+
+    def init_progressindicator(self, window: Tk):
+        """Add GUI progressbar and corresponding label."""
         # Update to get the correct width for the progressbar
         window.update()
         w_width = window.winfo_width()
@@ -291,9 +324,9 @@ class MainApp:
         self.time_label = Label(window, text="")
         self.time_label.grid(row=self.row(), columnspan=3, sticky="E", padx=PAD_X)
 
-    def init_details(self, window):
-        # Details Menu
-        helper_frame = Frame(window, width=window.winfo_width() + 100 - PAD_X * 2, height=250)
+    def init_details(self, window: Tk):
+        """Add GUI textbox for detailed information."""
+        helper_frame = Frame(window, width=TMAIN_W, height=TMAIN_H)
         helper_frame.pack_propagate(False)
         helper_frame.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y)
 

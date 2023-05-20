@@ -1,4 +1,7 @@
-class WarningCodes:
+from enum import IntEnum
+
+
+class WarningCodes(IntEnum):
     NO_WARNING = 0
     WARNING_MISSING_DATA = 1
     WARNING_DATE_OVERLAP_START = 2
@@ -9,6 +12,7 @@ class WarningCodes:
     WARNING_DATE_OUTSIDE_START = 7
     WARNING_DATE_OUTSIDE_END = 8
     WARNING_DATE_OUTSIDE_BOTH = 9
+
 
 WarningArray = [
     "",
@@ -23,7 +27,8 @@ WarningArray = [
     "Non matching timeframe of subevent or participant found.",
 ]
 
-class InfoCodes:
+
+class InfoCodes(IntEnum):
     NO_INFO = 0
     ADD_SUCCESS = 1
     ADD_SUCCESS_AFTER_SHIFT = 2
@@ -32,10 +37,14 @@ class InfoCodes:
     CLEAN_SUCCESS = 5
     CLEAN_ALL_SUCCESS = 6
     LOAD_SUCCESS = 7
-    SAVE_SUCCESS = 8
-    ADD_ERROR = 9
-    MOD_ERROR = 10
-    DEL_ERROR = 11
+    LOAD_SUCCESS_PARTIAL = 8
+    SAVE_SUCCESS = 9
+    ADD_ERROR = 10
+    MOD_ERROR = 11
+    DEL_ERROR = 12
+    VAL_SUCCESS = 13
+    VAL_ERROR = 14
+
 
 InfoArray = [
     "",
@@ -46,8 +55,11 @@ InfoArray = [
     "All entrys of the selected table (and linked entrys) were deleted.",
     "All tables were deleted.",
     "Successfully loaded database from file.",
+    "Warning: Loaded incomplete database from file.",
     "Successfully saved database to file.",
     "Item already present.",
     "Item not found - could not be modified.",
     "Item not found - could not be deleted.",
+    "Item validation was sucessfull.",
+    "Item validation was not sucessfull.",
 ]

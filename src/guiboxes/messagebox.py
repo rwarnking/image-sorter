@@ -1,14 +1,17 @@
 from tkinter import Button, Checkbutton, Label, Toplevel
 
-from helper import center_window
-
 from guiboxes.basebox import PAD_X, PAD_Y
+from helper import center_window
+from meta_information import MetaInformation
 
 
 # Source: https://stackoverflow.com/questions/29619418/
 class MessageBox(object):
-    def __init__(self, title, message, meta_info):
-
+    def __init__(self, title: str, message: str, meta_info: MetaInformation):
+        """
+        Create a GUI box that allows to select yes, no as buttons as well as
+        a Do not ask again option.
+        """
         # Return value
         self.choice = False
 
@@ -45,17 +48,17 @@ class MessageBox(object):
         # Making MessageBox Visible
         self.root.wait_window()
 
-    # Function on Closeing MessageBox
     def closed(self):
+        """Function for closing the box."""
         self.root.destroy()
         self.choice = False
 
-    # Function on pressing Yes
     def clickYes(self):
+        """Function when yes was clicked."""
         self.root.destroy()
         self.choice = True
 
-    # Function on pressing No
     def clickNo(self):
+        """Function when no was clicked."""
         self.root.destroy()
         self.choice = False

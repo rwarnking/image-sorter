@@ -4,7 +4,10 @@ from tkinter import BooleanVar, IntVar, StringVar
 
 
 class MetaInformation:
+    """Collection class for all kinds of metainformation and program settings."""
+
     def __init__(self):
+        """Setup all meta information."""
         self.finished = True
 
         self.file_count = 0
@@ -45,6 +48,7 @@ class MetaInformation:
         self.text_queue = queue.Queue()
 
     def set_dirs(self, img_src: str, img_tgt: str, db_src: str, db_tgt: str):
+        """Set the source and target directories for the images and the database."""
         self.img_src = StringVar()
         self.img_src.set(img_src)
         self.img_tgt = StringVar()
@@ -54,16 +58,17 @@ class MetaInformation:
         if isfile(join(db_src, "db.json")):
             self.sv_db_src.set(join(db_src, "db.json"))
         else:
-            self.sv_db_src.set("C:\\")
+            self.sv_db_src.set(join(db_src, ""))
         self.sv_db_tgt = StringVar()
         if isfile(join(db_tgt, "db.json")):
             self.sv_db_tgt.set(join(db_tgt, "db.json"))
         else:
-            self.sv_db_tgt.set("C:\\")
+            self.sv_db_tgt.set(join(db_src, ""))
 
     # Optional TODO: IMG_ is currently used for all file types (.mp4)
     # Change to TYPE_ / EXTENSION_
     def get_supported_file_signatures(self):
+        """Returns all file signatures the program can output."""
         return [
             "YYYY-MM-DD_HH-MM-SS",
             "YYYY-MM-DD_HH-MM-SS.fff",
@@ -74,6 +79,7 @@ class MetaInformation:
         ]
 
     def get_supported_folder_signatures(self):
+        """Returns all folder signatures the program can output."""
         return [
             "YYYY_[MM_DD-MM_DD]_Event-Subevent",
             "YYYY[MM_DD-MM_DD]_Event-Subevent",
@@ -88,6 +94,7 @@ class MetaInformation:
         ]
 
     def get_read_choices(self):
+        """Returns all signatures supported for file and information reading."""
         return [
             "Metadata, fallback: Filename",
             "Filename, fallback: Metadata",
@@ -95,11 +102,13 @@ class MetaInformation:
             "Filename only",
         ]
 
-    # List of regex for supported filesignatures.
-    # Each regex allows for additional name information after the date,
-    # but the file must start either with the date or with three charaters
-    # indicating the file type e.g. IMG/MVI/VID/RAW
     def get_signature_regex(self):
+        """
+        List of regex for supported filesignatures.
+        Each regex allows for additional name information after the date,
+        but the file must start either with the date or with three charaters
+        indicating the file type e.g. IMG/MVI/VID/RAW
+        """
         return [
             r"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{3})",
             r"^(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})",
@@ -112,8 +121,10 @@ class MetaInformation:
             r"^(\w{3}_\d{4})",
         ]
 
-
     def get_signature_strptime(self):
+        """
+        Returns a list of regexes for reading the datetime from a string.
+        """
         return [
             "%Y-%m-%d_%H-%M-%S.%f",
             "%Y-%m-%d_%H-%M-%S",
@@ -128,10 +139,13 @@ class MetaInformation:
         ]
 
     def update_estimated_time(self, filecount: int):
+        """Update the time estimate for how long the program will continue to run."""
         self.estimated_time_ms = filecount * self.estimated_time_per_file_ms
 
     def get_estimated_time_s(self):
-        return (self.estimated_time_ms / 1000) % 60
-    
+        """Returns the time estimate in seconds."""
+        return int((self.estimated_time_ms / 1000) % 60)
+
     def get_estimated_time_m(self):
+        """Returns the time estimate in minutes."""
         return int((self.estimated_time_ms / 1000) / 60)

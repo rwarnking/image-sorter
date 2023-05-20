@@ -1,41 +1,29 @@
 import os
-
-from tkinter import Button, Label
-
-from tkinter import (
-    END,
-    RIGHT,
-    Button,
-    Frame,
-    Label,
-    StringVar,
-    Text,
-    filedialog,
-    messagebox,
-)
+from functools import partial
+from idlelib.tooltip import Hovertip
+from tkinter import END, RIGHT, Button, Frame, Label, StringVar, Text, filedialog, messagebox
 from tkinter.ttk import Combobox, Scrollbar, Separator
 
-from functools import partial
-
+from database import Database
+from debug_messages import InfoArray, InfoCodes
+from guiboxes.artistbox import ModifyArtistBox
+from guiboxes.basebox import BTN_W, LINE_H, PAD_X, PAD_Y, PAD_Y_ADD, PAD_Y_LBL, WINDOW_W, BaseBox
+from guiboxes.eventbox import ModifyEventBox
+from guiboxes.personbox import ModifyPersonBox
 from helper import center_window
-
-from idlelib.tooltip import Hovertip
+from meta_information import MetaInformation
 from tooltips import TooltipDict
 
-from guiboxes.personbox import ModifyPersonBox
-from guiboxes.artistbox import ModifyArtistBox
-from guiboxes.eventbox import ModifyEventBox
-
-from guiboxes.basebox import BaseBox, PAD_X, PAD_Y, PAD_Y_LBL, PAD_Y_ADD
-
-from debug_messages import InfoCodes, InfoArray
-
-TF_WIDTH = 600
-TF_HEIGHT = 200
+TMODDB_H = 200
+TMODDB_W = WINDOW_W - 2 * PAD_X
 
 
 class ModifyDBBox(BaseBox):
-    def __init__(self, header, db, meta_info):
+    def __init__(self, header: str, db: Database, meta_info: MetaInformation):
+        """
+        Create a GUI element that includes a list of all entries of a table
+        selectable via a combobox. Also allows to add, mod or delete entries.
+        """
         super().__init__(header)
 
         # Save the database
@@ -93,7 +81,7 @@ class ModifyDBBox(BaseBox):
         ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="w")
 
         def update_db_gui(_):
-            self.lbl_info.config(text = InfoArray[InfoCodes.NO_INFO])
+            self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
             self.updateListFrame(db, self.db_select.get())
 
         list_dbs = [
@@ -117,7 +105,7 @@ class ModifyDBBox(BaseBox):
         ######################################
         # Frame and textfield for add button #
         ######################################
-        self.frame_db_add = Frame(self.root, width=TF_WIDTH, height=30, bg="white")
+        self.frame_db_add = Frame(self.root, width=TMODDB_W, height=LINE_H, bg="white")
         self.frame_db_add.pack_propagate(False)
         self.frame_db_add.grid(
             row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y_ADD, sticky="EW"
@@ -128,10 +116,12 @@ class ModifyDBBox(BaseBox):
         self.text_db_add = Text(self.frame_db_add, wrap="none")
         self.text_db_add.pack(fill="both", expand=True)
 
-        btn_add = Button(self.text_db_add, text="Add", command=self.clickAdd, width=5)
+        btn_add = Button(self.text_db_add, text="Add", command=self.clickAdd, width=BTN_W)
         Hovertip(btn_add, TooltipDict["btn_add"])
         self.text_db_add.window_create("end", window=btn_add)
-        btn_null = Button(self.text_db_add, text="", width=5, background="white", state="disabled")
+        btn_null = Button(
+            self.text_db_add, text="", width=BTN_W, background="white", state="disabled"
+        )
         self.text_db_add.window_create("end", window=btn_null)
 
         self.text_db_add.insert("end", " ...")
@@ -139,8 +129,7 @@ class ModifyDBBox(BaseBox):
         #########################################
         # Frame and textfield for table content #
         #########################################
-        # self.frame_db_list = Frame(self.root, width=self.root.winfo_width() - PAD_X * 2, height=300, bg="white")
-        self.frame_db_list = Frame(self.root, width=TF_WIDTH, height=TF_HEIGHT, bg="white")
+        self.frame_db_list = Frame(self.root, width=TMODDB_W, height=TMODDB_H, bg="white")
         self.frame_db_list.pack_propagate(False)
         self.frame_db_list.grid(
             row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -160,7 +149,9 @@ class ModifyDBBox(BaseBox):
         # Remove all button #
         #####################
         self.lbl_info = Label(self.root, text="")
-        self.lbl_info.grid(row=self.row_idx, column=0, columnspan=2, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
+        self.lbl_info.grid(
+            row=self.row_idx, column=0, columnspan=2, padx=PAD_X, pady=PAD_Y_LBL, sticky="W"
+        )
 
         btn_clear = Button(
             self.root,
@@ -189,28 +180,34 @@ class ModifyDBBox(BaseBox):
         # Making MessageBox Visible
         self.root.wait_window()
 
-    def browse_button_open(self, dir):
+    def browse_button_open(self, dir: StringVar):
+        """Open filedialog for browsing for a database file to open."""
         filename = filedialog.askopenfilename(initialdir=os.path.dirname(dir.get()))
         if filename != "" and not filename.lower().endswith(".json"):
             messagebox.showinfo(message="Please select a json file.", title="Error")
         elif filename != "":
             info = self.db.load_from_file(filename)
             self.updateListFrame(self.db, self.db_select.get())
-            self.lbl_info.config(text = InfoArray[info], fg="#0a0" if info < 9 else "#a00")
+            self.lbl_info.config(
+                text=InfoArray[info], fg="#0a0" if info == InfoCodes.LOAD_SUCCESS else "#a80"
+            )
             dir.set(filename)
 
-    def browse_button_save(self, dir):
+    def browse_button_save(self, dir: StringVar):
+        """Open filedialog for browsing for a database file to save to."""
         filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
         if filename != "" and not filename.lower().endswith(".json"):
             messagebox.showinfo(message="Please select a json file.", title="Error")
         elif filename != "":
             info = self.db.save_to_file(filename)
-            self.lbl_info.config(text = InfoArray[info], fg="#0a0" if info < 9 else "#a00")
+            self.lbl_info.config(
+                text=InfoArray[info], fg="#0a0" if info == InfoCodes.SAVE_SUCCESS else "#a00"
+            )
             dir.set(filename)
 
-    # Function on pressing Add
     def clickAdd(self):
-        self.lbl_info.config(text = InfoArray[InfoCodes.NO_INFO])
+        """Function when pressing the add button. The selected box is created."""
+        self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
 
         str_selection = self.db_select.get()
         if str_selection == "events":
@@ -222,15 +219,15 @@ class ModifyDBBox(BaseBox):
 
         if box.changed:
             self.updateListFrame(self.db, self.db_select.get())
-            self.lbl_info.config(text = InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
+            self.lbl_info.config(text=InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
 
-    # Function on pressing Modify
-    def clickModify(self, elem):
-        self.lbl_info.config(text = InfoArray[InfoCodes.NO_INFO])
+    def clickModify(self, elem: str):
+        """Function when pressing the modify button. The selected box is created."""
+        self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
 
         str_selection = self.db_select.get()
         if str_selection == "events":
-            box = ModifyEventBox("Modify event", self.db, elem)
+            box: BaseBox = ModifyEventBox("Modify event", self.db, elem)
         elif str_selection == "artists":
             box = ModifyArtistBox("Modify artist", self.db, elem)
         elif str_selection == "persons":
@@ -238,18 +235,18 @@ class ModifyDBBox(BaseBox):
 
         if box.changed:
             self.updateListFrame(self.db, self.db_select.get())
-            self.lbl_info.config(text = InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
+            self.lbl_info.config(text=InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
 
-    # Function on pressing Delete
-    def clickDelete(self, elem):
+    def clickDelete(self, elem: str):
+        """Function when pressing the delete button. The selected box is created."""
         str_selection = self.db_select.get()
         if str_selection == "events":
             elm_data = elem.split(" | ")
-            info = self.db.delete_event(elm_data[1], elm_data[2], elm_data[3])
+            info = self.db.delete_event_s(elm_data[1], elm_data[2], elm_data[3])
         elif str_selection == "artists":
             elm_data = elem.split(" | ")
             # Obacht: elm_data[0] is the index not the name
-            info = self.db.delete_artist(
+            info = self.db.delete_artist_s(
                 int(elm_data[1]), elm_data[2], elm_data[3], elm_data[4], elm_data[5], elm_data[6]
             )
         elif str_selection == "persons":
@@ -257,39 +254,42 @@ class ModifyDBBox(BaseBox):
             info = self.db.delete_person(elm_data[1])
 
         self.updateListFrame(self.db, self.db_select.get())
-        self.lbl_info.config(text = InfoArray[info], fg="#0a0" if info < 9 else "#a00")
+        self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
 
     def clickClear(self):
+        """Function when pressing the clear button. The selec table in the database is cleared."""
         str_selection = self.db_select.get()
         info = self.db.clean(str_selection)
         self.updateListFrame(self.db, str_selection)
-        self.lbl_info.config(text = InfoArray[info], fg="#0a0" if info < 9 else "#a00")
+        self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
 
-    def updateListFrame(self, db, table):
+    def updateListFrame(self, db: Database, table: str):
         """
+        Update the text field listing all entries of the selected table.
         How to create a scrollable list of buttons in Tkinter?
         https://stackoverflow.com/questions/68288119/
         How to pass arguments to a Button command in Tkinter?
         https://stackoverflow.com/questions/6920302/
         """
         # Clear all content in the text area
-        self.text_db_list.delete('1.0', END)
+        self.text_db_list.delete("1.0", END)
 
-        list_table_content = [
-            ' | '.join(str(e) for e in x)
-            for x in db.get_all(table)
-        ]
+        list_table_content = [" | ".join(str(e) for e in x) for x in db.get_all(table)]
 
         ############################
         str_selection = self.db_select.get()
 
         # Creating label for each artist/event/...
         for i, e in enumerate(list_table_content):
-            btn_mod = Button(self.text_db_list, text="Mod", command=partial(self.clickModify, e), width=5)
+            btn_mod = Button(
+                self.text_db_list, text="Mod", command=partial(self.clickModify, e), width=BTN_W
+            )
             Hovertip(btn_mod, TooltipDict["btn_mod"])
             self.text_db_list.window_create("end", window=btn_mod)
 
-            btn_del = Button(self.text_db_list, text="Del", command=partial(self.clickDelete, e), width=5)
+            btn_del = Button(
+                self.text_db_list, text="Del", command=partial(self.clickDelete, e), width=BTN_W
+            )
             Hovertip(btn_del, TooltipDict["btn_del"])
             self.text_db_list.window_create("end", window=btn_del)
 
@@ -297,8 +297,8 @@ class ModifyDBBox(BaseBox):
             if str_selection == "artists":
                 first_idx = e.index(" | ")
                 second_idx = e.index(" | ", first_idx + 1)
-                num = int(e[first_idx+3:second_idx])
-                e = e[:second_idx] + " (" + self.db.get("persons", ("pid", num))[0][1] + ")" + e[second_idx:]
+                num = int(e[first_idx + 3 : second_idx])
+                e = f"{e[:second_idx]} ({self.db.get_pname(num)}){e[second_idx:]}"
 
             self.text_db_list.insert("end", " " + e + "\n")
 

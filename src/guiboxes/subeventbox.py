@@ -1,26 +1,29 @@
-import datetime
-
-from tkinter import Button, Label
-
-from tkinter import (
-    Button,
-    Entry,
-    Label,
-    StringVar,
-)
+from datetime import datetime
+from idlelib.tooltip import Hovertip
+from tkinter import Button, Entry, Label, StringVar
 from tkinter.ttk import Separator
 
-from helper import center_window, test_time_frame, test_time_frame_swap, limit_input
-
-from idlelib.tooltip import Hovertip
-from tooltips import TooltipDict
-from debug_messages import WarningArray, WarningCodes
+from database import Database
 from dateutils import TimeFrameSelector
-from guiboxes.basebox import BaseBox, PAD_X, PAD_Y, PAD_Y_LBL
+from debug_messages import WarningArray, WarningCodes
+from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, BaseBox
+from helper import center_window, limit_input, test_time_frame, test_time_frame_swap
+from tooltips import TooltipDict
 
 
 class ModifySubeventBox(BaseBox):
-    def __init__(self, header, db, subevent_list, startdate_parent, enddate_parent):
+    def __init__(
+        self,
+        header: str,
+        db: Database,
+        subevent_list: list[str],
+        startdate_parent: datetime,
+        enddate_parent: datetime,
+    ):
+        """
+        Create a GUI element that includes a input field for the subevent title,
+        and a time frame selector for start and end date.
+        """
         super().__init__(header)
 
         # Save the database
@@ -40,7 +43,9 @@ class ModifySubeventBox(BaseBox):
         lbl_header = Label(self.root, text="Fill all cells to add the subevent.")
         lbl_header.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
         self.lbl_warning = Label(self.root, fg="#a00", text="")
-        self.lbl_warning.grid(row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y_LBL, sticky="E")
+        self.lbl_warning.grid(
+            row=self.row(), column=2, columnspan=2, padx=PAD_X, pady=PAD_Y_LBL, sticky="E"
+        )
 
         ###############
         # Title input #
@@ -50,8 +55,12 @@ class ModifySubeventBox(BaseBox):
         self.sv_se_title.trace("w", self.validate_input)
         lbl_se_title = Label(self.root, text="Title: ")
         lbl_se_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_se_title = Entry(self.root, textvariable=self.sv_se_title, validate="key", validatecommand=vcmd)
-        ent_se_title.grid(row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        ent_se_title = Entry(
+            self.root, textvariable=self.sv_se_title, validate="key", validatecommand=vcmd
+        )
+        ent_se_title.grid(
+            row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
         Hovertip(ent_se_title, TooltipDict["ent_se_title"])
 
         #####################
@@ -61,7 +70,7 @@ class ModifySubeventBox(BaseBox):
         self.tfs.set_start_date(startdate_parent)
         self.tfs.set_end_date(enddate_parent)
         self.row_idx += 2
-        
+
         # Bind after setting the values to avoid triggering the callback
         self.tfs.bind(self.validate_input)
 
@@ -94,6 +103,10 @@ class ModifySubeventBox(BaseBox):
         self.root.wait_window()
 
     def validate_input(self, *args):
+        """
+        Test if the values of all input fields are valid
+        and disable the add button in case they are not.
+        """
         if self.sv_se_title.get():
             self.btn_add.config(state="normal")
         else:
@@ -103,34 +116,38 @@ class ModifySubeventBox(BaseBox):
         # (Date and time cells have always atleast some value)
         if not self.sv_se_title.get():
             self.btn_add.config(state="disabled")
-            self.lbl_warning.config(text = WarningArray[WarningCodes.WARNING_MISSING_DATA])
+            self.lbl_warning.config(text=WarningArray[WarningCodes.WARNING_MISSING_DATA])
             return
 
         start_date = self.tfs.get_start_date()
         end_date = self.tfs.get_end_date()
 
-        if err:= test_time_frame_swap(start_date, end_date):
+        if err := test_time_frame_swap(start_date, end_date):
             self.btn_add.config(state="disabled")
-            self.lbl_warning.config(text = WarningArray[err])
+            self.lbl_warning.config(text=WarningArray[err])
             return
 
-        # Test all subevents of the list, to check if there are two subevents with 
+        # Test all subevents of the list, to check if there are two subevents with
         # the same time frame, which is not allowed
         for subevent in self.subevent_list:
             subevent_data = subevent.split(" | ")
-            testdate_start = datetime.datetime.strptime(subevent_data[1], "%Y-%m-%d %H:%M:%S")
-            testdate_end = datetime.datetime.strptime(subevent_data[2], "%Y-%m-%d %H:%M:%S")
+            testdate_start = datetime.fromisoformat(subevent_data[1])
+            testdate_end = datetime.fromisoformat(subevent_data[2])
 
             # Test for overlapping time frames
             if err := test_time_frame(testdate_start, testdate_end, start_date, end_date):
                 self.btn_add.config(state="disabled")
-                self.lbl_warning.config(text = WarningArray[err])
+                self.lbl_warning.config(text=WarningArray[err])
                 return
 
         self.btn_add.config(state="normal")
-        self.lbl_warning.config(text = WarningArray[WarningCodes.NO_WARNING])
+        self.lbl_warning.config(text=WarningArray[WarningCodes.NO_WARNING])
 
     def add(self):
+        """
+        Use the input data to create a new subevent and save it in a variable.
+        The result can be accessed from the outside (for example from the eventbox).
+        """
         start_date = self.tfs.get_start_date()
         end_date = self.tfs.get_end_date()
 

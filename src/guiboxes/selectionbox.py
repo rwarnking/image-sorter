@@ -1,14 +1,15 @@
-from tkinter import Button, Label, Toplevel, Radiobutton, StringVar
-
-from helper import center_window
+from tkinter import Button, Label, Radiobutton, StringVar, Toplevel
 
 from guiboxes.basebox import PAD_X, PAD_Y
+from helper import center_window
 
 
 # Source: https://stackoverflow.com/questions/29619418/
 class SelectionBox(object):
-    def __init__(self, title, actioncall, message, options):
+    """GUI box that allows to select from a list of values using a radiobutton."""
 
+    def __init__(self, title: str, actioncall: str, message: str, options: list[str]):
+        """Initialize radiobutton for selection."""
         # Return value
         self.choice = StringVar()
         self.choice.set(options[0])
@@ -31,15 +32,13 @@ class SelectionBox(object):
         row_idx = 1
         col = 0
         for opt in options:
-            Radiobutton(
-                self.root, text=opt, variable=self.choice, value=opt
-            ).grid(
-                row=row_idx, column=1+col, padx=PAD_X, sticky="W"
+            Radiobutton(self.root, text=opt, variable=self.choice, value=opt).grid(
+                row=row_idx, column=1 + col, padx=PAD_X, sticky="W"
             )
             col += 1
             if col % 2 == 0:
                 col -= 2
-                row_idx+=1
+                row_idx += 1
 
         # Creating Yes button
         Button(
@@ -53,6 +52,6 @@ class SelectionBox(object):
         # Making MessageBox Visible
         self.root.wait_window()
 
-    # Function on Closeing MessageBox
     def closed(self):
+        """Function for closing the box."""
         self.root.destroy()

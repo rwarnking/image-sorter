@@ -5,22 +5,22 @@
 import pathmagic  # noqa isort:skip
 
 import os
-import shutil
 import re
+import shutil
 import unittest
 from os.path import isfile, join
-from tkinter import Text, Tk
-
-from database import Database
-from meta_information import MetaInformation
-from sorter import Sorter
-from sort_file_states import file_rules
-from testfile_creator import create_all_test_files
+from tkinter import Tk
+from typing import Any
 
 import piexif
-
+from database import Database
+from meta_information import MetaInformation
+from sort_file_states import file_rules
+from sorter import Sorter
+from testfile_creator import create_all_test_files
 
 IMAGE_FOLDER = "test_images"
+
 
 class TestSort(unittest.TestCase):
     def test_run(self):
@@ -29,7 +29,7 @@ class TestSort(unittest.TestCase):
         IMAGE_DIR = join(TEST_DIR, IMAGE_FOLDER)
         RESULT_DIR = join(TEST_DIR, "result_images")
 
-        window = Tk()
+        window = Tk()  # noqa: F841
 
         # Set the meta_info data
         meta_info = MetaInformation()
@@ -92,8 +92,8 @@ class TestSort(unittest.TestCase):
         shutil.rmtree(IMAGE_DIR)
         shutil.rmtree(RESULT_DIR)
         os.mkdir(RESULT_DIR)
-        
-    def get_settings_list(self, meta_info):
+
+    def get_settings_list(self, meta_info: MetaInformation):
         """
         Creates a list of setting objects that should be tested.
         The tool allows to customize multiple things:
@@ -107,7 +107,7 @@ class TestSort(unittest.TestCase):
         @return The list with all generated setting objects
         """
         # The final list
-        settings = []
+        settings: list[dict[str, Any]] = []
 
         # List of options, that can either enabled or disabled
         lst_options = [
@@ -156,9 +156,11 @@ class TestSort(unittest.TestCase):
 
         # Test that as much setting objects were generated as expected
         self.assertTrue(
-            len(settings) + excluded == len(meta_info.get_read_choices()) *
-            len(meta_info.get_supported_file_signatures()) * option_max,
-            f"Setting length mismatch: {len(settings)}"
+            len(settings) + excluded
+            == len(meta_info.get_read_choices())
+            * len(meta_info.get_supported_file_signatures())
+            * option_max,
+            f"Setting length mismatch: {len(settings)}",
         )
 
         # Add aditional settings case for metadata
@@ -170,14 +172,14 @@ class TestSort(unittest.TestCase):
 
         return settings
 
-    def run_checks(self, meta_info, settings, IMAGE_DIR):
+    def run_checks(self, meta_info: MetaInformation, settings: dict[str, Any], IMAGE_DIR: str):
         """
         Run all checks for the current settings.
         For this the information from sort_file_status.py
         is parsed. The file contains a dictionary list in which
         for each file the correct combination of folder and file name for all possible
-        setting combinations is saved. 
-        This allows to parse the information and use it to test against. 
+        setting combinations is saved.
+        This allows to parse the information and use it to test against.
         """
         BASE_DIR = meta_info.img_tgt.get()
 
@@ -215,13 +217,15 @@ class TestSort(unittest.TestCase):
                             lst_tmp.append(join(res_split[-1], f))
                         else:
                             lst_tmp.append(f)
-                lst_tmp.sort(key=lambda f: os.path.splitext(f)[1].lower() != ".jpg")  
+                lst_tmp.sort(key=lambda f: os.path.splitext(f)[1].lower() != ".jpg")
                 lst_files.extend(lst_tmp)
         else:
             lst_files = [f for f in os.listdir(IMAGE_DIR) if isfile(join(IMAGE_DIR, f))]
-            lst_files.sort(key=lambda f: os.path.splitext(f)[1].lower() != ".jpg")  
+            lst_files.sort(key=lambda f: os.path.splitext(f)[1].lower() != ".jpg")
 
-        self.assertTrue(len(lst_files) > 40, f"File list does contain to few elements: {len(lst_files)}!")
+        self.assertTrue(
+            len(lst_files) > 40, f"File list does contain to few elements: {len(lst_files)}!"
+        )
 
         for file in lst_files:
             f_name, f_ext = os.path.splitext(file)
@@ -251,15 +255,18 @@ class TestSort(unittest.TestCase):
                     case_count += 1
 
                     # Get folder
-                    if current_folder:= case["folder"]:
+                    if current_folder := case["folder"]:
                         # Get filename
                         expected_name = file_rule["out"][case["name"]][settings["file_signature"]]
 
                         # Special case for the file_signature Foldername_Number!
-                        # Since this case uses the number of files in the target folder, 
+                        # Since this case uses the number of files in the target folder,
                         # the filecounts for each folder must be saved.
                         # Furthermore the file name is also dependent on the folder it is in.
-                        if settings["file_signature"] == "Foldername_Number" and current_folder != "misc":
+                        if (
+                            settings["file_signature"] == "Foldername_Number"
+                            and current_folder != "misc"
+                        ):
                             if current_folder not in file_counts:
                                 file_counts[current_folder] = 1
                             else:
@@ -282,18 +289,26 @@ class TestSort(unittest.TestCase):
                         tests_count += 1
 
             self.assertTrue(found_case, "Was not able to find case for settings!")
-            
-        self.assertTrue(case_count == len(lst_files), f"File counts do not match: {case_count} : {len(lst_files)}!")
+
+        self.assertTrue(
+            case_count == len(lst_files),
+            f"File counts do not match: {case_count} : {len(lst_files)}!",
+        )
         dir_info = [(len(files), cur_path) for cur_path, _, files in os.walk(BASE_DIR)]
         tgt_counts, _ = zip(*dir_info)
         tgt_counts = sum(tgt_counts)
-        self.assertTrue(tests_count == tgt_counts, f"File counts do not match (tgt dir): {tests_count} : {tgt_counts}!")
+        self.assertTrue(
+            tests_count == tgt_counts,
+            f"File counts do not match (tgt dir): {tests_count} : {tgt_counts}!",
+        )
 
         # Check if all files are still present in IMG source.
         for file in lst_files:
-            self.assertTrue(os.path.exists(join(meta_info.img_src.get(), file)), f"Found missing file {file}!")
+            self.assertTrue(
+                os.path.exists(join(meta_info.img_src.get(), file)), f"Found missing file {file}!"
+            )
 
-    def check_meta(self, file_with_path, metadata, state):
+    def check_meta(self, file_with_path: str, metadata: list[dict[str, Any]], state: int):
         try:
             exif_dict = piexif.load(file_with_path)
         except FileNotFoundError:
@@ -304,21 +319,19 @@ class TestSort(unittest.TestCase):
 
             self.assertTrue(
                 elem["value_enabled" if state == 1 else "value_disabled"] == value,
-                f"Metainfo-value mismatch! ({value}, {elem['value_enabled' if state else 'value_disabled']})"
+                f"Metainfo-value mismatch! \
+                    ({value}, {elem['value_enabled' if state else 'value_disabled']})",
             )
 
-    def get_exif_value(self, exif_dict, dict1, key):
-        if (
-            key in exif_dict[dict1]
-            and len((exif_dict[dict1][key]).decode("ascii")) > 0
-        ):
+    def get_exif_value(self, exif_dict: dict[str, Any], dict1: str, key: int):
+        if key in exif_dict[dict1] and len((exif_dict[dict1][key]).decode("ascii")) > 0:
             return str(exif_dict[dict1][key], "ascii")
         else:
             return None
 
-    def set_meta_info(self, meta_info, settings):
+    def set_meta_info(self, meta_info: MetaInformation, settings: dict[str, Any]):
         """
-        Helper function for transfer the values from the settings object to the meta_info object. 
+        Helper function for transfer the values from the settings object to the meta_info object.
         """
         meta_info.modify_meta.set(settings["modify_meta"])
         meta_info.overwrite_meta.set(settings["overwrite_meta"])
@@ -333,7 +346,7 @@ class TestSort(unittest.TestCase):
         meta_info.file_signature.set(settings["file_signature"])
         meta_info.folder_signature.set(settings["folder_signature"])
 
-    def create_settings_obj(self, meta_info):
+    def create_settings_obj(self, meta_info: MetaInformation):
         """
         Helper function for generating a default settings object.
         """

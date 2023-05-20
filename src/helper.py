@@ -1,7 +1,17 @@
-from debug_messages import WarningArray, WarningCodes
+from datetime import datetime
+from tkinter import Tk, Toplevel, messagebox
+
+from debug_messages import InfoCodes, WarningCodes
 
 
-def center_window(window):
+def wbox(msg: str):
+    """Show warning box for validation error."""
+    messagebox.showwarning(title="Validation Error!", message=msg)
+    return InfoCodes.VAL_ERROR
+
+
+def center_window(window: Toplevel):
+    """Centers the given window on the screen."""
     window.update()
     window_width = window.winfo_width()
     window_height = window.winfo_height()
@@ -19,7 +29,8 @@ def center_window(window):
     window.geometry(window_geometry)
 
 
-def lt_window(window):
+def lt_window(window: Tk):
+    """Aligns the given window at the left side of the screen (with margin)."""
     window.update()
     window_width = window.winfo_width()
     window_height = window.winfo_height()
@@ -30,11 +41,18 @@ def lt_window(window):
     window.geometry(window_geometry)
 
 
-def limit_input(S):
-    return str.isalpha(S) or S == " " or str.isdigit(S)
+def limit_input(S: str):
+    """Returns true if the input character is a whitespace, -, _, a number or a letter."""
+    return str.isalnum(S) or str.isspace(S) or S == "-" or S == "_"
 
 
-def test_time_frame(frame_start, frame_end, test_frame_start, test_frame_end):
+def test_time_frame(
+    frame_start: datetime,
+    frame_end: datetime,
+    test_frame_start: datetime,
+    test_frame_end: datetime,
+):
+    """Check if the second time frame lies inside or overlaps with the first time frame."""
     # Check if start date lies in time frame
     if frame_start <= test_frame_start and test_frame_start < frame_end:
         return WarningCodes.WARNING_DATE_OVERLAP_START
@@ -47,7 +65,13 @@ def test_time_frame(frame_start, frame_end, test_frame_start, test_frame_end):
     return None
 
 
-def test_time_frame_outside(frame_start, frame_end, test_frame_start, test_frame_end):
+def test_time_frame_outside(
+    frame_start: datetime,
+    frame_end: datetime,
+    test_frame_start: datetime,
+    test_frame_end: datetime,
+):
+    """Check if the second time frame lies outside or overlaps with the first time frame."""
     if test_frame_start < frame_start and frame_end < test_frame_end:
         return WarningCodes.WARNING_DATE_OUTSIDE_BOTH
     # Check if start date lies outside time frame
@@ -58,7 +82,8 @@ def test_time_frame_outside(frame_start, frame_end, test_frame_start, test_frame
     return None
 
 
-def test_time_frame_swap(test_frame_start, test_frame_end):
+def test_time_frame_swap(test_frame_start: datetime, test_frame_end: datetime):
+    """Test if the start date and the the end date of the timeframe are swapped."""
     if test_frame_end < test_frame_start:
         return WarningCodes.WARNING_DATE_SWAP
     return None

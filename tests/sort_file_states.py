@@ -1,7 +1,9 @@
 from os.path import join
+from typing import Any
+
 import piexif
 
-file_rules = {
+file_rules: dict[str, dict[str, list[dict[str, Any]]]] = {
     ###############################################################################################
     # 07-July-08_001
     ###############################################################################################
@@ -13,7 +15,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -21,14 +23,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
-            {
+            {  # 1900 misc
                 "folder": join("1900", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                ]
+                "conditions": [],
             },
         ],
         "out": [
@@ -47,7 +48,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "07-July-08_001",
                 "Day Month DD HH-MM-SS YYYY": "07-July-08_001",
                 "Foldername_Number": "07-July-08_001",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -62,7 +63,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -70,7 +71,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -78,13 +79,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -103,7 +104,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020_[07_09]",
                 "Day Month DD HH-MM-SS YYYY": "2020_[07_09]",
                 "Foldername_Number": "2020_[07_09]",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -118,7 +119,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -126,7 +127,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -134,13 +135,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -159,7 +160,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020_[07_10-07_10]",
                 "Day Month DD HH-MM-SS YYYY": "2020_[07_10-07_10]",
                 "Foldername_Number": "2020_[07_10-07_10]",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -175,7 +176,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -184,7 +185,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -192,13 +193,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -217,7 +218,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020-07-01_09-28-50",
                 "Day Month DD HH-MM-SS YYYY": "2020-07-01_09-28-50",
                 "Foldername_Number": "2020-07-01_09-28-50",
-            }
+            },
         ],
         "meta": [
             {
@@ -241,7 +242,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -250,7 +251,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -258,13 +259,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -283,7 +284,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020-07-02_09-28-50.000",
                 "Day Month DD HH-MM-SS YYYY": "2020-07-02_09-28-50.000",
                 "Foldername_Number": "2020-07-02_09-28-50.000",
-            }
+            },
         ],
         "meta": [
             {
@@ -306,7 +307,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -314,7 +315,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -322,13 +323,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -347,7 +348,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "20200703_092850",
                 "Day Month DD HH-MM-SS YYYY": "20200703_092850",
                 "Foldername_Number": "20200703_092850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -361,13 +362,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {
                 "folder": None,
                 "name": None,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -378,7 +379,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "gibberish0",
                 "Day Month DD HH-MM-SS YYYY": "gibberish0",
                 "Foldername_Number": "gibberish0",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -393,7 +394,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -401,7 +402,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -409,13 +410,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -434,7 +435,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_20200704_092850",
                 "Day Month DD HH-MM-SS YYYY": "IMG_20200704_092850",
                 "Foldername_Number": "IMG_20200704_092850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -449,7 +450,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -458,7 +459,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -467,13 +468,13 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", False),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -492,7 +493,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_0000",
                 "Day Month DD HH-MM-SS YYYY": "IMG_0000",
                 "Foldername_Number": "IMG_0000",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -508,7 +509,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -517,7 +518,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -525,13 +526,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -550,7 +551,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "MVI_20200705_092850",
                 "Day Month DD HH-MM-SS YYYY": "MVI_20200705_092850",
                 "Foldername_Number": "MVI_20200705_092850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -565,7 +566,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -573,7 +574,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -581,13 +582,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -606,7 +607,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "Tue Jul 07 09-28-50 2020",
                 "Day Month DD HH-MM-SS YYYY": "Tue Jul 07 09-28-50 2020",
                 "Foldername_Number": "Tue Jul 07 09-28-50 2020",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -621,7 +622,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -629,7 +630,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[07_01-07_10]_Umzug"),
@@ -637,13 +638,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[07_01-07_10]_Umzug", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -662,7 +663,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "VID_20200706_092850",
                 "Day Month DD HH-MM-SS YYYY": "VID_20200706_092850",
                 "Foldername_Number": "VID_20200706_092850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -681,7 +682,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -689,14 +690,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("1900", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                ]
+                "conditions": [],
             },
         ],
         "out": [
@@ -715,7 +715,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "09-September-08_001",
                 "Day Month DD HH-MM-SS YYYY": "09-September-08_001",
                 "Foldername_Number": "09-September-08_001",
-            }
+            },
         ],
     },
     # ###############################################################################################
@@ -730,7 +730,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -738,13 +738,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -763,7 +763,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020_[09_09]",
                 "Day Month DD HH-MM-SS YYYY": "2020_[09_09]",
                 "Foldername_Number": "2020_[09_09]",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -778,7 +778,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -786,13 +786,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -811,7 +811,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020_[09_10-09_10]",
                 "Day Month DD HH-MM-SS YYYY": "2020_[09_10-09_10]",
                 "Foldername_Number": "2020_[09_10-09_10]",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -827,7 +827,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -835,13 +835,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -860,7 +860,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020-09-01_15-28-50",
                 "Day Month DD HH-MM-SS YYYY": "2020-09-01_15-28-50",
                 "Foldername_Number": "2020-09-01_15-28-50",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -876,7 +876,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -884,13 +884,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -909,7 +909,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020-09-02_15-28-50.000",
                 "Day Month DD HH-MM-SS YYYY": "2020-09-02_15-28-50.000",
                 "Foldername_Number": "2020-09-02_15-28-50.000",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -924,7 +924,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -932,13 +932,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -957,7 +957,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "20200903_152850",
                 "Day Month DD HH-MM-SS YYYY": "20200903_152850",
                 "Foldername_Number": "20200903_152850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -971,13 +971,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {
                 "folder": None,
                 "name": None,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -988,7 +988,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "gibberish2",
                 "Day Month DD HH-MM-SS YYYY": "gibberish2",
                 "Foldername_Number": "gibberish2",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1003,7 +1003,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1011,13 +1011,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1036,7 +1036,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_20200904_152850",
                 "Day Month DD HH-MM-SS YYYY": "IMG_20200904_152850",
                 "Foldername_Number": "IMG_20200904_152850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1051,7 +1051,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -1060,7 +1060,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1068,13 +1068,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1093,7 +1093,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_0020",
                 "Day Month DD HH-MM-SS YYYY": "IMG_0020",
                 "Foldername_Number": "IMG_0020",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1109,7 +1109,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1117,13 +1117,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1142,7 +1142,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "MVI_20200905_152850",
                 "Day Month DD HH-MM-SS YYYY": "MVI_20200905_152850",
                 "Foldername_Number": "MVI_20200905_152850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1157,7 +1157,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1165,13 +1165,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1190,7 +1190,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "Mon Sep 07 15-28-50 2020",
                 "Day Month DD HH-MM-SS YYYY": "Mon Sep 07 15-28-50 2020",
                 "Foldername_Number": "Mon Sep 07 15-28-50 2020",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1205,7 +1205,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1213,13 +1213,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1238,7 +1238,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "VID_20200906_152850",
                 "Day Month DD HH-MM-SS YYYY": "VID_20200906_152850",
                 "Foldername_Number": "VID_20200906_152850",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1257,7 +1257,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -1265,14 +1265,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("1900", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                ]
+                "conditions": [],
             },
         ],
         "out": [
@@ -1291,7 +1290,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "12-December-08_001_1",
                 "Day Month DD HH-MM-SS YYYY": "12-December-08_001_1",
                 "Foldername_Number": "12-December-08_001_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1306,7 +1305,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1314,7 +1313,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
@@ -1322,13 +1321,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1347,7 +1346,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020_[12_09]_1",
                 "Day Month DD HH-MM-SS YYYY": "2020_[12_09]_1",
                 "Foldername_Number": "2020_[12_09]_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1362,7 +1361,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1370,7 +1369,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
@@ -1378,13 +1377,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1403,7 +1402,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020_[12_10-12_10]_1",
                 "Day Month DD HH-MM-SS YYYY": "2020_[12_10-12_10]_1",
                 "Foldername_Number": "2020_[12_10-12_10]_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1419,7 +1418,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1428,21 +1427,22 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
+            },
+            {
+                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
+                "name": 0,
+                "jpg": False,
+                "conditions": [
+                    ("require_artist", True),
+                    ("process_samename", False),
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                    ("require_artist", False),
-                ]
-            },
-            {
-                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
-                "name": 0,
-                "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1461,7 +1461,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020-12-01_09-28-50_1",
                 "Day Month DD HH-MM-SS YYYY": "2020-12-01_09-28-50_1",
                 "Foldername_Number": "2020-12-01_09-28-50_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1477,7 +1477,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1486,21 +1486,22 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
+            },
+            {
+                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
+                "name": 0,
+                "jpg": False,
+                "conditions": [
+                    ("require_artist", True),
+                    ("process_samename", False),
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                    ("require_artist", False),
-                ]
-            },
-            {
-                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
-                "name": 0,
-                "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1519,7 +1520,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2020-12-02_09-28-50.000_1",
                 "Day Month DD HH-MM-SS YYYY": "2020-12-02_09-28-50.000_1",
                 "Foldername_Number": "2020-12-02_09-28-50.000_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1534,7 +1535,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1542,21 +1543,22 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
+            },
+            {
+                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
+                "name": 0,
+                "jpg": False,
+                "conditions": [
+                    ("require_artist", True),
+                    ("process_samename", False),
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                    ("require_artist", False),
-                ]
-            },
-            {
-                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
-                "name": 0,
-                "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1575,7 +1577,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "20201203_092850_1",
                 "Day Month DD HH-MM-SS YYYY": "20201203_092850_1",
                 "Foldername_Number": "20201203_092850_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1589,13 +1591,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {
                 "folder": None,
                 "name": None,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1606,10 +1608,9 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "gibberish1_1",
                 "Day Month DD HH-MM-SS YYYY": "gibberish1_1",
                 "Foldername_Number": "gibberish1_1",
-            }
+            },
         ],
     },
-
     ###############################################################################################
     # IMG_20201204_092850_1
     ###############################################################################################
@@ -1622,7 +1623,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1630,21 +1631,22 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
+            },
+            {
+                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
+                "name": 0,
+                "jpg": False,
+                "conditions": [
+                    ("require_artist", True),
+                    ("process_samename", False),
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                    ("require_artist", False),
-                ]
-            },
-            {
-                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
-                "name": 0,
-                "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1663,7 +1665,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_20201204_092850_1",
                 "Day Month DD HH-MM-SS YYYY": "IMG_20201204_092850_1",
                 "Foldername_Number": "IMG_20201204_092850_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1678,7 +1680,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -1687,7 +1689,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1695,7 +1697,7 @@ file_rules = {
                 "jpg": False,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1704,21 +1706,13 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                    ("require_artist", False),
-                ]
-            },
-            {
-                "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
-                "name": 0,
-                "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1737,7 +1731,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_0010_1",
                 "Day Month DD HH-MM-SS YYYY": "IMG_0010_1",
                 "Foldername_Number": "IMG_0010_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1753,7 +1747,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1762,7 +1756,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
@@ -1770,13 +1764,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1795,7 +1789,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "MVI_20201205_092850_1",
                 "Day Month DD HH-MM-SS YYYY": "MVI_20201205_092850_1",
                 "Foldername_Number": "MVI_20201205_092850_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1810,7 +1804,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1818,7 +1812,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
@@ -1826,13 +1820,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1851,7 +1845,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "Mon Dec 07 09-28-50 2020_1",
                 "Day Month DD HH-MM-SS YYYY": "Mon Dec 07 09-28-50 2020_1",
                 "Foldername_Number": "Mon Dec 07 09-28-50 2020_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1866,7 +1860,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1874,7 +1868,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2020", "2020_[12_01-12_31]_December"),
@@ -1882,13 +1876,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2020", join("2020_[12_01-12_31]_December", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -1907,7 +1901,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "VID_20201206_092850_1",
                 "Day Month DD HH-MM-SS YYYY": "VID_20201206_092850_1",
                 "Foldername_Number": "VID_20201206_092850_1",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1926,7 +1920,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -1934,14 +1928,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("1900", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                ]
+                "conditions": [],
             },
         ],
         "out": [
@@ -1960,7 +1953,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "08-August-08_001 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "08-August-08_001 - Copy",
                 "Foldername_Number": "08-August-08_001 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -1975,7 +1968,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -1983,7 +1976,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -1991,13 +1984,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2016,7 +2009,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2022_[08_09] - Copy",
                 "Day Month DD HH-MM-SS YYYY": "2022_[08_09] - Copy",
                 "Foldername_Number": "2022_[08_09] - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2031,7 +2024,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2039,7 +2032,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2047,13 +2040,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2072,7 +2065,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2022_[08_10-08_10] - Copy",
                 "Day Month DD HH-MM-SS YYYY": "2022_[08_10-08_10] - Copy",
                 "Foldername_Number": "2022_[08_10-08_10] - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2088,7 +2081,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2097,7 +2090,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2105,13 +2098,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2130,7 +2123,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2022-08-01_09-28-50 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "2022-08-01_09-28-50 - Copy",
                 "Foldername_Number": "2022-08-01_09-28-50 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2146,7 +2139,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2155,7 +2148,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2163,13 +2156,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2188,7 +2181,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2022-08-02_09-28-50.000 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "2022-08-02_09-28-50.000 - Copy",
                 "Foldername_Number": "2022-08-02_09-28-50.000 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2203,7 +2196,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2211,7 +2204,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2219,13 +2212,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2244,7 +2237,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "20220803_092850 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "20220803_092850 - Copy",
                 "Foldername_Number": "20220803_092850 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2258,13 +2251,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {
                 "folder": None,
                 "name": None,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2275,7 +2268,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "gibberish4 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "gibberish4 - Copy",
                 "Foldername_Number": "gibberish4 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2290,7 +2283,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2298,7 +2291,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2306,13 +2299,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2331,7 +2324,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_20220804_092850 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "IMG_20220804_092850 - Copy",
                 "Foldername_Number": "IMG_20220804_092850 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2346,7 +2339,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -2355,7 +2348,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2364,7 +2357,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", False),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2373,7 +2366,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2381,13 +2374,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2406,7 +2399,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_0040 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "IMG_0040 - Copy",
                 "Foldername_Number": "IMG_0040 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2422,7 +2415,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2431,7 +2424,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2439,13 +2432,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2464,7 +2457,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "MVI_20220805_092850 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "MVI_20220805_092850 - Copy",
                 "Foldername_Number": "MVI_20220805_092850 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2479,7 +2472,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2487,7 +2480,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2495,13 +2488,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2520,7 +2513,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "Sun Aug 07 09-28-50 2022 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "Sun Aug 07 09-28-50 2022 - Copy",
                 "Foldername_Number": "Sun Aug 07 09-28-50 2022 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2535,7 +2528,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2543,7 +2536,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2022", "2022_[08_01-08_31]_August"),
@@ -2551,13 +2544,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2022", join("2022_[08_01-08_31]_August", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2576,7 +2569,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "VID_20220806_092850 - Copy",
                 "Day Month DD HH-MM-SS YYYY": "VID_20220806_092850 - Copy",
                 "Foldername_Number": "VID_20220806_092850 - Copy",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2595,7 +2588,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -2603,14 +2596,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("1900", "misc"),
                 "name": 0,
                 "jpg": True,
-                "conditions": [
-                ]
+                "conditions": [],
             },
         ],
         "out": [
@@ -2629,7 +2621,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "11-November-08_001 (2)",
                 "Day Month DD HH-MM-SS YYYY": "11-November-08_001 (2)",
                 "Foldername_Number": "11-November-08_001 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2644,7 +2636,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2652,7 +2644,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -2660,13 +2652,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2685,7 +2677,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2021_[11_09] (2)",
                 "Day Month DD HH-MM-SS YYYY": "2021_[11_09] (2)",
                 "Foldername_Number": "2021_[11_09] (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2700,7 +2692,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2708,7 +2700,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -2716,13 +2708,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2741,7 +2733,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2021_[11_10-11_10] (2)",
                 "Day Month DD HH-MM-SS YYYY": "2021_[11_10-11_10] (2)",
                 "Foldername_Number": "2021_[11_10-11_10] (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2757,7 +2749,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2766,7 +2758,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -2774,13 +2766,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2799,7 +2791,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2021-11-01_09-28-50 (2)",
                 "Day Month DD HH-MM-SS YYYY": "2021-11-01_09-28-50 (2)",
                 "Foldername_Number": "2021-11-01_09-28-50 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2815,7 +2807,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2824,7 +2816,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -2832,13 +2824,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2857,7 +2849,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "2021-11-02_09-28-50.000 (2)",
                 "Day Month DD HH-MM-SS YYYY": "2021-11-02_09-28-50.000 (2)",
                 "Foldername_Number": "2021-11-02_09-28-50.000 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2872,7 +2864,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2880,7 +2872,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -2888,13 +2880,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2913,7 +2905,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "20211103_092850 (2)",
                 "Day Month DD HH-MM-SS YYYY": "20211103_092850 (2)",
                 "Foldername_Number": "20211103_092850 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2927,13 +2919,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {
                 "folder": None,
                 "name": None,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -2944,7 +2936,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "gibberish3 (2)",
                 "Day Month DD HH-MM-SS YYYY": "gibberish3 (2)",
                 "Foldername_Number": "gibberish3 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -2959,7 +2951,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -2967,7 +2959,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -2975,13 +2967,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -3000,7 +2992,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_20211104_092850 (2)",
                 "Day Month DD HH-MM-SS YYYY": "IMG_20211104_092850 (2)",
                 "Foldername_Number": "IMG_20211104_092850 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -3015,7 +3007,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # Misc
                 "folder": "misc",
@@ -3024,7 +3016,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -3033,7 +3025,7 @@ file_rules = {
                 "conditions": [
                     ("process_unmatched", False),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -3042,7 +3034,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Filename only"),
                     ("process_unmatched", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -3050,13 +3042,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -3075,7 +3067,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "IMG_0030 (2)",
                 "Day Month DD HH-MM-SS YYYY": "IMG_0030 (2)",
                 "Foldername_Number": "IMG_0030 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -3091,7 +3083,7 @@ file_rules = {
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
                     ("process_samename", False),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -3100,7 +3092,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_samename", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -3108,13 +3100,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -3133,7 +3125,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "MVI_20211105_092850 (2)",
                 "Day Month DD HH-MM-SS YYYY": "MVI_20211105_092850 (2)",
                 "Foldername_Number": "MVI_20211105_092850 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -3148,7 +3140,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -3156,7 +3148,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -3164,13 +3156,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -3189,7 +3181,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "Sun Nov 07 09-28-50 2021 (2)",
                 "Day Month DD HH-MM-SS YYYY": "Sun Nov 07 09-28-50 2021 (2)",
                 "Foldername_Number": "Sun Nov 07 09-28-50 2021 (2)",
-            }
+            },
         ],
     },
     ###############################################################################################
@@ -3204,7 +3196,7 @@ file_rules = {
                 "conditions": [
                     ("in_signature", "Metadata only"),
                     ("process_unmatched", True),
-                ]
+                ],
             },
             {  # None
                 "folder": None,
@@ -3212,7 +3204,7 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("in_signature", "Metadata only"),
-                ]
+                ],
             },
             {
                 "folder": join("2021", "2021_[11_01-11_30]_November"),
@@ -3220,13 +3212,13 @@ file_rules = {
                 "jpg": True,
                 "conditions": [
                     ("require_artist", False),
-                ]
+                ],
             },
             {
                 "folder": join("2021", join("2021_[11_01-11_30]_November", "no_artist")),
                 "name": 0,
                 "jpg": True,
-                "conditions": []
+                "conditions": [],
             },
         ],
         "out": [
@@ -3245,7 +3237,7 @@ file_rules = {
                 "IMG_YYYYMMDD_HHMMSS": "VID_20211106_092850 (2)",
                 "Day Month DD HH-MM-SS YYYY": "VID_20211106_092850 (2)",
                 "Foldername_Number": "VID_20211106_092850 (2)",
-            }
+            },
         ],
     },
 }

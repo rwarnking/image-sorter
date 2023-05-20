@@ -6,12 +6,22 @@ PAD_X = 5
 PAD_Y = (5, 5)
 PAD_Y_LBL = (5, 0)
 PAD_Y_ADD = (0, 0)
+# Window dimensions
+WINDOW_W = 650
+# Line height
+LINE_H = 30
+# Button width
+BTN_W = 5
+
 
 class BaseBox(object):
     """
+    Baseclass for GUI boxes.
     Source: https://stackoverflow.com/questions/29619418/
     """
-    def __init__(self, header):
+
+    def __init__(self, header: str):
+        """Initialize most common variables."""
         # Creating Dialogue for messagebox
         self.root = Toplevel()
         self.root.title(header)
@@ -30,10 +40,10 @@ class BaseBox(object):
         self.root.grid_columnconfigure(3, weight=1)
 
     def row(self):
+        """Increase the row idx and return the previous value."""
         self.row_idx += 1
         return self.row_idx - 1
 
-    # Function on closing MessageBox
     def close(self):
+        """Function for closing the box."""
         self.root.destroy()
-        
