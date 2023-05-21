@@ -61,21 +61,21 @@ jobs:
           if [[ "$COMMITMSG" =~ ^Major: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_major }} -m "New version ${{ steps.semvers.outputs.v_major }}"
           git push origin ${{ steps.semvers.outputs.v_major }}
-          echo "{result}={1}" >> "$GITHUB_OUTPUT"
+          echo "result=1" >> "$GITHUB_OUTPUT"
           elif [[ "$COMMITMSG" =~ ^Minor: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_minor }} -m "New version ${{ steps.semvers.outputs.v_minor }}"
           git push origin ${{ steps.semvers.outputs.v_minor }}
-          echo "{result}={1}" >> "$GITHUB_OUTPUT"
+          echo "result=1" >> "$GITHUB_OUTPUT"
           elif [[ "$COMMITMSG" =~ ^Patch: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_patch }} -m "New version ${{ steps.semvers.outputs.v_patch }}"
           git push origin ${{ steps.semvers.outputs.v_patch }}
-          echo "{result}={1}" >> "$GITHUB_OUTPUT"
+          echo "result=1" >> "$GITHUB_OUTPUT"
           elif [[ "$COMMITMSG" =~ ^Update: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_patch }} -m "New version ${{ steps.semvers.outputs.v_patch }}"
           git push origin ${{ steps.semvers.outputs.v_patch }}
-          echo "{result}={1}" >> "$GITHUB_OUTPUT"
+          echo "result=1" >> "$GITHUB_OUTPUT"
           else
-          echo "{result}={0}" >> "$GITHUB_OUTPUT"
+          echo "result=0" >> "$GITHUB_OUTPUT"
           fi
 
   ##################
@@ -135,10 +135,10 @@ jobs:
       # Setup URL
       - id: set_upload_url
         if: ${{ needs.create_tag.outputs.output1 == '1' }}
-        run: echo "{upload_url}={${{ steps.create_release.outputs.upload_url }}}" >> "$GITHUB_OUTPUT"
+        run: echo "upload_url=${{ steps.create_release.outputs.upload_url }}" >> "$GITHUB_OUTPUT"
       - id: set_version
         if: ${{ needs.create_tag.outputs.output1 == '1' }}
-        run: echo "{version}={${{ steps.previoustag.outputs.tag }}}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${{ steps.previoustag.outputs.tag }}" >> "$GITHUB_OUTPUT"
 
   #############################
   # Build & Upload to release #

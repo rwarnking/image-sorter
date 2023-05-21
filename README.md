@@ -23,6 +23,21 @@ All functionalities are accesseable via a simple GUI.
 
 ## List of Features
 
+- Database for events, artists, persons
+  - load and save database from json
+- Image sorting according to present database data
+  - input and output folder selection
+  - select input type (filename or metadata)
+  - select output signature for folder and file
+- Settings for:
+  - process folder recursively
+  - process unmatched files like (.txt)
+  - processing files with identical name
+  - require artist for files
+  - metadata modifiction
+  - metadata overriding
+  - save or move files
+
 ## Installation
 
 Download this repository or install directly from GitHub
@@ -71,7 +86,7 @@ Run the program using your usual Python IDE (like Visual Code) or via the consol
 ### GUI
 
 The GUI lets you select the input and output directory.
-Furthermore options are available to add events and authors.
+Further menus are available to add events and authors to the database.
 Progress-bars are given for continuous observation of the progress.
 
 ![GUI](/docs/images/gui.jpg)
