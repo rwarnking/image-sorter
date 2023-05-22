@@ -340,7 +340,7 @@ class TestSort(unittest.TestCase):
         meta_info.process_unmatched.set(settings["process_unmatched"])
         meta_info.require_artist.set(settings["require_artist"])
         meta_info.process_samename.set(settings["process_samename"])
-        meta_info.dont_ask_again.set(settings["dont_ask_again"])
+        meta_info.dont_ask_again_fnum.set(settings["dont_ask_again_fnum"])
 
         meta_info.in_signature.set(settings["in_signature"])
         meta_info.file_signature.set(settings["file_signature"])
@@ -358,7 +358,7 @@ class TestSort(unittest.TestCase):
             "process_unmatched": 1,
             "require_artist": 1,
             "process_samename": 0,
-            "dont_ask_again": False,
+            "dont_ask_again_fnum": False,
             "in_signature": meta_info.get_read_choices()[0],
             "file_signature": meta_info.get_supported_file_signatures()[0],
             "folder_signature": meta_info.get_supported_folder_signatures()[0],

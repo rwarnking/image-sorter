@@ -29,8 +29,10 @@ class MetaInformation:
         self.require_artist.set(1)
         self.process_samename = IntVar()
         self.process_samename.set(1)
-        self.dont_ask_again = BooleanVar()
-        self.dont_ask_again.set(False)
+        self.dont_ask_again_fnum = BooleanVar()
+        self.dont_ask_again_fnum.set(False)
+        self.dont_ask_again_thumb = BooleanVar()
+        self.dont_ask_again_thumb.set(False)
 
         self.in_signature = StringVar()
         self.in_signature.set(self.get_read_choices()[0])
@@ -119,6 +121,7 @@ class MetaInformation:
             r"^(\d{4}_\[\d{2}_\d{2}\])",
             r"^(\d{4}_\[\d{2}_\d{2})-\d{2}_\d{2}\]",
             r"^(\w{3}_\d{4})",
+            r"^\w{3}-(\d{8})-",
         ]
 
     def get_signature_strptime(self):
@@ -136,6 +139,7 @@ class MetaInformation:
             "%Y_[%m_%d]",
             "%Y_[%m_%d",
             "",
+            "%Y%m%d",
         ]
 
     def update_estimated_time(self, filecount: int):

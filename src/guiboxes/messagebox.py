@@ -1,13 +1,12 @@
-from tkinter import Button, Checkbutton, Label, Toplevel
+from tkinter import BooleanVar, Button, Checkbutton, Label, Toplevel
 
 from guiboxes.basebox import PAD_X, PAD_Y
 from helper import center_window
-from meta_information import MetaInformation
 
 
 # Source: https://stackoverflow.com/questions/29619418/
 class MessageBox(object):
-    def __init__(self, title: str, message: str, meta_info: MetaInformation):
+    def __init__(self, title: str, msg: str, again: BooleanVar, b1: str = "Yes", b2: str = "No"):
         """
         Create a GUI box that allows to select yes, no as buttons as well as
         a Do not ask again option.
@@ -18,30 +17,27 @@ class MessageBox(object):
         # Creating Dialogue for messagebox
         self.root = Toplevel()
         self.root.title(title)
+        self.root.minsize(350, 0)
 
         # Creating Label For message
         Label(
             self.root,
-            text=message,
+            text=msg,
         ).grid(row=0, column=0, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="w")
 
-        Checkbutton(self.root, text="Do not ask again", variable=meta_info.dont_ask_again).grid(
+        Checkbutton(self.root, text="Do not ask again", variable=again).grid(
             row=1, column=0, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="w"
         )
 
         # Creating Yes button
-        Button(
-            self.root,
-            text="Yes",
-            command=self.clickYes,
-        ).grid(row=2, column=0, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Button(self.root, text=b1, command=self.clickYes).grid(
+            row=2, column=0, padx=PAD_X, pady=PAD_Y, sticky="ew"
+        )
 
         # Creating No button
-        Button(
-            self.root,
-            text="No",
-            command=self.clickNo,
-        ).grid(row=2, column=1, padx=PAD_X, pady=(10, 15), sticky="ew")
+        Button(self.root, text=b2, command=self.clickNo).grid(
+            row=2, column=1, padx=PAD_X, pady=PAD_Y, sticky="ew"
+        )
 
         center_window(self.root)
 

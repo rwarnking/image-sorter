@@ -93,7 +93,8 @@ class MainApp:
         s = Sorter(self.meta_info)
         self.meta_info.finished = False
         self.meta_info.file_count = 0
-        self.meta_info.dont_ask_again.set(False)
+        self.meta_info.dont_ask_again_fnum.set(False)
+        self.meta_info.dont_ask_again_thumb.set(False)
         self.listen_for_result(window)
 
         self.new_thread = threading.Thread(target=s.run)

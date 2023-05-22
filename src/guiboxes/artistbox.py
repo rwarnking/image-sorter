@@ -1,3 +1,4 @@
+from datetime import datetime
 from idlelib.tooltip import Hovertip
 from tkinter import Button, Entry, Label, StringVar
 from tkinter.ttk import Combobox, Separator
@@ -236,8 +237,8 @@ class ModifyArtistBox(BaseBox):
                 self.p_id,
                 self.make,
                 self.model,
-                self.start_date,
-                self.end_date,
+                datetime.strptime(self.start_date, "%Y-%m-%d %H:%M:%S"),
+                datetime.strptime(self.end_date, "%Y-%m-%d %H:%M:%S"),
                 self.time_shift,
                 new_p_id,
                 self.sv_a_make.get(),

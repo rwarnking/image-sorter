@@ -21,7 +21,8 @@ class Sorter:
     def __init__(self, meta_info: MetaInformation):
         """Setup the Sorter Object"""
         self.meta_info = meta_info
-        self.confirm = False
+        self.confirm_fnum = False
+        self.confirm_thumb = False
 
     ###############################################################################################
     # Main
@@ -430,14 +431,15 @@ class Sorter:
 
         # Check if the file already exists
         if os.path.exists(os.path.join(event_dir, new_name_ext)):
-            if not self.meta_info.dont_ask_again.get():
+            if not self.meta_info.dont_ask_again_fnum.get():
                 box = MessageBox(
                     title="Warning: Filename already taken!",
-                    message="Overwrite file? Adding number to name otherwise.",
-                    meta_info=self.meta_info,
+                    msg="Overwrite file? Adding number to name otherwise.",
+                    again=self.meta_info.dont_ask_again_fnum,
                 )
-                self.confirm = box.choice
-            if not self.confirm:
+                self.confirm_fnum = box.choice
+            # If the user selected "do not override" add number
+            if not self.confirm_fnum:
                 i = 1
                 new_name_ext = f"{new_name}_{i}{f_ext}"
                 while os.path.exists(os.path.join(event_dir, new_name_ext)):
@@ -559,9 +561,6 @@ class Sorter:
             if search := re.search(regex, file):
                 match = search.group(1) + file_extension
 
-                if regex == r"^\w{3}_\d{8}_\d{6}":
-                    strptime = "%Y%m%d_%H%M%S"
-
                 if strptime == "" or not isinstance(match, str):
                     return None
 
@@ -589,8 +588,10 @@ class Sorter:
         Uses get_supported_folder_signatures to switch between different signatures.
         Note: e_title already consits of event and subevent title
         """
+        # Capitalize every first letter
+        event_title = e_title.title()
         # Replace all whitespaces to prevent spaces in path
-        event_title = e_title.replace(" ", "")
+        event_title = event_title.replace(" ", "")
 
         # Get date information and padd month and day with 0 if necessary
         year = str(e_start.year)
@@ -724,6 +725,25 @@ class Sorter:
             ):
                 exif_dict[d][k] = v
 
-            # Write back to the file
+        # Write back to the file
+        try:
             exif_bytes = piexif.dump(exif_dict)
-            piexif.insert(exif_bytes, file_with_path)
+        except ValueError:
+            # Not the best solution, but this is necessary in case the file
+            # has a thumbnail bigger than 64kb
+            if not self.meta_info.dont_ask_again_thumb.get():
+                box = MessageBox(
+                    title="Error: Thumbnail size > 64kb!",
+                    msg=f"The thumbnail of file {file_with_path} is to large.",
+                    again=self.meta_info.dont_ask_again_thumb,
+                    b1="Delete thumbnail",
+                    b2="Do not modify metadata",
+                )
+                self.confirm_thumb = box.choice
+            if self.confirm_thumb:
+                del exif_dict["thumbnail"]
+                exif_bytes = piexif.dump(exif_dict)
+            else:
+                return
+
+        piexif.insert(exif_bytes, file_with_path)
