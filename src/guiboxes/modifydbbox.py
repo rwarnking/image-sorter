@@ -1,17 +1,33 @@
+import operator
 import os
+from datetime import datetime, time, timedelta
 from functools import partial
 from idlelib.tooltip import Hovertip
 from tkinter import END, RIGHT, Button, Frame, Label, StringVar, Text, filedialog, messagebox
 from tkinter.ttk import Combobox, Scrollbar, Separator
 
-from database import Database
+import matplotlib as mpl
+from database import EVENT_E_DATE, EVENT_S_DATE, EVENT_TITLE, Database
+from dateutil.relativedelta import relativedelta
 from debug_messages import InfoArray, InfoCodes
 from guiboxes.artistbox import ModifyArtistBox
-from guiboxes.basebox import BTN_W, LINE_H, PAD_X, PAD_Y, PAD_Y_ADD, PAD_Y_LBL, WINDOW_W, BaseBox
+from guiboxes.basebox import (
+    BTN_W,
+    LINE_H,
+    PAD_X,
+    PAD_Y,
+    PAD_Y_ADD,
+    PAD_Y_LBL,
+    SEPARATOR,
+    WINDOW_W,
+    BaseBox,
+)
 from guiboxes.eventbox import ModifyEventBox
 from guiboxes.personbox import ModifyPersonBox
+from guiboxes.selectionbox import SelectionBox
 from helper import center_window
 from meta_information import MetaInformation
+from tkcalendar import Calendar
 from tooltips import TooltipDict
 
 TMODDB_H = 200
@@ -23,6 +39,9 @@ class ModifyDBBox(BaseBox):
         """
         Create a GUI element that includes a list of all entries of a table
         selectable via a combobox. Also allows to add, mod or delete entries.
+        :param header: Title string
+        :param db: Handle to the database containing events, artists, ...
+        :param meta_info: The currently set metainformation (like directories)
         """
         super().__init__(header)
 
@@ -30,6 +49,8 @@ class ModifyDBBox(BaseBox):
         self.db = db
         # Used for saving the directories in metainfo
         self.meta_info = meta_info
+
+        self.calendar = None
 
         ###############
         # Header Line #
@@ -80,9 +101,22 @@ class ModifyDBBox(BaseBox):
             text="Selected database table:",
         ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="w")
 
-        def update_db_gui(_):
+        def combobox_select(_):
+            table = self.db_select.get()
+            if table == "events":
+                bd = self.calendar.__getitem__("borderwidth")
+                self.calendar._cal_frame.pack(fill="both", expand=True, padx=bd, pady=bd)
+                self.calendar.grid()
+                btn_clear_m.grid()
+            elif table == "artists":
+                self.calendar._cal_frame.pack_forget()
+                self.calendar.grid()
+                btn_clear_m.grid_remove()
+            else:
+                self.calendar.grid_remove()
+                btn_clear_m.grid_remove()
             self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
-            self.updateListFrame(db, self.db_select.get())
+            self.updateGUI(table)
 
         list_dbs = [
             "events",
@@ -99,8 +133,16 @@ class ModifyDBBox(BaseBox):
         # Place the widget
         cb_dbs.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
-        cb_dbs.bind("<<ComboboxSelected>>", update_db_gui)
+        cb_dbs.bind("<<ComboboxSelected>>", combobox_select)
         Hovertip(cb_dbs, TooltipDict["cb_dbs"])
+
+        #################
+        # Calendar view #
+        #################
+        # Save the row index for the calendar since the calendar can only
+        # be added the the grid after the textfield otherwise the tooltip
+        # does not work (unclear why that is)
+        row_idx_cal = self.row()
 
         ######################################
         # Frame and textfield for add button #
@@ -142,12 +184,70 @@ class ModifyDBBox(BaseBox):
         self.sb_db_list.pack(side=RIGHT, fill="y")
         self.text_db_list.configure(yscrollcommand=self.sb_db_list.set)
         self.text_db_list.pack(fill="both", expand=True)
+        # This is needed so the Calendar tooltip is shown
+        self.text_db_list.update()
 
-        self.updateListFrame(db, self.db_select.get())
+        #################
+        # Calendar view #
+        #################
+        # https://tkcalendar.readthedocs.io/en/stable/Calendar.html
+        # https://tkcalendar.readthedocs.io/en/stable/_modules/tkcalendar/calendar_.html#Calendar
 
-        #####################
-        # Remove all button #
-        #####################
+        self.calendar = Calendar(
+            self.root,
+            tooltipdelay=100,
+            weekendbackground="white",
+            weekendforeground="black",
+            othermonthwebackground="gray93",
+        )
+        self.calendar.grid(
+            row=row_idx_cal, column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        def calendar_selected(_):
+            # Get date
+            date_sel = self.calendar.selection_get()
+            event_data = self.calendar.get_calevents(date_sel)
+
+            if len(event_data) > 0:
+                idx = event_data[0]
+                if len(event_data) > 1:
+                    # Select one of the found events for this date
+                    box = SelectionBox(
+                        title="Warning: Multiple events found!",
+                        message=("For the selected date multiple events are present."),
+                        actioncall="Select one event:",
+                        # Use the calendar tags to present the user information for each event
+                        options=[
+                            f"{i}: {self.calendar.calevent_cget(i, 'tags')[0]}" for i in event_data
+                        ],
+                    )
+                    # Extract the event index from the choice string (month index not db index)
+                    idx = int(box.choice.get().split(":")[0])
+                self.clickModify(self.calendar.calevent_cget(idx, "tags")[0])
+            else:
+                self.clickAdd()
+
+        self.calendar.bind("<<CalendarSelected>>", calendar_selected)
+        self.calendar.bind(
+            "<<CalendarMonthChanged>>", lambda _: self.updateGUI(self.db_select.get())
+        )
+
+        # Update calendar AND textfields
+        self.updateGUI(self.db_select.get())
+
+        #################################
+        # Remove buttons and Info label #
+        #################################
+        btn_clear_m = Button(
+            self.root,
+            text="Clear current month of selected table",
+            command=lambda: self.clickClearMonth(),
+        )
+        btn_clear_m.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_clear_m, TooltipDict["btn_clear_month"])
+
+        # Info label for example for success or error informations
         self.lbl_info = Label(self.root, text="")
         self.lbl_info.grid(
             row=self.row_idx, column=0, columnspan=2, padx=PAD_X, pady=PAD_Y_LBL, sticky="W"
@@ -181,20 +281,26 @@ class ModifyDBBox(BaseBox):
         self.root.wait_window()
 
     def browse_button_open(self, dir: StringVar):
-        """Open filedialog for browsing for a database file to open."""
+        """
+        Open filedialog for browsing for a database file to open.
+        :param dir: The directory to load from.
+        """
         filename = filedialog.askopenfilename(initialdir=os.path.dirname(dir.get()))
         if filename != "" and not filename.lower().endswith(".json"):
             messagebox.showinfo(message="Please select a json file.", title="Error")
         elif filename != "":
             info = self.db.load_from_file(filename)
-            self.updateListFrame(self.db, self.db_select.get())
+            self.updateGUI(self.db_select.get())
             self.lbl_info.config(
                 text=InfoArray[info], fg="#0a0" if info == InfoCodes.LOAD_SUCCESS else "#a80"
             )
             dir.set(filename)
 
     def browse_button_save(self, dir: StringVar):
-        """Open filedialog for browsing for a database file to save to."""
+        """
+        Open filedialog for browsing for a database file to save to.
+        :param dir: The directory to save to.
+        """
         filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
         if filename != "" and not filename.lower().endswith(".json"):
             messagebox.showinfo(message="Please select a json file.", title="Error")
@@ -206,23 +312,31 @@ class ModifyDBBox(BaseBox):
             dir.set(filename)
 
     def clickAdd(self):
-        """Function when pressing the add button. The selected box is created."""
+        """
+        Function when pressing the add button.
+        Depending on the selected table an element is created.
+        """
         self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
 
         str_selection = self.db_select.get()
         if str_selection == "events":
-            box = ModifyEventBox("Add event", self.db)
+            date = self.getDefaultDay()
+            box = ModifyEventBox("Add event", self.db, date)
         elif str_selection == "artists":
-            box = ModifyArtistBox("Add artist", self.db)
+            date = self.getDefaultDay()
+            box = ModifyArtistBox("Add artist", self.db, date)
         elif str_selection == "persons":
             box = ModifyPersonBox("Add person", self.db)
 
         if box.changed:
-            self.updateListFrame(self.db, self.db_select.get())
+            self.updateGUI(str_selection)
             self.lbl_info.config(text=InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
 
     def clickModify(self, elem: str):
-        """Function when pressing the modify button. The selected box is created."""
+        """
+        Function when pressing the modify button. The selected elem is modified.
+        :param elem: The element that should be modified.
+        """
         self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
 
         str_selection = self.db_select.get()
@@ -234,50 +348,92 @@ class ModifyDBBox(BaseBox):
             box = ModifyPersonBox("Modify person", self.db, elem)
 
         if box.changed:
-            self.updateListFrame(self.db, self.db_select.get())
+            self.updateGUI(str_selection)
             self.lbl_info.config(text=InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
 
     def clickDelete(self, elem: str):
-        """Function when pressing the delete button. The selected box is created."""
+        """
+        Function when pressing the delete button. The selected elem is deleted.
+        :param elem: The element that should be deleted.
+        """
         str_selection = self.db_select.get()
         if str_selection == "events":
-            elm_data = elem.split(" | ")
+            elm_data = elem.split(SEPARATOR)
             info = self.db.delete_event_s(elm_data[1], elm_data[2], elm_data[3])
         elif str_selection == "artists":
-            elm_data = elem.split(" | ")
+            elm_data = elem.split(SEPARATOR)
             # Obacht: elm_data[0] is the index not the name
             info = self.db.delete_artist_s(
                 int(elm_data[1]), elm_data[2], elm_data[3], elm_data[4], elm_data[5], elm_data[6]
             )
         elif str_selection == "persons":
-            elm_data = elem.split(" | ")
+            elm_data = elem.split(SEPARATOR)
             info = self.db.delete_person(elm_data[1])
 
-        self.updateListFrame(self.db, self.db_select.get())
+        self.updateGUI(str_selection)
         self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
 
     def clickClear(self):
-        """Function when pressing the clear button. The selec table in the database is cleared."""
+        """
+        Function when pressing the clear button. The selected table in the database is cleared.
+        """
         str_selection = self.db_select.get()
         info = self.db.clean(str_selection)
-        self.updateListFrame(self.db, str_selection)
+        self.updateGUI(str_selection)
         self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
 
-    def updateListFrame(self, db: Database, table: str):
+    def clickClearMonth(self):
+        """
+        Function when pressing the clear month button.
+        All entrys in the database of selected table and in the current month are deleted.
+        """
+        info = InfoCodes.DEL_SUCCESS
+        str_selection = self.db_select.get()
+        if str_selection == "events":
+            lst_content = self.getEvents()
+            for elem in lst_content:
+                tmp_info = self.db.delete_event(
+                    elem[EVENT_TITLE], elem[EVENT_S_DATE], elem[EVENT_E_DATE]
+                )
+                if tmp_info == InfoCodes.DEL_ERROR:
+                    info = InfoCodes.DEL_ERROR
+
+        self.updateGUI(str_selection)
+        self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
+
+    def updateGUI(self, table):
+        """
+        Update the GUI to display the correct data.
+        :param table: The currently selected table
+        """
+        self.calendar.selection_clear()
+
+        if table == "events":
+            lst_content = self.getEvents()
+            self.updateCalender(lst_content)
+        elif table == "persons":
+            lst_content = self.getPersons()
+        elif table == "artists":
+            lst_content = self.getArtists()
+        else:
+            lst_content = self.db.get_all(table)
+
+        self.updateListFrame(table, lst_content)
+
+    def updateListFrame(self, table: str, lst_content):
         """
         Update the text field listing all entries of the selected table.
         How to create a scrollable list of buttons in Tkinter?
         https://stackoverflow.com/questions/68288119/
         How to pass arguments to a Button command in Tkinter?
         https://stackoverflow.com/questions/6920302/
+        :param table: The currently selected table
+        :param lst_content: The content for the text frame
         """
         # Clear all content in the text area
         self.text_db_list.delete("1.0", END)
 
-        list_table_content = [" | ".join(str(e) for e in x) for x in db.get_all(table)]
-
-        ############################
-        str_selection = self.db_select.get()
+        list_table_content = [SEPARATOR.join(str(e) for e in x) for x in lst_content]
 
         # Creating label for each artist/event/...
         for i, e in enumerate(list_table_content):
@@ -294,12 +450,118 @@ class ModifyDBBox(BaseBox):
             self.text_db_list.window_create("end", window=btn_del)
 
             # Special case because the artist contains a person id
-            if str_selection == "artists":
-                first_idx = e.index(" | ")
-                second_idx = e.index(" | ", first_idx + 1)
+            if table == "artists":
+                first_idx = e.index(SEPARATOR)
+                second_idx = e.index(SEPARATOR, first_idx + 1)
                 num = int(e[first_idx + 3 : second_idx])
                 e = f"{e[:second_idx]} ({self.db.get_pname(num)}){e[second_idx:]}"
+
+            # Remove index from text frame, since they are not sorted anyways
+            first_idx = e.index(SEPARATOR)
+            e = f"{e[first_idx + len(SEPARATOR):]}"
 
             self.text_db_list.insert("end", " " + e + "\n")
 
         self.text_db_list.update()
+
+    def updateCalender(self, lst_events):
+        """
+        Add all events of the given list to the calendar.
+        For each event its days are iterated and added the event of the calendar.
+        For each display event a unique color is generated.
+        :param lst_events: The list of events to add
+        """
+        self.calendar.calevent_remove("all")
+
+        viridis = mpl.colormaps["viridis"].resampled(len(lst_events))
+
+        for i, e in enumerate(lst_events):
+            # Get a list of days from the start and to the end date of the event
+            lst_days = [
+                e[EVENT_S_DATE] + timedelta(days=x)
+                for x in range(((e[EVENT_E_DATE] + timedelta(days=1)) - e[EVENT_S_DATE]).days)
+            ]
+            for day in lst_days:
+                tmp_str = SEPARATOR.join(str(x) for x in e)
+                self.calendar.calevent_create(day, e[1], tmp_str)
+                r, g, b, a = [int(x * 255) for x in viridis(i)]
+                # Change font color depending on brightness
+                brightness = (299 * r + 587 * g + 114 * b) / 1000
+                self.calendar.tag_config(
+                    tmp_str,
+                    foreground="white" if brightness < 125 else "black",
+                    background=f"#{r:02x}{g:02x}{b:02x}",
+                )
+
+    def getEvents(self):
+        """
+        Get a list of events in the currently selected month.
+        For this the calendar month is queried and the events are obtained from the database
+        using a timeframe. The list is sorted by the start date of the event.
+        :return: List of events in month
+        """
+        month, year = self.calendar.get_displayed_month()
+        month_date = datetime(year, month, 1)
+
+        # Get first day of month
+        first_day = month_date + relativedelta(day=1)
+        # Get monday before first day of month
+        first_day -= timedelta(days=first_day.weekday())
+        # Get last day of month
+        # last_day = month_date + relativedelta(day=31, hour=23, minute=59, second=59)
+        # Get sunday 5 weeks later than the first day
+        last_day = first_day + timedelta(weeks=5, days=6, hours=23, minutes=59, seconds=59)
+
+        lst_events = self.db.get_by_timeframe("events", first_day, last_day)
+        lst_events.sort(key=lambda x: x[EVENT_S_DATE])
+
+        return lst_events
+
+    def getArtists(self):
+        """
+        Get a list of artists in the currently selected month.
+        For this the calendar month is queried and the artists are obtained from the database
+        using a timeframe. The list is sorted by the name and the start date of the artist.
+        :return: List of events in month
+        """
+        month, year = self.calendar.get_displayed_month()
+        month_date = datetime(year, month, 1)
+
+        # Get first day of month
+        first_day = month_date + relativedelta(day=1)
+        # Get last day of month
+        last_day = month_date + relativedelta(day=31, hour=23, minute=59, second=59)
+
+        lst_content = self.db.get_by_timeframe("artists", first_day, last_day)
+        lst_content.sort(key=operator.itemgetter(1, 4))
+
+        return lst_content
+
+    def getPersons(self):
+        """
+        Get a list of persons. The list is sorted by the name of the person.
+        :return: List of persons
+        """
+        lst_content = self.db.get_all("persons")
+        # TODO sort by lastname
+        lst_content.sort(key=lambda x: x[1])
+        return lst_content
+
+    def getDefaultDay(self):
+        """
+        Get the currently most fitting default day.
+        If a day is selected it is returned, otherwise the first of the current month is used.
+        The result is returned in form of a string with the earliest and latest time of the day
+        are separated by a separator symbol.
+        :return: The first and last moment of the default day as string.
+        """
+        if date_sel := self.calendar.selection_get():
+            # Create latest time at the same day
+            date_sel_night = datetime.combine(date_sel, time.max)
+            return f"{date_sel}{SEPARATOR}{date_sel_night}"
+
+        # If no day is selected use the currently selected month as start date
+        month, year = self.calendar.get_displayed_month()
+        month_date = datetime(year, month, 1)
+        month_date_night = datetime.combine(month_date, time.max)
+        return f"{month_date}{SEPARATOR}{month_date_night}"

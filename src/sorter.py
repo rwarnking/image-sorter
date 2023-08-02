@@ -8,6 +8,7 @@ from typing import Any, Union
 
 import piexif
 from database import Database
+from guiboxes.basebox import SEPARATOR
 from guiboxes.messagebox import MessageBox
 from guiboxes.selectionbox import SelectionBox
 from helper import test_time_frame_outside
@@ -290,9 +291,9 @@ class Sorter:
                 title="Warning: Multiple events match!",
                 message=f"The given file ({f_name_cpl_old}) matches multiple events.",
                 actioncall="Select event:",
-                options=[str(i) + " | " + e[1] for i, e in enumerate(lst_events)],
+                options=[f"{i}{SEPARATOR}{e[1]}" for i, e in enumerate(lst_events)],
             )
-            select = int(box.choice.get().split(" | ")[0])
+            select = int(box.choice.get().split(SEPARATOR)[0])
 
         # Order: e_id, e_title, e_start, e_end
         return lst_events[select][0:4]
@@ -394,9 +395,11 @@ class Sorter:
                 title="Warning: Multiple events/artists match!",
                 message=f"The given file ({filename}) matches multiple event-artist combinations.",
                 actioncall="Select the correct combination:",
-                options=[str(i) + " | " + e[0][1] + " | " + e[1] for i, e in enumerate(lst_final)],
+                options=[
+                    f"{i}{SEPARATOR}{e[0][1]}{SEPARATOR}{e[1]}" for i, e in enumerate(lst_final)
+                ],
             )
-            select = int(box.choice.get().split(" | ")[0])
+            select = int(box.choice.get().split(SEPARATOR)[0])
 
         return (
             lst_final[select][0][0],  # e_id

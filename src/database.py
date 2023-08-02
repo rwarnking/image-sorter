@@ -7,6 +7,13 @@ from typing import Any, Literal, Union
 from debug_messages import InfoCodes
 from helper import test_time_frame, test_time_frame_outside, wbox
 
+# TODO use these
+EVENT_TITLE = 1
+EVENT_S_DATE = 2
+EVENT_E_DATE = 3
+ARTIST_S_DATE = 4
+ARTIST_E_DATE = 5
+
 
 class Database:
     """
@@ -348,6 +355,22 @@ class Database:
             opt_where, opt_vals = self.get_where_and_vals(args)
             where += " AND " + opt_where
             vals += opt_vals
+
+        cur = self.conn.execute(
+            f"SELECT * FROM {table} WHERE {where}",
+            vals,
+        )
+        result = cur.fetchall()
+        cur.close()
+        return result
+
+    def get_by_timeframe(self, table: str, s_date: datetime, e_date: datetime):
+        """Get all elements from the table with the specified date."""
+        # When the elem sdate is smaller than the timeframe end date,
+        # while the elem edate is bigger than the timeframe start date
+        # the element is atleast partially inside the timeframe.
+        where = "start_date<=? AND end_date>=?"
+        vals = (e_date, s_date)
 
         cur = self.conn.execute(
             f"SELECT * FROM {table} WHERE {where}",

@@ -2,6 +2,7 @@ from tkinter import Toplevel
 
 from debug_messages import InfoCodes
 
+SEPARATOR = " | "
 PAD_X = 5
 PAD_Y = (5, 5)
 PAD_Y_LBL = (5, 0)

@@ -13,6 +13,7 @@ All functionalities are accesseable via a simple GUI.
 ## Table of Contents
 - [Image Sorter](#image-sorter)
   - [Table of Contents](#table-of-contents)
+  - [List of Features](#list-of-features)
   - [Installation](#installation)
     - [Dependencies](#dependencies)
   - [Usage](#usage)
@@ -61,7 +62,7 @@ conda env create --file imgsort.txt
 ```
 afterwards activate the environment (`conda activate imgsort`) and start the application.
 
-The main dependency is the anvil tool found here:
+The main dependency is tkinter and the piexif tool found here:
 * [tkinter](https://docs.python.org/3/library/tkinter.html) for the interface/GUI
 * [tkcalendar](https://pypi.org/project/tkcalendar/) for the date selection
 * [piexif](https://piexif.readthedocs.io/en/latest/) for modification of the image metadata (EXIF)

@@ -27,6 +27,9 @@ def center_window(window: Toplevel):
     )
     # Sets the geometry accordingly
     window.geometry(window_geometry)
+    # Override again such that automatic window resizing works
+    # https://stackoverflow.com/questions/50955987/auto-resize-tkinter-window-to-fit-all-widgets
+    window.geometry("")
 
 
 def lt_window(window: Tk):

@@ -3,7 +3,7 @@ from tkinter import Button, Entry, Label, StringVar
 
 from database import Database
 from debug_messages import WarningArray, WarningCodes
-from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, BaseBox
+from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, BaseBox
 from helper import center_window, limit_input
 from tooltips import TooltipDict
 
@@ -22,7 +22,7 @@ class ModifyPersonBox(BaseBox):
         vcmd = (self.root.register(limit_input), "%S")
 
         # Get the person data if one was given
-        person_data = person.split(" | ")
+        person_data = person.split(SEPARATOR)
         self.name = "" if len(person_data) < 2 else person_data[1]
 
         ###############

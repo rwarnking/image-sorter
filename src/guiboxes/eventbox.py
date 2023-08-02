@@ -7,7 +7,7 @@ from tkinter.ttk import Scrollbar, Separator
 from database import Database
 from dateutils import TimeFrameSelector
 from debug_messages import WarningArray, WarningCodes
-from guiboxes.basebox import BTN_W, LINE_H, PAD_X, PAD_Y, PAD_Y_LBL, WINDOW_W, BaseBox
+from guiboxes.basebox import BTN_W, LINE_H, PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, WINDOW_W, BaseBox
 from guiboxes.participantbox import ModifyParticipantBox
 from guiboxes.subeventbox import ModifySubeventBox
 from helper import center_window, limit_input, test_time_frame_outside, test_time_frame_swap
@@ -34,14 +34,17 @@ class ModifyEventBox(BaseBox):
         # Split the string to gain the data
         # If the string did not contain everything override with empty string
         # and assign it to the values
-        event_data = event.split(" | ")
+        event_data = event.split(SEPARATOR)
 
         self.e_id = None
         self.title = ""
         self.start_date = None
         self.end_date = None
 
-        if len(event_data) >= 4:
+        if len(event_data) == 2:
+            self.start_date = event_data[0]
+            self.end_date = event_data[1]
+        elif len(event_data) >= 4:
             # Convert e_id to integer
             self.e_id = int(event_data[0])
             self.title = event_data[1]
@@ -220,7 +223,7 @@ class ModifyEventBox(BaseBox):
         # because changes in the timecells can not be checked.
         self.btn_add_event = Button(
             self.root,
-            text="Add" if event == "" else "Update",
+            text="Add" if len(event_data) < 4 else "Update",
             command=self.add,
             state="disabled",
         )
@@ -255,7 +258,7 @@ class ModifyEventBox(BaseBox):
         # This needs to be done since the event date might have been changed,
         # after the participants and subevents were added.
         for p in self.list_new_participants:
-            elem_p_data = p.split(" | ")
+            elem_p_data = p.split(SEPARATOR)
             p_date_start = datetime.fromisoformat(elem_p_data[1])
             p_date_end = datetime.fromisoformat(elem_p_data[2])
 
@@ -265,7 +268,7 @@ class ModifyEventBox(BaseBox):
                 return
 
         for se in self.list_new_subevents:
-            elem_se_data = se.split(" | ")
+            elem_se_data = se.split(SEPARATOR)
             se_date_start = datetime.fromisoformat(elem_se_data[2])
             se_date_end = datetime.fromisoformat(elem_se_data[2])
 
@@ -311,7 +314,7 @@ class ModifyEventBox(BaseBox):
 
         # Now add all participants that are in the list
         for p in self.list_new_participants:
-            elem_p_data = p.split(" | ")
+            elem_p_data = p.split(SEPARATOR)
             s_date_p = datetime.fromisoformat(elem_p_data[1])
             e_date_p = datetime.fromisoformat(elem_p_data[2])
 
@@ -322,7 +325,7 @@ class ModifyEventBox(BaseBox):
 
         # Now add all subevents that are in the list
         for se in self.list_new_subevents:
-            elem_se_data = se.split(" | ")
+            elem_se_data = se.split(SEPARATOR)
             s_date_se = datetime.fromisoformat(elem_se_data[1])
             e_date_se = datetime.fromisoformat(elem_se_data[2])
 

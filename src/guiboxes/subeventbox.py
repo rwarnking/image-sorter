@@ -6,7 +6,7 @@ from tkinter.ttk import Separator
 from database import Database
 from dateutils import TimeFrameSelector
 from debug_messages import WarningArray, WarningCodes
-from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, BaseBox
+from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, BaseBox
 from helper import center_window, limit_input, test_time_frame, test_time_frame_swap
 from tooltips import TooltipDict
 
@@ -130,7 +130,7 @@ class ModifySubeventBox(BaseBox):
         # Test all subevents of the list, to check if there are two subevents with
         # the same time frame, which is not allowed
         for subevent in self.subevent_list:
-            subevent_data = subevent.split(" | ")
+            subevent_data = subevent.split(SEPARATOR)
             testdate_start = datetime.fromisoformat(subevent_data[1])
             testdate_end = datetime.fromisoformat(subevent_data[2])
 
@@ -151,6 +151,6 @@ class ModifySubeventBox(BaseBox):
         start_date = self.tfs.get_start_date()
         end_date = self.tfs.get_end_date()
 
-        self.subevent = self.sv_se_title.get() + " | " + str(start_date) + " | " + str(end_date)
+        self.subevent = f"{self.sv_se_title.get()}{SEPARATOR}{start_date}{SEPARATOR}{end_date}"
         self.changed = True
         self.close()

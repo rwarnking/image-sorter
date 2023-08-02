@@ -159,12 +159,8 @@ jobs:
         uses: actions/setup-python@v2
       - name: Build
         run: |
-          # pip install -r requirements.txt
+          pip install -r requirements.txt
           pip install pytest pytest-cov
-          pip install setuptools
-          pip install tkcalendar
-          pip install pillow
-          pip install piexif
           pip install pyinstaller
           sh create_exe.sh
       # Upload
@@ -195,12 +191,8 @@ jobs:
         uses: actions/setup-python@v2
       - name: Build
         run: |
-          # pip install -r requirements.txt
+          pip install -r requirements.txt
           pip install pytest pytest-cov
-          pip install setuptools
-          pip install tkcalendar
-          pip install pillow
-          pip install piexif
           pip install pyinstaller
           sh create_exe.sh
       # Upload
@@ -229,12 +221,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Build
         run: |
-          # pip install -r requirements.txt
+          pip install -r requirements.txt
           pip install pytest pytest-cov
-          pip install setuptools
-          pip install tkcalendar
-          pip install pillow
-          pip install piexif
           pip install pyinstaller
           sh create_exe.sh
       # Upload

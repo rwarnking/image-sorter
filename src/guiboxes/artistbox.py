@@ -6,7 +6,7 @@ from tkinter.ttk import Combobox, Separator
 from database import Database
 from dateutils import TimeFrameSelector, TimeShiftSelector
 from debug_messages import WarningArray, WarningCodes
-from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, BaseBox
+from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, BaseBox
 from helper import center_window, limit_input, test_time_frame_swap
 from tooltips import TooltipDict
 
@@ -37,7 +37,10 @@ class ModifyArtistBox(BaseBox):
 
         # Split the string to gain the data
         # If the string did contain sufficient data assign it to the vars
-        artist_data = artist.split(" | ")
+        artist_data = artist.split(SEPARATOR)
+        if len(artist_data) == 2:
+            self.start_date = artist_data[0]
+            self.end_date = artist_data[1]
         if len(artist_data) >= 7:
             self.a_id = int(artist_data[0])
             self.p_id = int(artist_data[1])
@@ -152,12 +155,14 @@ class ModifyArtistBox(BaseBox):
 
         self.btn_add = Button(
             self.root,
-            text="Add" if artist == "" else "Update",
+            text="Add" if len(artist_data) < 7 else "Update",
             command=self.add,
             state="disabled",
         )
         self.btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(self.btn_add, TooltipDict["btn_add_art" if artist == "" else "btn_update_art"])
+        Hovertip(
+            self.btn_add, TooltipDict["btn_add_art" if len(artist_data) < 7 else "btn_update_art"]
+        )
 
         center_window(self.root)
 

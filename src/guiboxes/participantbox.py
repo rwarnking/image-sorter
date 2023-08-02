@@ -6,7 +6,7 @@ from tkinter.ttk import Combobox, Separator
 from database import Database
 from dateutils import TimeFrameSelector
 from debug_messages import WarningArray, WarningCodes
-from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, BaseBox
+from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, BaseBox
 from helper import center_window, limit_input, test_time_frame, test_time_frame_swap
 from tooltips import TooltipDict
 
@@ -152,7 +152,7 @@ class ModifyParticipantBox(BaseBox):
             return
 
         for part in self.part_list:
-            part_data = part.split(" | ")
+            part_data = part.split(SEPARATOR)
             if part_data[0] == self.sv_p_name.get():
                 testdate_start = datetime.fromisoformat(part_data[1])
                 testdate_end = datetime.fromisoformat(part_data[2])
@@ -175,6 +175,6 @@ class ModifyParticipantBox(BaseBox):
         end_date = self.tfs.get_end_date()
 
         # Add participant
-        self.participant = self.sv_p_name.get() + " | " + str(start_date) + " | " + str(end_date)
+        self.participant = f"{self.sv_p_name.get()}{SEPARATOR}{start_date}{SEPARATOR}{end_date}"
         self.changed = True
         self.close()

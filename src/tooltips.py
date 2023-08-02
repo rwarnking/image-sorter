@@ -43,6 +43,7 @@ TooltipDict = {
     "btn_del": "Delete the element in this row.",
     "btn_mod": "Modify the element in this row.",
     "btn_clear": "Clears the selected table by deleting all its entrys.",
+    "btn_clear_month": "Deletes all entrys of the current month for the selected table.",
     "btn_done": "Close this window and return to the previous one.",
     # Add/Mod event window
     "ent_e_title": "Enter the title of the event.",

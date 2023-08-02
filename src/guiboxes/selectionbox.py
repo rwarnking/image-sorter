@@ -29,16 +29,19 @@ class SelectionBox(object):
             text=actioncall,
         ).grid(row=1, column=0, padx=PAD_X, sticky="w")
 
-        row_idx = 1
+        row_idx = 0
         col = 0
         for opt in options:
+            # Reset column and shift to next row if necessary
+            if col % 2 == 0:
+                col = 0
+                row_idx += 1
             Radiobutton(self.root, text=opt, variable=self.choice, value=opt).grid(
-                row=row_idx, column=1 + col, padx=PAD_X, sticky="W"
+                row=row_idx, column=col + 1, padx=PAD_X, sticky="W"
             )
             col += 1
-            if col % 2 == 0:
-                col -= 2
-                row_idx += 1
+        # Guarantee the Confirm button to be in the next row
+        row_idx += 1
 
         # Creating Yes button
         Button(
