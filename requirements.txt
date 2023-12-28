@@ -8,6 +8,7 @@ setuptools>=51.3.3
 kiwisolver
 matplotlib>=3.7.2
 numpy
+openpyxl
 packaging
 piexif
 Pillow
@@ -15,4 +16,5 @@ pyparsing
 python-dateutil
 six
 tkcalendar>=1.6.1
+XlsxWriter
 zipp

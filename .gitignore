@@ -6,8 +6,13 @@
 *.db
 
 src/*.json
+*.xlsx
 tests/result_images
 tests/test_images
+build/*
+dist/*
+
+application.spec
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

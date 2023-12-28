@@ -36,7 +36,7 @@ class TestDB(unittest.TestCase):
         # Load from file 1 #
         ####################
         # Check if not empty after insert from file
-        self.db.load_from_file(join(DB_DIR, "db_test_1-1.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_1-1.json"))
         for table in table_list:
             self.db_not_empty_test(table[0], table[1])
 
@@ -48,7 +48,7 @@ class TestDB(unittest.TestCase):
         ####################
         # Load from file 2 #
         ####################
-        self.db.load_from_file(join(DB_DIR, "db_test_2-1.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_2-1.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 1, "artist1")
@@ -57,7 +57,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(len(artists) == 1)
         self.artist_test(artists[0], 1, 1, "test_make_1", "test_model_1")
 
-        self.db.load_from_file(join(DB_DIR, "db_test_2-2.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_2-2.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 2)
         self.person_test(persons[0], 1, "artist2")
@@ -75,7 +75,7 @@ class TestDB(unittest.TestCase):
         ####################
         # Load from file 3 #
         ####################
-        self.db.load_from_file(join(DB_DIR, "db_test_3-1.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_3-1.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 3, "artist1")
@@ -84,7 +84,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(len(artists) == 1)
         self.artist_test(artists[0], 1, 3, "test_make_1", "test_model_1")
 
-        self.db.load_from_file(join(DB_DIR, "db_test_3-2.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_3-2.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 1, "artist1")
@@ -93,7 +93,7 @@ class TestDB(unittest.TestCase):
         self.assertTrue(len(artists) == 1)
         self.artist_test(artists[0], 1, 1, "test_make_1", "test_model_1")
 
-        self.db.load_from_file(join(DB_DIR, "db_test_3-3.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_3-3.json"))
         persons = self.db.get_all("persons")
         self.assertTrue(len(persons) == 1)
         self.person_test(persons[0], 1, "artist1")
@@ -161,7 +161,7 @@ class TestDB(unittest.TestCase):
         # Save to file #
         ################
         # Check if file exists after save
-        self.db.save_to_file(join(TEST_DIR, "db2.json"))
+        self.db.save_to_json(join(TEST_DIR, "db2.json"))
         print(TEST_DIR)
         print(TEST_DIR + "/db2.json")
         self.assertTrue(os.path.exists(join(TEST_DIR, "db2.json")))

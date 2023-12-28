@@ -37,7 +37,7 @@ class TestSort(unittest.TestCase):
 
         # load database
         self.db = Database()
-        self.db.load_from_file(join(DB_DIR, "db_test_4-1.json"))
+        self.db.load_from_json(join(DB_DIR, "db_test_4-1.json"))
 
         # Creating testfiles if not present
         # OBACHT: This does not check if the folder contains files

@@ -38,6 +38,7 @@ TooltipDict = {
         \nEverthing is loaded directly after file selection.",
     "btn_savefile": "Browse for a json file to save the database to.\
         \nEverthing is loaded directly after file selection.",
+    "btn_reorder": "Reorder all tables of the currently loaded database by date.",
     "cb_dbs": "Select a table from the database to inspect and modify.",
     "btn_add": "Add one element to the selected table.",
     "btn_del": "Delete the element in this row.",

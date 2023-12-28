@@ -4,15 +4,70 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, Literal, Union
 
+import xlsxwriter
 from debug_messages import InfoCodes
 from helper import test_time_frame, test_time_frame_outside, wbox
+from openpyxl import load_workbook
 
-# TODO use these
+PERSON_ID = 0
+PERSON_NAME = 1
+ARTIST_ID = 0
+ARTIST_P_ID = 1
+ARTIST_MAKE = 2
+ARTIST_MODEL = 3
+ARTIST_S_DATE = 4
+ARTIST_E_DATE = 5
+ARTIST_TSHIFT = 6
+EVENT_ID = 0
 EVENT_TITLE = 1
 EVENT_S_DATE = 2
 EVENT_E_DATE = 3
-ARTIST_S_DATE = 4
-ARTIST_E_DATE = 5
+SEVENT_ID = 0
+SEVENT_E_ID = 1
+SEVENT_TITLE = 2
+SEVENT_S_DATE = 3
+SEVENT_E_DATE = 4
+PART_ID = 0
+PART_P_ID = 1
+PART_E_ID = 2
+PART_S_DATE = 3
+PART_E_DATE = 4
+
+COLUMN_NAMES = {
+    "person": [
+        "pid",
+        "name",
+    ],
+    "artist": [
+        "aid",
+        "person_id",
+        "make",
+        "model",
+        "start_date",
+        "end_date",
+        "time_shift",
+    ],
+    "participant": [
+        "paid",
+        "person_id",
+        "event_id",
+        "start_date",
+        "end_date",
+    ],
+    "event": [
+        "eid",
+        "title",
+        "start_date",
+        "end_date",
+    ],
+    "subevent": [
+        "seid",
+        "event_id",
+        "title",
+        "start_date",
+        "end_date",
+    ],
+}
 
 
 class Database:
@@ -76,7 +131,7 @@ class Database:
                 REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)"
         )
 
-    def load_from_file(self, file: str):
+    def load_from_json(self, file: str):
         """
         Read the table data from a json file.
         If the data was not parseable the GUI will show an info message.
@@ -145,7 +200,85 @@ class Database:
         else:
             return InfoCodes.LOAD_SUCCESS
 
-    def save_to_file(self, file: str):
+    def load_from_xlsx(self, file: str):
+        """
+        Read the table data from a json file.
+        If the data was not parseable the GUI will show an info message.
+        """
+        err = False
+
+        # Define variable to load the dataframe
+        workbook = load_workbook(file)
+
+        persons_df = workbook["Persons"]
+        for person in persons_df.iter_rows(min_row=2):
+            err |= (
+                self.insert_person_with_id(
+                    person[PERSON_ID].value,
+                    person[PERSON_NAME].value,
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        artists_df = workbook["Artists"]
+        for artist in artists_df.iter_rows(min_row=2):
+            err |= (
+                self.insert_artist_with_id(
+                    artist[ARTIST_ID].value,
+                    artist[ARTIST_P_ID].value,
+                    artist[ARTIST_MAKE].value,
+                    artist[ARTIST_MODEL].value,
+                    datetime.fromisoformat(artist[ARTIST_S_DATE].value),
+                    datetime.fromisoformat(artist[ARTIST_E_DATE].value),
+                    artist[ARTIST_TSHIFT].value,
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        events_df = workbook["Events"]
+        for event in events_df.iter_rows(min_row=2):
+            err |= (
+                self.insert_event_with_id(
+                    event[EVENT_ID].value,
+                    event[EVENT_TITLE].value,
+                    datetime.fromisoformat(event[EVENT_S_DATE].value),
+                    datetime.fromisoformat(event[EVENT_E_DATE].value),
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        sevents_df = workbook["Subevents"]
+        for subevent in sevents_df.iter_rows(min_row=2):
+            err |= (
+                self.insert_subevent_with_id(
+                    subevent[SEVENT_ID].value,
+                    subevent[SEVENT_E_ID].value,
+                    subevent[SEVENT_TITLE].value,
+                    datetime.fromisoformat(subevent[SEVENT_S_DATE].value),
+                    datetime.fromisoformat(subevent[SEVENT_E_DATE].value),
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        parts_df = workbook["Participants"]
+        for participant in parts_df.iter_rows(min_row=2):
+            err |= (
+                self.insert_participant_with_id(
+                    participant[PART_ID].value,
+                    participant[PART_P_ID].value,
+                    participant[PART_E_ID].value,
+                    datetime.fromisoformat(participant[PART_S_DATE].value),
+                    datetime.fromisoformat(participant[PART_E_DATE].value),
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        if err:
+            return InfoCodes.LOAD_SUCCESS_PARTIAL
+        else:
+            return InfoCodes.LOAD_SUCCESS
+
+    def save_to_json(self, file: str):
         """Save all table data to a json file."""
         json_data: dict[str, list] = {
             "events": [],
@@ -159,13 +292,13 @@ class Database:
         for elem in data:
             json_data["events"].append(
                 {
-                    "eid": elem[0],
-                    "title": elem[1],
+                    "eid": elem[EVENT_ID],
+                    "title": elem[EVENT_TITLE],
                     "start": {
-                        "date": str(elem[2]),
+                        "date": str(elem[EVENT_S_DATE]),
                     },
                     "end": {
-                        "date": str(elem[3]),
+                        "date": str(elem[EVENT_E_DATE]),
                     },
                 }
             )
@@ -174,14 +307,14 @@ class Database:
         for elem in data:
             json_data["subevents"].append(
                 {
-                    "seid": elem[0],
-                    "event_id": elem[1],
-                    "title": elem[2],
+                    "seid": elem[SEVENT_ID],
+                    "event_id": elem[SEVENT_E_ID],
+                    "title": elem[SEVENT_TITLE],
                     "start": {
-                        "date": str(elem[3]),
+                        "date": str(elem[SEVENT_S_DATE]),
                     },
                     "end": {
-                        "date": str(elem[4]),
+                        "date": str(elem[SEVENT_E_DATE]),
                     },
                 }
             )
@@ -190,14 +323,14 @@ class Database:
         for elem in data:
             json_data["participants"].append(
                 {
-                    "paid": elem[0],
-                    "person_id": elem[1],
-                    "event_id": elem[2],
+                    "paid": elem[PART_ID],
+                    "person_id": elem[PART_P_ID],
+                    "event_id": elem[PART_E_ID],
                     "start": {
-                        "date": str(elem[3]),
+                        "date": str(elem[PART_S_DATE]),
                     },
                     "end": {
-                        "date": str(elem[4]),
+                        "date": str(elem[PART_E_DATE]),
                     },
                 }
             )
@@ -206,18 +339,18 @@ class Database:
         for elem in data:
             json_data["artists"].append(
                 {
-                    "aid": elem[0],
-                    "person_id": elem[1],
-                    "make": elem[2],
-                    "model": elem[3],
+                    "aid": elem[ARTIST_ID],
+                    "person_id": elem[ARTIST_P_ID],
+                    "make": elem[ARTIST_MAKE],
+                    "model": elem[ARTIST_MODEL],
                     "start": {
-                        "date": str(elem[4]),
+                        "date": str(elem[ARTIST_S_DATE]),
                     },
                     "end": {
-                        "date": str(elem[5]),
+                        "date": str(elem[ARTIST_E_DATE]),
                     },
                     "timeshift": {
-                        "date": elem[6],
+                        "date": elem[ARTIST_TSHIFT],
                     },
                 }
             )
@@ -226,14 +359,267 @@ class Database:
         for elem in data:
             json_data["persons"].append(
                 {
-                    "pid": elem[0],
-                    "name": elem[1],
+                    "pid": elem[PERSON_ID],
+                    "name": elem[PERSON_NAME],
                 }
             )
 
         with open(file, "w") as outfile:
             json.dump(json_data, outfile, indent=4)
         return InfoCodes.SAVE_SUCCESS
+
+    def save_to_xlsx(self, file: str):
+        """Save all table data to a xlsx file."""
+
+        # Create a workbook and add a worksheet.
+        workbook = xlsxwriter.Workbook(file)
+
+        ##########
+        # Events #
+        ##########
+        worksheet = workbook.add_worksheet("Events")
+
+        # Write some data headers.
+        worksheet.write("A1", COLUMN_NAMES["event"][EVENT_ID])
+        worksheet.write("B1", COLUMN_NAMES["event"][EVENT_TITLE])
+        worksheet.write("C1", COLUMN_NAMES["event"][EVENT_S_DATE])
+        worksheet.write("D1", COLUMN_NAMES["event"][EVENT_E_DATE])
+
+        row = 1
+        # Iterate over the data and write it out row by row.
+        data = self.get_all("events")
+        for elem in data:
+            worksheet.write_number(row, EVENT_ID, elem[EVENT_ID])
+            worksheet.write_string(row, EVENT_TITLE, elem[EVENT_TITLE])
+            worksheet.write_string(row, EVENT_S_DATE, str(elem[EVENT_S_DATE]))
+            worksheet.write_string(row, EVENT_E_DATE, str(elem[EVENT_E_DATE]))
+            row += 1
+
+        #############
+        # Subevents #
+        #############
+        worksheet = workbook.add_worksheet("Subevents")
+
+        # Write some data headers.
+        worksheet.write("A1", COLUMN_NAMES["subevent"][SEVENT_ID])
+        worksheet.write("B1", COLUMN_NAMES["subevent"][SEVENT_E_ID])
+        worksheet.write("C1", COLUMN_NAMES["subevent"][SEVENT_TITLE])
+        worksheet.write("D1", COLUMN_NAMES["subevent"][SEVENT_S_DATE])
+        worksheet.write("E1", COLUMN_NAMES["subevent"][SEVENT_E_DATE])
+
+        row = 1
+        # Iterate over the data and write it out row by row.
+        data = self.get_all("subevents")
+        for elem in data:
+            worksheet.write_number(row, SEVENT_ID, elem[SEVENT_ID])
+            worksheet.write_number(row, SEVENT_E_ID, elem[SEVENT_E_ID])
+            worksheet.write_string(row, SEVENT_TITLE, elem[SEVENT_TITLE])
+            worksheet.write_string(row, SEVENT_S_DATE, str(elem[SEVENT_S_DATE]))
+            worksheet.write_string(row, SEVENT_E_DATE, str(elem[SEVENT_E_DATE]))
+            row += 1
+
+        ################
+        # Participants #
+        ################
+        worksheet = workbook.add_worksheet("Participants")
+
+        # Write some data headers.
+        worksheet.write("A1", COLUMN_NAMES["participant"][PART_ID])
+        worksheet.write("B1", COLUMN_NAMES["participant"][PART_P_ID])
+        worksheet.write("C1", COLUMN_NAMES["participant"][PART_E_ID])
+        worksheet.write("D1", COLUMN_NAMES["participant"][PART_S_DATE])
+        worksheet.write("E1", COLUMN_NAMES["participant"][PART_E_DATE])
+
+        row = 1
+        # Iterate over the data and write it out row by row.
+        data = self.get_all("participants")
+        for elem in data:
+            worksheet.write_number(row, PART_ID, elem[PART_ID])
+            worksheet.write_number(row, PART_P_ID, elem[PART_P_ID])
+            worksheet.write_number(row, PART_E_ID, elem[PART_E_ID])
+            worksheet.write_string(row, PART_S_DATE, str(elem[PART_S_DATE]))
+            worksheet.write_string(row, PART_E_DATE, str(elem[PART_E_DATE]))
+            row += 1
+
+        ###########
+        # Artists #
+        ###########
+        worksheet = workbook.add_worksheet("Artists")
+
+        # Write some data headers.
+        worksheet.write("A1", COLUMN_NAMES["artist"][ARTIST_ID])
+        worksheet.write("B1", COLUMN_NAMES["artist"][ARTIST_P_ID])
+        worksheet.write("C1", COLUMN_NAMES["artist"][ARTIST_MAKE])
+        worksheet.write("D1", COLUMN_NAMES["artist"][ARTIST_MODEL])
+        worksheet.write("E1", COLUMN_NAMES["artist"][ARTIST_S_DATE])
+        worksheet.write("F1", COLUMN_NAMES["artist"][ARTIST_E_DATE])
+        worksheet.write("G1", COLUMN_NAMES["artist"][ARTIST_TSHIFT])
+
+        row = 1
+        # Iterate over the data and write it out row by row.
+        data = self.get_all("artists")
+        for elem in data:
+            worksheet.write_number(row, ARTIST_ID, elem[ARTIST_ID])
+            worksheet.write_number(row, ARTIST_P_ID, elem[ARTIST_P_ID])
+            worksheet.write_string(row, ARTIST_MAKE, elem[ARTIST_MAKE])
+            worksheet.write_string(row, ARTIST_MODEL, elem[ARTIST_MODEL])
+            worksheet.write_string(row, ARTIST_S_DATE, str(elem[ARTIST_S_DATE]))
+            worksheet.write_string(row, ARTIST_E_DATE, str(elem[ARTIST_E_DATE]))
+            worksheet.write_string(row, ARTIST_TSHIFT, str(elem[ARTIST_TSHIFT]))
+            row += 1
+
+        ###########
+        # Persons #
+        ###########
+        worksheet = workbook.add_worksheet("Persons")
+
+        # Write some data headers.
+        worksheet.write("A1", COLUMN_NAMES["person"][PERSON_ID])
+        worksheet.write("B1", COLUMN_NAMES["person"][PERSON_NAME])
+
+        row = 1
+        # Iterate over the data and write it out row by row.
+        data = self.get_all("persons")
+        for elem in data:
+            worksheet.write_number(row, PERSON_ID, elem[PERSON_ID])
+            worksheet.write_string(row, PERSON_NAME, elem[PERSON_NAME])
+            row += 1
+
+        workbook.close()
+        return InfoCodes.SAVE_SUCCESS
+
+    def reorder_by_date(self):
+        """
+        Reorder all tables with a date attribute, such that
+        the index of an element fits its date.
+        This is mainly usefull for the readability of exported files.
+        """
+        err = False
+
+        # Get all data in the beginning, since deleting a person also deletes the artist
+        persons = self.get_all("persons")
+        artists = self.get_all("artists")
+        events = self.get_all("events")
+        subevents = self.get_all("subevents")
+        participants = self.get_all("participants")
+
+        ###################################################
+        self.clean("persons")
+        persons.sort(key=lambda x: x[PERSON_NAME])
+        for person in persons:
+            err |= (
+                self.insert_person(
+                    person[PERSON_NAME],
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        ###################################################
+        for idx, artist in enumerate(artists):
+            tmp = None
+            for i, dic in enumerate(persons):
+                if dic[PERSON_ID] == artist[ARTIST_P_ID]:
+                    tmp = i + 1
+            # TODO
+            if not tmp:
+                raise ValueError
+
+            conv = list(artist)
+            conv[ARTIST_P_ID] = tmp
+            artists[idx] = conv
+
+        artists.sort(key=lambda x: (x[ARTIST_P_ID], x[ARTIST_S_DATE]))
+        self.clean("artists")
+        for artist in artists:
+            err |= (
+                self.insert_artist(
+                    artist[ARTIST_P_ID],
+                    artist[ARTIST_MAKE],
+                    artist[ARTIST_MODEL],
+                    artist[ARTIST_S_DATE],
+                    artist[ARTIST_E_DATE],
+                    artist[ARTIST_TSHIFT],
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        ###################################################
+        self.clean("events")
+        events.sort(key=lambda x: x[EVENT_S_DATE])
+        for event in events:
+            err |= (
+                self.insert_event(
+                    event[EVENT_TITLE],
+                    event[EVENT_S_DATE],
+                    event[EVENT_E_DATE],
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        ###################################################
+        for idx, subevent in enumerate(subevents):
+            tmp = None
+            for i, dic in enumerate(events):
+                if dic[EVENT_ID] == subevent[SEVENT_E_ID]:
+                    tmp = i + 1
+            # TODO
+            if not tmp:
+                raise ValueError
+
+            conv = list(subevent)
+            conv[SEVENT_E_ID] = tmp
+            subevents[idx] = conv
+
+        subevents.sort(key=lambda x: (x[SEVENT_E_ID], x[SEVENT_S_DATE]))
+        self.clean("subevents")
+        for subevent in subevents:
+            err |= (
+                self.insert_subevent(
+                    subevent[SEVENT_E_ID],
+                    subevent[SEVENT_TITLE],
+                    subevent[SEVENT_S_DATE],
+                    subevent[SEVENT_E_DATE],
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        ###################################################
+        for idx, participant in enumerate(participants):
+            tmp1 = None
+            for i, dic in enumerate(persons):
+                if dic[PERSON_ID] == participant[PART_P_ID]:
+                    tmp1 = i + 1
+
+            tmp2 = None
+            for i, dic in enumerate(events):
+                if dic[EVENT_ID] == participant[PART_E_ID]:
+                    tmp2 = i + 1
+            # TODO
+            if not (tmp1 or tmp2):
+                raise ValueError
+
+            conv = list(participant)
+            conv[ARTIST_P_ID] = tmp1
+            conv[PART_E_ID] = tmp2
+            participants[idx] = conv
+
+        participants.sort(key=lambda x: (x[PART_E_ID], x[PART_S_DATE], x[PART_P_ID]))
+        self.clean("participants")
+        for participant in participants:
+            err |= (
+                self.insert_participant(
+                    participant[PART_P_ID],
+                    participant[PART_E_ID],
+                    participant[PART_S_DATE],
+                    participant[PART_E_DATE],
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        if err:
+            return InfoCodes.REORDER_SUCCESS_PARTIAL
+        else:
+            return InfoCodes.REORDER_SUCCESS
 
     def clean_all(self):
         """

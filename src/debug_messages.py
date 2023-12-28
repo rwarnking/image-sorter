@@ -44,6 +44,8 @@ class InfoCodes(IntEnum):
     DEL_ERROR = 12
     VAL_SUCCESS = 13
     VAL_ERROR = 14
+    REORDER_SUCCESS = 15
+    REORDER_SUCCESS_PARTIAL = 16
 
 
 InfoArray = [
@@ -62,4 +64,6 @@ InfoArray = [
     "Item not found - could not be deleted.",
     "Item validation was sucessfull.",
     "Item validation was not sucessfull.",
+    "Successfully reordered database.",
+    "Warning: Reordering was only partial successfull.",
 ]

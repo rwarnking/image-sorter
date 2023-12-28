@@ -58,7 +58,7 @@ to install all dependencies.
 
 Or use Anaconda for your python environment and create a new environment with
 ```bash
-conda env create --file imgsort.txt
+conda env create --file imgsort.yml
 ```
 afterwards activate the environment (`conda activate imgsort`) and start the application.
 
@@ -66,6 +66,8 @@ The main dependency is tkinter and the piexif tool found here:
 * [tkinter](https://docs.python.org/3/library/tkinter.html) for the interface/GUI
 * [tkcalendar](https://pypi.org/project/tkcalendar/) for the date selection
 * [piexif](https://piexif.readthedocs.io/en/latest/) for modification of the image metadata (EXIF)
+* [XlsxWriter](https://pypi.org/project/XlsxWriter/) for writing to excel files
+* [openpyxl](https://pypi.org/project/openpyxl/) for reading excel files
 
 Further dependencies that should be present anyway are:
 * [datetime](https://docs.python.org/3/library/datetime.html) for all time data objects
@@ -75,7 +77,7 @@ Further dependencies that should be present anyway are:
 * [threading](https://docs.python.org/3/library/threading.html) used such that the gui is not freezed while processing,
   [Details](https://realpython.com/intro-to-python-threading/)
 
-Optional dependencies for different exif modification methods:
+Alternative exif modification librarys that are no longer used:
 * [pyexiv2](https://github.com/LeoHsiao1/pyexiv2)
 * [exif](https://gitlab.com/TNThieding/exif)
 * [Pillow (PIL)](https://pillow.readthedocs.io/en/stable/#)

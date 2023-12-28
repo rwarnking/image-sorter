@@ -409,6 +409,10 @@ class ModifyEventBox(BaseBox):
         )
         if box.changed:
             self.list_new_subevents.append(box.subevent)
+            self.list_new_subevents.sort(
+                key=lambda x: x[x.find(SEPARATOR) + len(SEPARATOR) : x.rfind(SEPARATOR)]
+            )
+
             self.updateSubeventListFrame()
             self.validate_input()
 

@@ -69,7 +69,7 @@ class ModifyDBBox(BaseBox):
         # Load events from file
         btn_loadfile = Button(
             self.root,
-            text="Load database from json file",
+            text="Load database from file",
             command=lambda: self.browse_button_open(self.meta_info.sv_db_src),
         )
         btn_loadfile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -81,7 +81,7 @@ class ModifyDBBox(BaseBox):
         # Save events to file
         btn_savefile = Button(
             self.root,
-            text="Save database to json file",
+            text="Save database to file",
             command=lambda: self.browse_button_save(self.meta_info.sv_db_tgt),
         )
         btn_savefile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -89,6 +89,27 @@ class ModifyDBBox(BaseBox):
 
         lbl_save = Label(self.root, textvariable=self.meta_info.sv_db_tgt)
         lbl_save.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        separator = Separator(self.root, orient="horizontal")
+        separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+
+        ####################
+        # Reorder database #
+        ####################
+        def reorder_button():
+            info = self.db.reorder_by_date()
+            self.lbl_info.config(
+                text=InfoArray[info], fg="#0a0" if info == InfoCodes.REORDER_SUCCESS else "#a00"
+            )
+
+        # Reoder the currently loaded database
+        btn_reorder = Button(
+            self.root,
+            text="Reorder currently loaded database by date",
+            command=lambda: reorder_button(),
+        )
+        btn_reorder.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_reorder, TooltipDict["btn_reorder"])
 
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -285,31 +306,57 @@ class ModifyDBBox(BaseBox):
         Open filedialog for browsing for a database file to open.
         :param dir: The directory to load from.
         """
-        filename = filedialog.askopenfilename(initialdir=os.path.dirname(dir.get()))
-        if filename != "" and not filename.lower().endswith(".json"):
-            messagebox.showinfo(message="Please select a json file.", title="Error")
-        elif filename != "":
-            info = self.db.load_from_file(filename)
-            self.updateGUI(self.db_select.get())
-            self.lbl_info.config(
-                text=InfoArray[info], fg="#0a0" if info == InfoCodes.LOAD_SUCCESS else "#a80"
-            )
-            dir.set(filename)
+        filepath = filedialog.askopenfilename(
+            initialdir=os.path.dirname(dir.get()),
+            filetypes=(("json file", "*.json"), ("excel file", "*.xlsx")),
+        )
+        if filepath == "":
+            messagebox.showinfo(message="Could not load! No filename provided.", title="Error")
+            return
+
+        if filepath.lower().endswith(".json"):
+            info = self.db.load_from_json(filepath)
+        elif filepath.lower().endswith(".xlsx"):
+            info = self.db.load_from_xlsx(filepath)
+        else:
+            messagebox.showinfo(message="Could not load! Filetype was not valid.", title="Error")
+            return
+
+        self.updateGUI(self.db_select.get())
+        self.lbl_info.config(
+            text=InfoArray[info], fg="#0a0" if info == InfoCodes.LOAD_SUCCESS else "#a80"
+        )
+        dir.set(filepath)
 
     def browse_button_save(self, dir: StringVar):
         """
         Open filedialog for browsing for a database file to save to.
         :param dir: The directory to save to.
         """
-        filename = filedialog.asksaveasfilename(initialdir=os.path.dirname(dir.get()))
-        if filename != "" and not filename.lower().endswith(".json"):
-            messagebox.showinfo(message="Please select a json file.", title="Error")
-        elif filename != "":
-            info = self.db.save_to_file(filename)
-            self.lbl_info.config(
-                text=InfoArray[info], fg="#0a0" if info == InfoCodes.SAVE_SUCCESS else "#a00"
+        filepath = filedialog.asksaveasfilename(
+            initialdir=os.path.dirname(dir.get()),
+            defaultextension=".json",
+            filetypes=(("json file", "*.json"), ("excel file", "*.xlsx")),
+        )
+        filename = os.path.basename(filepath)
+        if filename == "" or filename.lower() == ".json" or filename.lower() == ".xlsx":
+            messagebox.showinfo(message="Could not save! Filename was not valid.", title="Error")
+            return
+
+        if filepath.lower().endswith(".json"):
+            info = self.db.save_to_json(filepath)
+        elif filepath.lower().endswith(".xlsx"):
+            info = self.db.save_to_xlsx(filepath)
+        else:
+            messagebox.showinfo(
+                message="Could not save! Select a valid fileextension.", title="Error"
             )
-            dir.set(filename)
+            return
+
+        self.lbl_info.config(
+            text=InfoArray[info], fg="#0a0" if info == InfoCodes.SAVE_SUCCESS else "#a00"
+        )
+        dir.set(filepath)
 
     def clickAdd(self):
         """
