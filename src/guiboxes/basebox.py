@@ -1,4 +1,4 @@
-from tkinter import Toplevel
+from tkinter import DISABLED, Toplevel
 
 from debug_messages import InfoCodes
 
@@ -40,6 +40,22 @@ class BaseBox(object):
         self.root.grid_columnconfigure(2, weight=1)
         self.root.grid_columnconfigure(3, weight=1)
 
+        self.cmps = {}
+
+    def get_cmp(self, name: str):
+        return self.cmps[name]["object"]
+
+    def add_cmp(self, name: str, object, prev_state: str = "normal"):
+        self.cmps[name] = {
+            "object": object,
+            "previous": prev_state,
+        }
+        return object
+
+    def set_cmp_state(self, name: str, _state: str):
+        self.cmps[name]["object"].config(state=_state)
+        self.cmps[name]["previous"] = _state
+
     def row(self):
         """Increase the row idx and return the previous value."""
         self.row_idx += 1
@@ -48,3 +64,14 @@ class BaseBox(object):
     def close(self):
         """Function for closing the box."""
         self.root.destroy()
+
+    def disable_all_cmps(self):
+        for elem in self.cmps.values():
+            elem["previous"] = elem["object"]["state"]
+            elem["object"].config(state=DISABLED)
+        self.root.update()
+
+    def reset_all_cmps(self):
+        for elem in self.cmps.values():
+            elem["object"].config(state=elem["previous"])
+        self.root.update()

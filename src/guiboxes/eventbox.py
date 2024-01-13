@@ -1,7 +1,7 @@
 from datetime import datetime
 from functools import partial
 from idlelib.tooltip import Hovertip
-from tkinter import END, RIGHT, Button, Entry, Frame, Label, StringVar, Text
+from tkinter import DISABLED, END, NORMAL, RIGHT, Button, Entry, Frame, Label, StringVar, Text
 from tkinter.ttk import Scrollbar, Separator
 
 from database import Database
@@ -66,12 +66,13 @@ class ModifyEventBox(BaseBox):
         ####################
         self.sv_e_title = StringVar()
         self.sv_e_title.set(self.title)
+        # TODO replace all occurances of trace with trace_add if possible
         self.sv_e_title.trace("w", self.validate_input)
         lbl_e_title = Label(self.root, text="Title: ")
         lbl_e_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        ent_e_title = Entry(
+        ent_e_title = self.add_cmp("ent_e_title", Entry(
             self.root, textvariable=self.sv_e_title, validate="key", validatecommand=vcmd
-        )
+        ))
         ent_e_title.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -80,15 +81,15 @@ class ModifyEventBox(BaseBox):
         #####################
         # TimeFrameSelector #
         #####################
-        self.tfs = TimeFrameSelector(self.root, self.row_idx)
+        tfs_event = self.add_cmp("tfs_event", TimeFrameSelector(self.root, self.row_idx))
         self.row_idx += 2
 
         if self.start_date is not None and self.end_date is not None:
-            self.tfs.set_start_date_s(self.start_date)
-            self.tfs.set_end_date_s(self.end_date)
+            tfs_event.set_start_date_s(self.start_date)
+            tfs_event.set_end_date_s(self.end_date)
 
         # Bind after setting the values to avoid triggering the callback
-        self.tfs.bind(self.validate_input)
+        tfs_event.bind(self.validate_input)
 
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -96,48 +97,46 @@ class ModifyEventBox(BaseBox):
         #########
         # Participant List Input
         #########
-        str_e_parts_w = StringVar()
-        str_e_parts_w.set("")
         lbl_e_parts = Label(self.root, text="List of Participants:")
         lbl_e_parts.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
 
         # Participant Frame and Text
-        self.frame_part_new = Frame(self.root, width=TEVENT_W, height=LINE_H, bg="white")
-        self.frame_part_new.pack_propagate(False)
-        self.frame_part_new.grid(
+        frame_part_new = Frame(self.root, width=TEVENT_W, height=LINE_H, bg="white")
+        frame_part_new.pack_propagate(False)
+        frame_part_new.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
 
-        self.text_part_new = Text(self.frame_part_new, wrap="none")
-        self.text_part_new.pack(fill="both", expand=True)
+        text_part_new = Text(frame_part_new, wrap="none")
+        text_part_new.pack(fill="both", expand=True)
 
-        btn_add_part = Button(
-            self.text_part_new, text="Add", command=self.clickAddParticipant, width=BTN_W
-        )
-        self.text_part_new.window_create("end", window=btn_add_part)
+        btn_add_part = self.add_cmp("btn_add_part", Button(
+            text_part_new, text="Add", command=self.clickAddParticipant, width=BTN_W
+        ))
+        text_part_new.window_create("end", window=btn_add_part)
         Hovertip(btn_add_part, TooltipDict["btn_add_part"])
         btn_none = Button(
-            self.text_part_new, text="", width=BTN_W, background="white", state="disabled"
+            text_part_new, text="", width=BTN_W, background="white", state=DISABLED
         )
-        self.text_part_new.window_create("end", window=btn_none)
+        text_part_new.window_create("end", window=btn_none)
 
-        self.text_part_new.insert("end", " ...")
+        text_part_new.insert("end", " ...")
 
         #########
         # Participant List Frame
         #########
-        self.frame_part_list = Frame(self.root, width=TEVENT_W, height=TEVENT_H, bg="white")
-        self.frame_part_list.pack_propagate(False)
-        self.frame_part_list.grid(
+        frame_part_list = Frame(self.root, width=TEVENT_W, height=TEVENT_H, bg="white")
+        frame_part_list.pack_propagate(False)
+        frame_part_list.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
 
         # Word wrap
         # https://stackoverflow.com/questions/19029157/
-        self.text_part_list = Text(self.frame_part_list, wrap="none")
-        self.sb_part_list = Scrollbar(self.frame_part_list, command=self.text_part_list.yview)
-        self.sb_part_list.pack(side=RIGHT, fill="y")
-        self.text_part_list.configure(yscrollcommand=self.sb_part_list.set)
+        self.text_part_list = Text(frame_part_list, wrap="none")
+        sb_part_list = Scrollbar(frame_part_list, command=self.text_part_list.yview)
+        sb_part_list.pack(side=RIGHT, fill="y")
+        self.text_part_list.configure(yscrollcommand=sb_part_list.set)
         self.text_part_list.pack(fill="both", expand=True)
 
         self.list_new_participants: list[str] = []
@@ -152,48 +151,46 @@ class ModifyEventBox(BaseBox):
         #################
         # Subevent list #
         #################
-        str_e_sub_w = StringVar()
-        str_e_sub_w.set("")
         lbl_e_sub = Label(self.root, text="List of Subevents:")
         lbl_e_sub.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
 
         # Subevent Frame and Text
-        self.frame_sub_new = Frame(self.root, width=TEVENT_W, height=LINE_H, bg="white")
-        self.frame_sub_new.pack_propagate(False)
-        self.frame_sub_new.grid(
+        frame_sub_new = Frame(self.root, width=TEVENT_W, height=LINE_H, bg="white")
+        frame_sub_new.pack_propagate(False)
+        frame_sub_new.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
 
-        self.text_sub_new = Text(self.frame_sub_new, wrap="none")
-        self.text_sub_new.pack(fill="both", expand=True)
+        text_sub_new = Text(frame_sub_new, wrap="none")
+        text_sub_new.pack(fill="both", expand=True)
 
-        btn_add_sube = Button(
-            self.text_sub_new, text="Add", command=self.clickAddSubevent, width=BTN_W
-        )
-        self.text_sub_new.window_create("end", window=btn_add_sube)
+        btn_add_sube = self.add_cmp("btn_add_sube", Button(
+            text_sub_new, text="Add", command=self.clickAddSubevent, width=BTN_W
+        ))
+        text_sub_new.window_create("end", window=btn_add_sube)
         Hovertip(btn_add_sube, TooltipDict["btn_add_sube"])
         btn_none = Button(
-            self.text_sub_new, text="", width=BTN_W, background="white", state="disabled"
+            text_sub_new, text="", width=BTN_W, background="white", state=DISABLED
         )
-        self.text_sub_new.window_create("end", window=btn_none)
+        text_sub_new.window_create("end", window=btn_none)
 
-        self.text_sub_new.insert("end", " ...")
+        text_sub_new.insert("end", " ...")
 
         #########
         # Subevent List Frame
         #########
-        self.frame_sub_list = Frame(self.root, width=TEVENT_W, height=TEVENT_H, bg="white")
-        self.frame_sub_list.pack_propagate(False)
-        self.frame_sub_list.grid(
+        frame_sub_list = Frame(self.root, width=TEVENT_W, height=TEVENT_H, bg="white")
+        frame_sub_list.pack_propagate(False)
+        frame_sub_list.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
 
         # Word wrap
         # https://stackoverflow.com/questions/19029157/
-        self.text_sub_list = Text(self.frame_sub_list, wrap="none")
-        self.sb_sub_list = Scrollbar(self.frame_sub_list, command=self.text_sub_list.yview)
-        self.sb_sub_list.pack(side=RIGHT, fill="y")
-        self.text_sub_list.configure(yscrollcommand=self.sb_sub_list.set)
+        self.text_sub_list = Text(frame_sub_list, wrap="none")
+        sb_sub_list = Scrollbar(frame_sub_list, command=self.text_sub_list.yview)
+        sb_sub_list.pack(side=RIGHT, fill="y")
+        self.text_sub_list.configure(yscrollcommand=sb_sub_list.set)
         self.text_sub_list.pack(fill="both", expand=True)
 
         self.list_new_subevents: list[str] = []
@@ -211,24 +208,24 @@ class ModifyEventBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = Button(
+        btn_abort = self.add_cmp("btn_abort", Button(
             self.root,
             text="Abort",
             command=self.close,
-        )
+        ))
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
         # In update mode the button must not be disabled from the start,
         # because changes in the timecells can not be checked.
-        self.btn_add_event = Button(
+        btn_add_event = self.add_cmp("btn_add_event", Button(
             self.root,
             text="Add" if len(event_data) < 4 else "Update",
             command=self.add,
-            state="disabled",
-        )
-        self.btn_add_event.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(self.btn_add_event, TooltipDict["btn_add_event"])
+            state=DISABLED,
+        ), DISABLED)
+        btn_add_event.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_add_event, TooltipDict["btn_add_event"])
 
         center_window(self.root)
 
@@ -242,15 +239,15 @@ class ModifyEventBox(BaseBox):
         """
         title = self.sv_e_title.get()
         if not title:
-            self.btn_add_event.config(state="disabled")
+            self.set_cmp_state("btn_add_event", DISABLED)
             self.lbl_warning.config(text=WarningArray[WarningCodes.WARNING_MISSING_DATA])
             return
 
-        e_date_start = self.tfs.get_start_date()
-        e_date_end = self.tfs.get_end_date()
+        e_date_start = self.get_cmp("tfs_event").get_start_date()
+        e_date_end = self.get_cmp("tfs_event").get_end_date()
 
         if err := test_time_frame_swap(e_date_start, e_date_end):
-            self.btn_add_event.config(state="disabled")
+            self.set_cmp_state("btn_add_event", DISABLED)
             self.lbl_warning.config(text=WarningArray[err])
             return
 
@@ -263,7 +260,7 @@ class ModifyEventBox(BaseBox):
             p_date_end = datetime.fromisoformat(elem_p_data[2])
 
             if err := test_time_frame_outside(e_date_start, e_date_end, p_date_start, p_date_end):
-                self.btn_add_event.config(state="disabled")
+                self.set_cmp_state("btn_add_event", DISABLED)
                 self.lbl_warning.config(text=WarningArray[err])
                 return
 
@@ -275,17 +272,17 @@ class ModifyEventBox(BaseBox):
             if err := test_time_frame_outside(
                 e_date_start, e_date_end, se_date_start, se_date_end
             ):
-                self.btn_add_event.config(state="disabled")
+                self.set_cmp_state("btn_add_event", DISABLED)
                 self.lbl_warning.config(text=WarningArray[err])
                 return
 
-        self.btn_add_event.config(state="normal")
+        self.set_cmp_state("btn_add_event", NORMAL)
         self.lbl_warning.config(text=WarningArray[WarningCodes.NO_WARNING])
 
     def add(self):
         """Use the input data to create a new event and add or update it to the database."""
-        new_start_date = self.tfs.get_start_date()
-        new_end_date = self.tfs.get_end_date()
+        new_start_date = self.get_cmp("tfs_event").get_start_date()
+        new_end_date = self.get_cmp("tfs_event").get_end_date()
 
         if self.e_id is None:
             self.info = self.db.insert_event(
@@ -388,8 +385,9 @@ class ModifyEventBox(BaseBox):
 
     def clickAddParticipant(self):
         """Function for adding a participant."""
-        start_date = self.tfs.get_start_date()
-        end_date = self.tfs.get_end_date()
+        self.disable_all_cmps()
+        start_date = self.get_cmp("tfs_event").get_start_date()
+        end_date = self.get_cmp("tfs_event").get_end_date()
 
         box = ModifyParticipantBox(
             "Add participant", self.db, self.list_new_participants, start_date, end_date
@@ -398,11 +396,13 @@ class ModifyEventBox(BaseBox):
             self.list_new_participants.append(box.participant)
             self.updateParticipantListFrame()
             self.validate_input()
+        self.reset_all_cmps()
 
     def clickAddSubevent(self):
         """Function for adding a subevent."""
-        start_date = self.tfs.get_start_date()
-        end_date = self.tfs.get_end_date()
+        self.disable_all_cmps()
+        start_date = self.get_cmp("tfs_event").get_start_date()
+        end_date = self.get_cmp("tfs_event").get_end_date()
 
         box = ModifySubeventBox(
             "Add subevent", self.db, self.list_new_subevents, start_date, end_date
@@ -415,6 +415,7 @@ class ModifyEventBox(BaseBox):
 
             self.updateSubeventListFrame()
             self.validate_input()
+        self.reset_all_cmps()
 
     def clickDeleteParticipant(self, participant: str):
         """Function for deleting a participant."""

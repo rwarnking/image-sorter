@@ -68,9 +68,9 @@ class MainApp:
         separator.grid(row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.init_details(window)
 
-        btn_run = Button(window, text="Dew it", command=lambda: self.run(window))
-        btn_run.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
-        Hovertip(btn_run, TooltipDict["btn_run"])
+        self.btn_run = Button(window, text="Dew it", command=lambda: self.run(window))
+        self.btn_run.grid(row=self.row_idx, column=0, columnspan=3, padx=PAD_X, pady=10)
+        Hovertip(self.btn_run, TooltipDict["btn_run"])
 
         # Stretch the gui, when the window size is adjusted
         window.grid_columnconfigure(1, weight=2)
@@ -227,11 +227,15 @@ class MainApp:
         """Add GUI button to open the database menu."""
 
         def create_modifydb_box():
+            self.btn_run["state"] = DISABLED
+            btn_mod_db["state"] = DISABLED
             ModifyDBBox(
                 "Modify Database",
                 self.db,
                 self.meta_info,
             )
+            self.btn_run["state"] = NORMAL
+            btn_mod_db["state"] = NORMAL
 
         # Load events from file
         btn_mod_db = Button(

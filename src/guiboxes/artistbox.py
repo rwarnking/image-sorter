@@ -1,6 +1,6 @@
 from datetime import datetime
 from idlelib.tooltip import Hovertip
-from tkinter import Button, Entry, Label, StringVar
+from tkinter import DISABLED, NORMAL, Button, Entry, Label, StringVar
 from tkinter.ttk import Combobox, Separator
 
 from database import Database
@@ -73,9 +73,9 @@ class ModifyArtistBox(BaseBox):
         self.sv_a_name = StringVar()
         self.sv_a_name.set(self.name)
         self.sv_a_name.trace("w", self.validate_input)
-        cb_a_person = Combobox(
+        cb_a_person = self.add_cmp("cb_a_person", Combobox(
             self.root, textvariable=self.sv_a_name, validate="key", validatecommand=vcmd
-        )
+        ))
         # Write file signatures
         cb_a_person["values"] = list_persons
         # Place the widget
@@ -90,9 +90,9 @@ class ModifyArtistBox(BaseBox):
         self.sv_a_make.trace("w", self.validate_input)
         lbl_a_make = Label(self.root, text="Make: ")
         lbl_a_make.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_a_make = Entry(
+        ent_a_make = self.add_cmp("ent_a_make", Entry(
             self.root, textvariable=self.sv_a_make, validate="key", validatecommand=vcmd
-        )
+        ))
         ent_a_make.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -104,9 +104,9 @@ class ModifyArtistBox(BaseBox):
         self.sv_a_model.trace("w", self.validate_input)
         lbl_a_model = Label(self.root, text="Model: ")
         lbl_a_model.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_a_model = Entry(
+        ent_a_model = self.add_cmp("ent_a_model", Entry(
             self.root, textvariable=self.sv_a_model, validate="key", validatecommand=vcmd
-        )
+        ))
         ent_a_model.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -115,29 +115,29 @@ class ModifyArtistBox(BaseBox):
         #####################
         # TimeFrameSelector #
         #####################
-        self.tfs = TimeFrameSelector(self.root, self.row_idx)
+        tfs_artist = self.add_cmp("tfs_artist", TimeFrameSelector(self.root, self.row_idx))
         self.row_idx += 2
 
         if self.start_date is not None and self.end_date is not None:
-            self.tfs.set_start_date_s(self.start_date)
-            self.tfs.set_end_date_s(self.end_date)
+            tfs_artist.set_start_date_s(self.start_date)
+            tfs_artist.set_end_date_s(self.end_date)
 
         # Bind after setting the values to avoid triggering the callback
-        self.tfs.bind(self.validate_input)
+        tfs_artist.bind(self.validate_input)
 
         #############
         # Timeshift #
         #############
-        self.tss = TimeShiftSelector(self.root, self.row_idx)
+        self.tss_artist = self.add_cmp("tss_artist", TimeShiftSelector(self.root, self.row_idx))
         self.row()
 
         # Set timeshift data
         if self.time_shift is not None:
             d, h, m, s = [x for x in self.time_shift.split(":")]
-            self.tss.set_all(d, h, m, s)
+            self.tss_artist.set_all(d, h, m, s)
 
         # Bind after setting the values to avoid triggering the callback
-        self.tss.bind(self.validate_input)
+        self.tss_artist.bind(self.validate_input)
 
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -145,23 +145,23 @@ class ModifyArtistBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = Button(
+        btn_abort = self.add_cmp("btn_abort", Button(
             self.root,
             text="Abort",
             command=self.close,
-        )
+        ))
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        self.btn_add = Button(
+        btn_add = self.add_cmp("btn_add", Button(
             self.root,
             text="Add" if len(artist_data) < 7 else "Update",
             command=self.add,
-            state="disabled",
-        )
-        self.btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+            state=DISABLED,
+        ))
+        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(
-            self.btn_add, TooltipDict["btn_add_art" if len(artist_data) < 7 else "btn_update_art"]
+            btn_add, TooltipDict["btn_add_art" if len(artist_data) < 7 else "btn_update_art"]
         )
 
         center_window(self.root)
@@ -181,24 +181,24 @@ class ModifyArtistBox(BaseBox):
         # Disable button in case some cells are not yet filled
         # (Date and time cells have always atleast some value)
         if not name or not make or not model:
-            self.btn_add.config(state="disabled")
+            self.set_cmp_state("btn_add", DISABLED)
             self.lbl_warning.config(text=WarningArray[WarningCodes.WARNING_MISSING_DATA])
             return
 
         # In case the person does not yet exist there can not be any overlap
         if not self.db.has("persons", ("name", name)):
-            self.btn_add.config(state="normal")
+            self.set_cmp_state("btn_add", NORMAL)
             self.lbl_warning.config(text=WarningArray[WarningCodes.NO_WARNING])
             return
 
         # Get id and dates to test for overlap
         p_id = self.db.get("persons", ("name", name))[0][0]
         # Get the dates
-        start_date = self.tfs.get_start_date()
-        end_date = self.tfs.get_end_date()
+        start_date = self.get_cmp("tfs_artist").get_start_date()
+        end_date = self.get_cmp("tfs_artist").get_end_date()
 
         if err := test_time_frame_swap(start_date, end_date):
-            self.btn_add.config(state="disabled")
+            self.set_cmp_state("btn_add", DISABLED)
             self.lbl_warning.config(text=WarningArray[err])
             return
 
@@ -208,18 +208,18 @@ class ModifyArtistBox(BaseBox):
         if err := self.db.test_artist_time_frame(
             self.a_id, p_id, make, model, start_date, end_date
         ):
-            self.btn_add.config(state="disabled")
+            self.set_cmp_state("btn_add", DISABLED)
             self.lbl_warning.config(text=WarningArray[err])
         else:
-            self.btn_add.config(state="normal")
+            self.set_cmp_state("btn_add", NORMAL)
             self.lbl_warning.config(text=WarningArray[WarningCodes.NO_WARNING])
 
     def add(self):
         """Use the input data to create a new artist and add or update it to the database."""
-        new_start_date = self.tfs.get_start_date()
-        new_end_date = self.tfs.get_end_date()
+        new_start_date = self.get_cmp("tfs_artist").get_start_date()
+        new_end_date = self.get_cmp("tfs_artist").get_end_date()
         # Create time shift string from input spinboxes
-        new_time_shift = self.tss.to_string()
+        new_time_shift = self.tss_artist.to_string()
 
         # Call a function that returns the id of the person and adds the person
         # if it is not yet present in the database.

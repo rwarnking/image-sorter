@@ -1,6 +1,6 @@
 import datetime
 from idlelib.tooltip import Hovertip
-from tkinter import Frame, Label, StringVar, Toplevel
+from tkinter import DISABLED, NORMAL, Frame, Label, StringVar, Toplevel
 from tkinter.ttk import Spinbox
 from typing import Any, Callable, Optional, Union
 
@@ -42,6 +42,11 @@ class Selector:
         """Bind a callback to the spinbox."""
         self.sv.trace("w", callback)
 
+    def enable(self):
+        self.sb["state"] = "readonly"
+
+    def disable(self):
+        self.sb["state"] = DISABLED
 
 class DaySelectorM(Selector):
     """Special type of selector for a day of a year (including minus numbers)."""
@@ -133,6 +138,16 @@ class DateSelector:
         self.hs.bind(callback)
         self.ms.bind(callback)
 
+    def enable(self):
+        self.date_entry["state"] = NORMAL
+        self.hs.enable()
+        self.ms.enable()
+
+    def disable(self):
+        self.date_entry["state"] = DISABLED
+        self.hs.disable()
+        self.ms.disable()
+
     def get_date(self):
         """Get the complete date represented by this dateselector."""
         return datetime.datetime.combine(
@@ -192,6 +207,7 @@ class TimeFrameSelector:
             "tt_minute": "ms_start",
         }
         self.ds_start = DateSelector(root, start_data)
+        self.state = NORMAL
 
         end_data = {
             "row_idx": row_idx + 1,
@@ -206,10 +222,29 @@ class TimeFrameSelector:
         }
         self.ds_end = DateSelector(root, end_data)
 
+    def __getitem__(self, key): 
+        return getattr(self, key)
+
     def bind(self, callback: Callable):
         """Bind callback to both dateselectors."""
         self.ds_start.bind(callback)
         self.ds_end.bind(callback)
+
+    def config(self, state):
+        if state == DISABLED:
+            self.ds_start.disable()
+            self.ds_end.disable()
+        else:
+            self.ds_start.enable()
+            self.ds_end.enable()
+
+    def enable(self):
+        self.ds_start.enable()
+        self.ds_end.enable()
+
+    def disable(self):
+        self.ds_start.disable()
+        self.ds_end.disable()
 
     def get_start_date(self):
         """Returns the start date of the time frame."""
@@ -320,12 +355,29 @@ class TimeShiftSelector:
         self.s.sb.pack(side="left", fill="x", expand=1)
         self.s.addTooltip(TooltipDict["sp_a_shift"])
 
+        self.state = NORMAL
+
+    def __getitem__(self, key): 
+        return getattr(self, key)
+
     def bind(self, callback: Callable):
         """Bind callback to all selectors."""
         self.ds.bind(callback)
         self.hs.bind(callback)
         self.ms.bind(callback)
         self.s.bind(callback)
+
+    def config(self, state):
+        if state == DISABLED:
+            self.ds.disable()
+            self.hs.disable()
+            self.ms.disable()
+            self.s.disable()
+        else:
+            self.ds.enable()
+            self.hs.enable()
+            self.ms.enable()
+            self.s.enable()
 
     def get_all(self):
         """Get the value of all selectors as a tuple"""

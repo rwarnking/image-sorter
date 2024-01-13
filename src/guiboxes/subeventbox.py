@@ -1,6 +1,6 @@
 from datetime import datetime
 from idlelib.tooltip import Hovertip
-from tkinter import Button, Entry, Label, StringVar
+from tkinter import DISABLED, NORMAL, Button, Entry, Label, StringVar
 from tkinter.ttk import Separator
 
 from database import Database
@@ -55,9 +55,9 @@ class ModifySubeventBox(BaseBox):
         self.sv_se_title.trace("w", self.validate_input)
         lbl_se_title = Label(self.root, text="Title: ")
         lbl_se_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_se_title = Entry(
+        ent_se_title = self.add_cmp("ent_se_title", Entry(
             self.root, textvariable=self.sv_se_title, validate="key", validatecommand=vcmd
-        )
+        ))
         ent_se_title.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -66,13 +66,16 @@ class ModifySubeventBox(BaseBox):
         #####################
         # TimeFrameSelector #
         #####################
-        self.tfs = TimeFrameSelector(self.root, self.row_idx, startdate_parent, enddate_parent)
-        self.tfs.set_start_date(startdate_parent)
-        self.tfs.set_end_date(enddate_parent)
+        tfs_subevent = self.add_cmp(
+            "tfs_subevent",
+            TimeFrameSelector(self.root, self.row_idx, startdate_parent, enddate_parent)
+        )
+        tfs_subevent.set_start_date(startdate_parent)
+        tfs_subevent.set_end_date(enddate_parent)
         self.row_idx += 2
 
         # Bind after setting the values to avoid triggering the callback
-        self.tfs.bind(self.validate_input)
+        tfs_subevent.bind(self.validate_input)
 
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -80,22 +83,22 @@ class ModifySubeventBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = Button(
+        btn_abort = self.add_cmp("btn_abort", Button(
             self.root,
             text="Abort",
             command=self.close,
-        )
+        ))
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        self.btn_add = Button(
+        btn_add = self.add_cmp("btn_add", Button(
             self.root,
             text="Add",
             command=self.add,
-            state="disabled",
-        )
-        self.btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(self.btn_add, TooltipDict["btn_add_sube"])
+            state=DISABLED,
+        ))
+        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_add, TooltipDict["btn_add_sube"])
 
         center_window(self.root)
 
@@ -108,22 +111,22 @@ class ModifySubeventBox(BaseBox):
         and disable the add button in case they are not.
         """
         if self.sv_se_title.get():
-            self.btn_add.config(state="normal")
+            self.set_cmp_state("btn_add", NORMAL)
         else:
-            self.btn_add.config(state="disabled")
+            self.set_cmp_state("btn_add", DISABLED)
 
         # Disable button in case some cells are not yet filled
         # (Date and time cells have always atleast some value)
         if not self.sv_se_title.get():
-            self.btn_add.config(state="disabled")
+            self.set_cmp_state("btn_add", DISABLED)
             self.lbl_warning.config(text=WarningArray[WarningCodes.WARNING_MISSING_DATA])
             return
 
-        start_date = self.tfs.get_start_date()
-        end_date = self.tfs.get_end_date()
+        start_date = self.get_cmp("tfs_subevent").get_start_date()
+        end_date = self.get_cmp("tfs_subevent").get_end_date()
 
         if err := test_time_frame_swap(start_date, end_date):
-            self.btn_add.config(state="disabled")
+            self.set_cmp_state("btn_add", DISABLED)
             self.lbl_warning.config(text=WarningArray[err])
             return
 
@@ -136,11 +139,11 @@ class ModifySubeventBox(BaseBox):
 
             # Test for overlapping time frames
             if err := test_time_frame(testdate_start, testdate_end, start_date, end_date):
-                self.btn_add.config(state="disabled")
+                self.set_cmp_state("btn_add", DISABLED)
                 self.lbl_warning.config(text=WarningArray[err])
                 return
 
-        self.btn_add.config(state="normal")
+        self.set_cmp_state("btn_add", NORMAL)
         self.lbl_warning.config(text=WarningArray[WarningCodes.NO_WARNING])
 
     def add(self):
@@ -148,8 +151,8 @@ class ModifySubeventBox(BaseBox):
         Use the input data to create a new subevent and save it in a variable.
         The result can be accessed from the outside (for example from the eventbox).
         """
-        start_date = self.tfs.get_start_date()
-        end_date = self.tfs.get_end_date()
+        start_date = self.get_cmp("tfs_subevent").get_start_date()
+        end_date = self.get_cmp("tfs_subevent").get_end_date()
 
         self.subevent = f"{self.sv_se_title.get()}{SEPARATOR}{start_date}{SEPARATOR}{end_date}"
         self.changed = True

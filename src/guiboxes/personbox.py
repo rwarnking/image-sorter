@@ -1,5 +1,5 @@
 from idlelib.tooltip import Hovertip
-from tkinter import Button, Entry, Label, StringVar
+from tkinter import DISABLED, NORMAL, Button, Entry, Label, StringVar
 
 from database import Database
 from debug_messages import WarningArray, WarningCodes
@@ -36,18 +36,20 @@ class ModifyPersonBox(BaseBox):
         ##############
         # Name input #
         ##############
+        # TODO check all StringVars to start with sv
+        # TODO add to cmp dict and do not use self at all?
         self.sv_p_name = StringVar()
         self.sv_p_name.set(self.name)
         self.sv_p_name.trace("w", self.validate_input)
         lbl_p_name = Label(self.root, text="Name: ")
         lbl_p_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        ent_p_name = Entry(
+        ent_p_name = self.add_cmp("ent_p_name", Entry(
             self.root,
             textvariable=self.sv_p_name,
             width=ENAME_W,
             validate="key",
             validatecommand=vcmd,
-        )
+        ))
         ent_p_name.grid(
             row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -56,23 +58,23 @@ class ModifyPersonBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = Button(
+        btn_abort = self.add_cmp("btn_abort", Button(
             self.root,
             text="Abort",
             command=self.close,
-        )
+        ))
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="W")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        self.btn_add_psn = Button(
+        btn_add_psn = self.add_cmp("btn_add_psn", Button(
             self.root,
             text="Add" if person == "" else "Update",
             command=self.add,
-            state="disabled",
-        )
-        self.btn_add_psn.grid(row=self.row(), column=2, padx=PAD_X, pady=(10, 15), sticky="E")
+            state=DISABLED,
+        ))
+        btn_add_psn.grid(row=self.row(), column=2, padx=PAD_X, pady=(10, 15), sticky="E")
         Hovertip(
-            self.btn_add_psn, TooltipDict["btn_add_psn" if person == "" else "btn_update_psn"]
+            btn_add_psn, TooltipDict["btn_add_psn" if person == "" else "btn_update_psn"]
         )
 
         center_window(self.root)
@@ -87,16 +89,16 @@ class ModifyPersonBox(BaseBox):
         """
         name = self.sv_p_name.get()
         if not name:
-            self.btn_add_psn.config(state="disabled")
+            self.set_cmp_state("btn_add_psn", DISABLED)
             self.lbl_warning.config(text=WarningArray[WarningCodes.WARNING_MISSING_DATA])
             return
 
         if self.db.has("persons", ("name", name)):
-            self.btn_add_psn.config(state="disabled")
+            self.set_cmp_state("btn_add_psn", DISABLED)
             self.lbl_warning.config(text=WarningArray[WarningCodes.WARNING_PERSON_EXISTS])
             return
 
-        self.btn_add_psn.config(state="normal")
+        self.set_cmp_state("btn_add_psn", NORMAL)
         self.lbl_warning.config(text=WarningArray[WarningCodes.NO_WARNING])
 
     def add(self):
