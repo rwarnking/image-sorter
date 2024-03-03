@@ -3,12 +3,15 @@ import os
 from datetime import datetime, time, timedelta
 from functools import partial
 from idlelib.tooltip import Hovertip
-from tkinter import DISABLED, END, RIGHT, Button, Frame, Label, StringVar, Text, filedialog, messagebox
-from tkinter.ttk import Combobox, Scrollbar, Separator
+from tkinter import DISABLED, END, RIGHT, Button, Frame, IntVar, Label, StringVar, Text, filedialog, messagebox
+from tkinter.ttk import Combobox, Scrollbar, Separator, Radiobutton
 
 import matplotlib as mpl
-from database import EVENT_E_DATE, EVENT_S_DATE, EVENT_TITLE, Database
+import matplotlib.pyplot as plt
+
+from database import ARTIST_E_DATE, ARTIST_MAKE, ARTIST_MODEL, ARTIST_S_DATE, ARTIST_P_ID, EVENT_E_DATE, EVENT_S_DATE, EVENT_TITLE, Database
 from dateutil.relativedelta import relativedelta
+from ganttchart import GanttChart
 from debug_messages import InfoArray, InfoCodes
 from guiboxes.artistbox import ModifyArtistBox
 from guiboxes.basebox import (
@@ -32,6 +35,24 @@ from tooltips import TooltipDict
 
 TMODDB_H = 200
 TMODDB_W = WINDOW_W - 2 * PAD_X
+
+# For combobox selector
+C_EVENTS = 0
+C_ARTISTS = 1
+C_PERSONS = 2
+
+# TODO to database?
+LST_DBS = [
+    "events",
+    "artists",
+    "persons",
+]
+
+ARTIST_TABLE = 0
+ARTIST_GANTT = 1
+
+ARTIST_ALL = 0
+ARTIST_CUR = 1
 
 
 class ModifyDBBox(BaseBox):
@@ -124,40 +145,124 @@ class ModifyDBBox(BaseBox):
             text="Selected database table:",
         ).grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="w")
 
-        def combobox_select(_):
-            table = self.db_select.get()
-            if table == "events":
+        def combobox_select(_=None):
+            table_id = self.cb_dbs.current()
+            if table_id == C_EVENTS:
+                self.frame_gant.grid_remove()
+                self.rb_artist_table.grid_remove()
+                self.rb_artist_gantt.grid_remove()
+                self.rb_artist_all.grid_remove()
+                self.rb_artist_cur.grid_remove()
                 bd = self.cldr_db.__getitem__("borderwidth")
                 self.cldr_db._cal_frame.pack(fill="both", expand=True, padx=bd, pady=bd)
                 self.cldr_db.grid()
+                self.frame_db_list.grid()
                 self.get_cmp("btn_clear_m").grid()
-            elif table == "artists":
+            elif table_id == C_ARTISTS:
+                self.get_cmp("btn_clear_m").grid_remove()
                 self.cldr_db._cal_frame.pack_forget()
                 self.cldr_db.grid()
-                self.get_cmp("btn_clear_m").grid_remove()
+                # self.frame_db_list.grid()
+                self.rb_artist_table.grid()
+                self.rb_artist_gantt.grid()
+
+                if self.iv_artist_vis.get() == ARTIST_TABLE:
+                    self.frame_gant.grid_remove()
+                    self.frame_db_list.grid()
+                elif self.iv_artist_vis.get() == ARTIST_GANTT:
+                    self.frame_db_list.grid_remove()
+                    self.frame_gant.grid()
+                    self.rb_artist_all.grid()
+                    self.rb_artist_cur.grid()
+
             else:
                 self.cldr_db.grid_remove()
+                self.frame_gant.grid_remove()
+                self.rb_artist_table.grid_remove()
+                self.rb_artist_gantt.grid_remove()
+                self.rb_artist_all.grid_remove()
+                self.rb_artist_cur.grid_remove()
                 self.get_cmp("btn_clear_m").grid_remove()
+                self.frame_db_list.grid()
             self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
-            self.updateGUI(table)
+            self.updateGUI(table_id)
 
         list_dbs = [
             "events",
             "artists",
             "persons",
         ]
-        self.db_select = StringVar()
-        self.db_select.set(list_dbs[0])
-        cb_dbs = self.add_cmp("cb_dbs", Combobox(self.root, textvariable=self.db_select))
+        # TODO sv_db_select
+        db_select = StringVar()
+        db_select.set(list_dbs[0])
+        self.cb_dbs = self.add_cmp("cb_dbs", Combobox(self.root, textvariable=db_select))
         # Write artist values from database
-        cb_dbs["values"] = list_dbs
+        self.cb_dbs["values"] = list_dbs
         # Prevent typing a value
-        cb_dbs["state"] = "readonly"
+        self.cb_dbs["state"] = "readonly"
         # Place the widget
-        cb_dbs.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        self.cb_dbs.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         # Bind callback
-        cb_dbs.bind("<<ComboboxSelected>>", combobox_select)
-        Hovertip(cb_dbs, TooltipDict["cb_dbs"])
+        self.cb_dbs.bind("<<ComboboxSelected>>", combobox_select)
+        Hovertip(self.cb_dbs, TooltipDict["cb_dbs"])
+
+        ##########################################
+        # Select gantt or table view for artists #
+        ##########################################
+        self.iv_artist_vis = IntVar()
+        self.iv_artist_vis.set(ARTIST_TABLE)
+
+        self.rb_artist_table = Radiobutton(self.root,
+            text="Table",
+            variable=self.iv_artist_vis,
+            command=combobox_select,
+            value=ARTIST_TABLE,
+        )
+        self.rb_artist_table.grid(
+            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        self.rb_artist_gantt = Radiobutton(self.root,
+            text="Gantt",
+            variable=self.iv_artist_vis,
+            command=combobox_select,
+            value=ARTIST_GANTT,
+        )
+        self.rb_artist_gantt.grid(
+            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        self.rb_artist_table.grid_remove()
+        self.rb_artist_gantt.grid_remove()
+
+        ##########################################
+        # Select gantt or table view for artists #
+        ##########################################
+        self.iv_artist_show = IntVar()
+        self.iv_artist_show.set(ARTIST_CUR)
+
+        self.rb_artist_all = Radiobutton(self.root,
+            text="Show all",
+            variable=self.iv_artist_show,
+            command=lambda: self.updateGUI(self.cb_dbs.current()),
+            value=ARTIST_ALL,
+        )
+        self.rb_artist_all.grid(
+            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        self.rb_artist_cur = Radiobutton(self.root,
+            text="Show active",
+            variable=self.iv_artist_show,
+            command=lambda: self.updateGUI(self.cb_dbs.current()),
+            value=ARTIST_CUR,
+        )
+        self.rb_artist_cur.grid(
+            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        self.rb_artist_all.grid_remove()
+        self.rb_artist_cur.grid_remove()
 
         #################
         # Calendar view #
@@ -256,11 +361,39 @@ class ModifyDBBox(BaseBox):
 
         self.cldr_db.bind("<<CalendarSelected>>", calendar_selected)
         self.cldr_db.bind(
-            "<<CalendarMonthChanged>>", lambda _: self.updateGUI(self.db_select.get())
+            "<<CalendarMonthChanged>>", lambda _: self.updateGUI(self.cb_dbs.current())
         )
 
         # Update calendar AND textfields
-        self.updateGUI(self.db_select.get())
+        self.updateGUI(self.cb_dbs.current())
+
+        ##############
+        # Gant Chart #
+        ##############
+        # https://www.tutorialspoint.com/basic-gantt-chart-using-python-matplotlib
+        # TODO merge artists with same name and same make model
+        ##########
+
+        self.frame_gant = Frame(self.root, width=TMODDB_W, bg="white")
+        self.frame_gant.grid(
+            row=self.row(), column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+        self.frame_gant.grid_remove()
+
+        self.gantt_chart = GanttChart(self.frame_gant)
+
+        btn_nextp = self.add_cmp("btn_nextp", Button(self.text_db_add, text=">", command=self.gantt_chart.next_page, width=BTN_W))
+        # TODO
+        # Hovertip(btn_nextp, TooltipDict["btn_nextp"])
+        btn_nextp.pack(side="right")
+
+        lbl_page = Label(self.text_db_add, textvariable=self.gantt_chart.sv_gpage)
+        lbl_page.pack(side="right")
+
+        btn_prevp = self.add_cmp("btn_prevp", Button(self.text_db_add, text="<", command=self.gantt_chart.prev_page, width=BTN_W))
+        # TODO
+        # Hovertip(btn_prevp, TooltipDict["btn_prevp"])
+        btn_prevp.pack(side="right")
 
         #################################
         # Remove buttons and Info label #
@@ -300,6 +433,7 @@ class ModifyDBBox(BaseBox):
         ))
         btn_done.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_done, TooltipDict["btn_done"])
+        self.root.protocol('WM_DELETE_WINDOW', self.close)
 
         center_window(self.root)
 
@@ -331,7 +465,7 @@ class ModifyDBBox(BaseBox):
             self.reset_all_cmps()
             return
 
-        self.updateGUI(self.db_select.get())
+        self.updateGUI(self.cb_dbs.current())
         self.lbl_info.config(
             text=InfoArray[info], fg="#0a0" if info == InfoCodes.LOAD_SUCCESS else "#a80"
         )
@@ -381,18 +515,18 @@ class ModifyDBBox(BaseBox):
         self.disable_all_cmps()
         self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
 
-        str_selection = self.db_select.get()
-        if str_selection == "events":
+        table_id = self.cb_dbs.current()
+        if table_id == C_EVENTS:
             date = self.getDefaultDay()
             box = ModifyEventBox("Add event", self.db, date)
-        elif str_selection == "artists":
+        elif table_id == C_ARTISTS:
             date = self.getDefaultDay()
             box = ModifyArtistBox("Add artist", self.db, date)
-        elif str_selection == "persons":
+        elif table_id == C_PERSONS:
             box = ModifyPersonBox("Add person", self.db)
 
         if box.changed:
-            self.updateGUI(str_selection)
+            self.updateGUI(table_id)
             self.lbl_info.config(text=InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
         self.reset_all_cmps()
 
@@ -404,16 +538,16 @@ class ModifyDBBox(BaseBox):
         self.disable_all_cmps()
         self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
 
-        str_selection = self.db_select.get()
-        if str_selection == "events":
+        table_id = self.cb_dbs.current()
+        if table_id == C_EVENTS:
             box: BaseBox = ModifyEventBox("Modify event", self.db, elem)
-        elif str_selection == "artists":
+        elif table_id == C_ARTISTS:
             box = ModifyArtistBox("Modify artist", self.db, elem)
-        elif str_selection == "persons":
+        elif table_id == C_PERSONS:
             box = ModifyPersonBox("Modify person", self.db, elem)
 
         if box.changed:
-            self.updateGUI(str_selection)
+            self.updateGUI(table_id)
             self.lbl_info.config(text=InfoArray[box.info], fg="#0a0" if box.info < 9 else "#a00")
         self.reset_all_cmps()
 
@@ -423,21 +557,21 @@ class ModifyDBBox(BaseBox):
         :param elem: The element that should be deleted.
         """
         self.disable_all_cmps()
-        str_selection = self.db_select.get()
-        if str_selection == "events":
+        table_id = self.cb_dbs.current()
+        if table_id == C_EVENTS:
             elm_data = elem.split(SEPARATOR)
             info = self.db.delete_event_s(elm_data[1], elm_data[2], elm_data[3])
-        elif str_selection == "artists":
+        elif table_id == C_ARTISTS:
             elm_data = elem.split(SEPARATOR)
             # Obacht: elm_data[0] is the index not the name
             info = self.db.delete_artist_s(
                 int(elm_data[1]), elm_data[2], elm_data[3], elm_data[4], elm_data[5], elm_data[6]
             )
-        elif str_selection == "persons":
+        elif table_id == C_PERSONS:
             elm_data = elem.split(SEPARATOR)
             info = self.db.delete_person(elm_data[1])
 
-        self.updateGUI(str_selection)
+        self.updateGUI(table_id)
         self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
         self.reset_all_cmps()
 
@@ -446,9 +580,9 @@ class ModifyDBBox(BaseBox):
         Function when pressing the clear button. The selected table in the database is cleared.
         """
         self.disable_all_cmps()
-        str_selection = self.db_select.get()
-        info = self.db.clean(str_selection)
-        self.updateGUI(str_selection)
+        table_id = self.cb_dbs.current()
+        info = self.db.clean(self.cb_dbs.get().split(" ")[0])
+        self.updateGUI(table_id)
         self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
         self.reset_all_cmps()
 
@@ -459,8 +593,8 @@ class ModifyDBBox(BaseBox):
         """
         self.disable_all_cmps()
         info = InfoCodes.DEL_SUCCESS
-        str_selection = self.db_select.get()
-        if str_selection == "events":
+        table_id = self.cb_dbs.current()
+        if table_id == C_EVENTS:
             lst_content = self.getEvents()
             for elem in lst_content:
                 tmp_info = self.db.delete_event(
@@ -469,37 +603,42 @@ class ModifyDBBox(BaseBox):
                 if tmp_info == InfoCodes.DEL_ERROR:
                     info = InfoCodes.DEL_ERROR
 
-        self.updateGUI(str_selection)
+        self.updateGUI(table_id)
         self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")
         self.reset_all_cmps()
 
-    def updateGUI(self, table):
+    def updateGUI(self, table_id):
         """
         Update the GUI to display the correct data.
         :param table: The currently selected table
         """
         self.cldr_db.selection_clear()
 
-        if table == "events":
+        if table_id == C_EVENTS:
             lst_content = self.getEvents()
             self.updateCalender(lst_content)
-        elif table == "persons":
+        elif table_id == C_PERSONS:
             lst_content = self.getPersons()
-        elif table == "artists":
+        elif table_id == C_ARTISTS:
             lst_content = self.getArtists()
+            if self.iv_artist_vis.get() == ARTIST_GANTT:
+                self.updateGanttChart(lst_content)
+                return
         else:
-            lst_content = self.db.get_all(table)
+            print("ERROR")# TODO
+            # lst_content = self.db.get_all(table)
 
-        self.updateListFrame(table, lst_content)
+        self.updateListFrame(table_id, lst_content)
 
-    def updateListFrame(self, table: str, lst_content):
+    # TODO Check all funtions for spelling (lowerchammelchase or _)
+    def updateListFrame(self, table_id: str, lst_content):
         """
         Update the text field listing all entries of the selected table.
         How to create a scrollable list of buttons in Tkinter?
         https://stackoverflow.com/questions/68288119/
         How to pass arguments to a Button command in Tkinter?
         https://stackoverflow.com/questions/6920302/
-        :param table: The currently selected table
+        :param table_id: The currently selected table as a combobox id
         :param lst_content: The content for the text frame
         """
         # Clear all content in the text area
@@ -531,7 +670,7 @@ class ModifyDBBox(BaseBox):
             self.text_db_list.window_create("end", window=btn_del)
 
             # Special case because the artist contains a person id
-            if table == "artists":
+            if table_id == C_ARTISTS: # TODO or table_id == C_ARTISTS_GANTT:
                 first_idx = e.index(SEPARATOR)
                 second_idx = e.index(SEPARATOR, first_idx + 1)
                 num = int(e[first_idx + 3 : second_idx])
@@ -574,6 +713,31 @@ class ModifyDBBox(BaseBox):
                     background=f"#{r:02x}{g:02x}{b:02x}",
                 )
 
+    def updateGanttChart(self, lst_artists):
+        if self.iv_artist_show.get() == ARTIST_ALL:
+            data_src = self.db.get_all("artists")
+        elif self.iv_artist_show.get() == ARTIST_CUR:
+            data_src = lst_artists
+        else:
+            # TODO
+            print("ERROR")
+
+        # https://stackoverflow.com/questions/19339/transpose-unzip-function-inverse-of-zip
+        components = list(zip(*data_src))
+        infos = [f"{x[0]} {x[1]}" for x in zip(components[ARTIST_MAKE], components[ARTIST_MODEL])]
+        start_dates = components[ARTIST_S_DATE]
+        end_dates = components[ARTIST_E_DATE]
+        # This component is not a list
+        # but since the get_pnames calls set+list itself it doesnt matter
+        artist_names = self.db.get_pnames(components[ARTIST_P_ID])
+
+        _, last_day = self.get_first_and_last_shown_day(self.cldr_db.get_displayed_month())
+        min_date = min(start_dates)
+        max_date = last_day
+
+        self.gantt_chart.set_data(min_date, max_date, start_dates, end_dates, artist_names, infos)
+        self.gantt_chart.update()
+
     def getEvents(self):
         """
         Get a list of events in the currently selected month.
@@ -581,17 +745,7 @@ class ModifyDBBox(BaseBox):
         using a timeframe. The list is sorted by the start date of the event.
         :return: List of events in month
         """
-        month, year = self.cldr_db.get_displayed_month()
-        month_date = datetime(year, month, 1)
-
-        # Get first day of month
-        first_day = month_date + relativedelta(day=1)
-        # Get monday before first day of month
-        first_day -= timedelta(days=first_day.weekday())
-        # Get last day of month
-        # last_day = month_date + relativedelta(day=31, hour=23, minute=59, second=59)
-        # Get sunday 5 weeks later than the first day
-        last_day = first_day + timedelta(weeks=5, days=6, hours=23, minutes=59, seconds=59)
+        first_day, last_day = self.get_first_and_last_shown_day(self.cldr_db.get_displayed_month())
 
         lst_events = self.db.get_by_timeframe("events", first_day, last_day)
         lst_events.sort(key=lambda x: x[EVENT_S_DATE])
@@ -646,3 +800,29 @@ class ModifyDBBox(BaseBox):
         month_date = datetime(year, month, 1)
         month_date_night = datetime.combine(month_date, time.max)
         return f"{month_date}{SEPARATOR}{month_date_night}"
+
+    def get_first_and_last_shown_day(self, selected_month):
+        """
+        This function returns the first and last shown day in the calendar for the
+        selected month.
+        First the last monday of the previous month is reconstructed by shiting the
+        first day of the selected month. Afterwards this date is shifted by 5 weeks and
+        6 day, resulting in the first sunday of the next month.
+        """
+        month, year = selected_month
+        month_date = datetime(year, month, 1)
+
+        # Get first day of month
+        first_day = month_date + relativedelta(day=1)
+        # Get monday before first day of month
+        first_day -= timedelta(days=first_day.weekday())
+        # Get sunday 5 weeks later than the first day
+        last_day = first_day + timedelta(weeks=5, days=6, hours=23, minutes=59, seconds=59)
+
+        return first_day, last_day
+
+    # TODO is this stell needed?
+    def close(self):
+        """Function for closing the box."""
+        plt.close('all')
+        super().close()

@@ -681,6 +681,8 @@ class Database:
         would result in
         where: "key1=? AND key2=? AND key3=?"
         vals: (value1, value2, value3)
+        A value can also be an list, in such a case the keyword IN is used and the given
+        list is split into its component values.
         """
         self.assert_tuple_list(args)
         where: str = ""
@@ -688,8 +690,12 @@ class Database:
         for pair in args:
             if where != "":
                 where += "AND "
-            where += pair[0] + "=? "
-            vals += (pair[1],)
+            if isinstance(pair[1], list):
+                where += pair[0] + " IN (" + ",".join(["?"] * len(pair[1])) + ")"
+                vals += tuple(pair[1])
+            else:
+                where += pair[0] + "=? "
+                vals += (pair[1],)
 
         return where, vals
 
@@ -1234,7 +1240,18 @@ class Database:
         res = self.get("persons", ("pid", id))
         assert len(res) > 0
         assert len(res[0]) > 0
-        return res[0][1]
+        return res[0][PERSON_NAME]
+    
+    def get_pnames(self, ids: list[int]) -> str:
+        """Returns the name of the participant that has the given id."""
+        res = self.get("persons", ("pid", list(set(ids))))
+        assert len(res) > 0
+        res_dict = {}
+        for person in res:
+            res_dict[person[PERSON_ID]] = person[PERSON_NAME]
+            assert len(person) > 0
+
+        return [res_dict[id] for id in ids]
 
     def delete_person(self, name: str):
         """Delete the specified event."""
