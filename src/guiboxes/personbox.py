@@ -40,16 +40,19 @@ class ModifyPersonBox(BaseBox):
         # TODO add to cmp dict and do not use self at all?
         self.sv_p_name = StringVar()
         self.sv_p_name.set(self.name)
-        self.sv_p_name.trace("w", self.validate_input)
+        self.sv_p_name.trace_add("write", self.validate_input)
         lbl_p_name = Label(self.root, text="Name: ")
         lbl_p_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        ent_p_name = self.add_cmp("ent_p_name", Entry(
-            self.root,
-            textvariable=self.sv_p_name,
-            width=ENAME_W,
-            validate="key",
-            validatecommand=vcmd,
-        ))
+        ent_p_name = self.add_cmp(
+            "ent_p_name",
+            Entry(
+                self.root,
+                textvariable=self.sv_p_name,
+                width=ENAME_W,
+                validate="key",
+                validatecommand=vcmd,
+            ),
+        )
         ent_p_name.grid(
             row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -58,24 +61,28 @@ class ModifyPersonBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = self.add_cmp("btn_abort", Button(
-            self.root,
-            text="Abort",
-            command=self.close,
-        ))
+        btn_abort = self.add_cmp(
+            "btn_abort",
+            Button(
+                self.root,
+                text="Abort",
+                command=self.close,
+            ),
+        )
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=(10, 15), sticky="W")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        btn_add_psn = self.add_cmp("btn_add_psn", Button(
-            self.root,
-            text="Add" if person == "" else "Update",
-            command=self.add,
-            state=DISABLED,
-        ))
-        btn_add_psn.grid(row=self.row(), column=2, padx=PAD_X, pady=(10, 15), sticky="E")
-        Hovertip(
-            btn_add_psn, TooltipDict["btn_add_psn" if person == "" else "btn_update_psn"]
+        btn_add_psn = self.add_cmp(
+            "btn_add_psn",
+            Button(
+                self.root,
+                text="Add" if person == "" else "Update",
+                command=self.add,
+                state=DISABLED,
+            ),
         )
+        btn_add_psn.grid(row=self.row(), column=2, padx=PAD_X, pady=(10, 15), sticky="E")
+        Hovertip(btn_add_psn, TooltipDict["btn_add_psn" if person == "" else "btn_update_psn"])
 
         center_window(self.root)
 

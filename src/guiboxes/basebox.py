@@ -1,4 +1,5 @@
 from tkinter import DISABLED, Toplevel
+from typing import Any
 
 from debug_messages import InfoCodes
 
@@ -40,7 +41,7 @@ class BaseBox(object):
         self.root.grid_columnconfigure(2, weight=1)
         self.root.grid_columnconfigure(3, weight=1)
 
-        self.cmps = {}
+        self.cmps: dict[str, dict[str, Any]] = {}
 
     def get_cmp(self, name: str):
         return self.cmps[name]["object"]

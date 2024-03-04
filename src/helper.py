@@ -46,7 +46,7 @@ def lt_window(window: Tk):
 
 def limit_input(S: str):
     """Returns true if the input character is a whitespace, -, _, a number or a letter."""
-    return str.isalnum(S) or str.isspace(S) or S == "-" or S == "_"
+    return str.isalnum(S) or str.isspace(S) or S == "-" or S == "_" or S == "&"
 
 
 def test_time_frame(

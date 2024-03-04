@@ -1,18 +1,23 @@
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import numpy as np
-
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg#, NavigationToolbar2TkAgg
-from matplotlib.widgets import Slider
-from tkinter import StringVar
 from math import ceil
+from tkinter import StringVar
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 SHOW_RESULTS = 5
+
 
 class GanttChart(object):
     """
     Gantt Chart class
+    Resources: TODO check again
+    https://www.datacamp.com/tutorial/how-to-make-gantt-chart-in-python-matplotlib
+    https://www.studytonight.com/tkinter/python-tkinter-canvas-widget
+    https://www.pythonprogramming.net/how-to-embed-matplotlib-graph-tkinter-gui/
     """
+
     def __init__(self, root):
         self.root = root
 
@@ -34,21 +39,21 @@ class GanttChart(object):
             self.canvas.draw()
             self.canvas.get_tk_widget().pack(fill="x")
         except Exception as e:
-            plt.close('all')
+            plt.close("all")
             raise Exception(f"Creating a plot using matplotlib was unsuccessful. {e}")
-        
+
     def next_page(self):
         if self.cur_page + 1 < self.max_page + 1:
             self.cur_page += 1
         self.sv_gpage.set(f"Page {self.cur_page}/{self.max_page}")
         self.update()
-    
+
     def prev_page(self):
         if self.cur_page - 1 > 0:
             self.cur_page -= 1
         self.sv_gpage.set(f"Page {self.cur_page}/{self.max_page}")
         self.update()
-    
+
     def set_data(self, x_min, x_max, s_dates, e_dates, y_data, lbl_data):
         assert x_min < x_max
         self.x_min = x_min
@@ -63,7 +68,7 @@ class GanttChart(object):
         self.lbl_data = lbl_data
 
         # Update page max
-        self.max_page = ceil(len(self.s_dates)/SHOW_RESULTS)
+        self.max_page = ceil(len(self.s_dates) / SHOW_RESULTS)
         if self.cur_page > self.max_page:
             self.cur_page = self.max_page
         self.sv_gpage.set(f"Page {self.cur_page}/{self.max_page}")
@@ -76,15 +81,15 @@ class GanttChart(object):
         self.axes.xaxis_date()
         self.axes.xaxis.set_major_locator(mdates.AutoDateLocator())
         self.axes.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-        self.axes.tick_params('x', labelrotation=45)
+        self.axes.tick_params("x", labelrotation=45)
 
     def add_bars(self):
         self.axes.set_xlim(self.x_min, self.x_max)
 
         margin = (self.axes.get_xbound()[1] - self.axes.get_xbound()[0]) * 0.01
 
-        category_colors = plt.get_cmap('RdYlGn')(np.linspace(0.15, 0.85, len(self.y_data)))
-        
+        category_colors = plt.get_cmap("RdYlGn")(np.linspace(0.15, 0.85, len(self.y_data)))
+
         # Even though we iterate here twice, it is faster to do this, rather than unzip or append
         tmp = range(len(self.s_dates))
         indexs = [i for i in tmp]
@@ -96,8 +101,11 @@ class GanttChart(object):
         self.hbars = self.axes.barh(
             indexs[start:end],
             lengths[start:end],
-            left=self.s_dates[start:end], align='center', 
-            data=self.lbl_data[start:end], color=category_colors[start:end])
+            left=self.s_dates[start:end],
+            align="center",
+            data=self.lbl_data[start:end],
+            color=category_colors[start:end],
+        )
 
         for i, bar in enumerate(self.hbars):
             self.axes.text(
@@ -109,17 +117,17 @@ class GanttChart(object):
                 # This is actual value we'll show.
                 self.y_data[start:end][i],
                 # Center the labels and style them a bit.
-                ha='left',
-                va='center',
-                size=8
+                ha="left",
+                va="center",
+                size=8,
             )
 
             self.axes.text(
                 self.axes.get_xbound()[1] - margin,
                 bar.get_y() + bar.get_height() * 0.5,
                 self.lbl_data[start:end][i],
-                ha='right',
-                va='center',
+                ha="right",
+                va="center",
                 size=8,
             )
 

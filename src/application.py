@@ -277,7 +277,7 @@ class MainApp:
             else:
                 cb_samename.config(state=NORMAL)
 
-        self.meta_info.file_signature.trace("w", on_change)
+        self.meta_info.file_signature.trace_add("write", on_change)
 
         cb_reqartist = Checkbutton(
             window, text="Require artist", variable=self.meta_info.require_artist

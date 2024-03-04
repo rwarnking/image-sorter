@@ -40,13 +40,14 @@ class Selector:
 
     def bind(self, callback: Callable):
         """Bind a callback to the spinbox."""
-        self.sv.trace("w", callback)
+        self.sv.trace_add("write", callback)
 
     def enable(self):
         self.sb["state"] = "readonly"
 
     def disable(self):
         self.sb["state"] = DISABLED
+
 
 class DaySelectorM(Selector):
     """Special type of selector for a day of a year (including minus numbers)."""
@@ -222,7 +223,7 @@ class TimeFrameSelector:
         }
         self.ds_end = DateSelector(root, end_data)
 
-    def __getitem__(self, key): 
+    def __getitem__(self, key):
         return getattr(self, key)
 
     def bind(self, callback: Callable):
@@ -357,7 +358,7 @@ class TimeShiftSelector:
 
         self.state = NORMAL
 
-    def __getitem__(self, key): 
+    def __getitem__(self, key):
         return getattr(self, key)
 
     def bind(self, callback: Callable):

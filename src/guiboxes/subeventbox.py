@@ -52,12 +52,13 @@ class ModifySubeventBox(BaseBox):
         ###############
         self.sv_se_title = StringVar()
         self.sv_se_title.set(subevent_title)
-        self.sv_se_title.trace("w", self.validate_input)
+        self.sv_se_title.trace_add("write", self.validate_input)
         lbl_se_title = Label(self.root, text="Title: ")
         lbl_se_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_se_title = self.add_cmp("ent_se_title", Entry(
-            self.root, textvariable=self.sv_se_title, validate="key", validatecommand=vcmd
-        ))
+        ent_se_title = self.add_cmp(
+            "ent_se_title",
+            Entry(self.root, textvariable=self.sv_se_title, validate="key", validatecommand=vcmd),
+        )
         ent_se_title.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -68,7 +69,7 @@ class ModifySubeventBox(BaseBox):
         #####################
         tfs_subevent = self.add_cmp(
             "tfs_subevent",
-            TimeFrameSelector(self.root, self.row_idx, startdate_parent, enddate_parent)
+            TimeFrameSelector(self.root, self.row_idx, startdate_parent, enddate_parent),
         )
         tfs_subevent.set_start_date(startdate_parent)
         tfs_subevent.set_end_date(enddate_parent)
@@ -83,20 +84,26 @@ class ModifySubeventBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = self.add_cmp("btn_abort", Button(
-            self.root,
-            text="Abort",
-            command=self.close,
-        ))
+        btn_abort = self.add_cmp(
+            "btn_abort",
+            Button(
+                self.root,
+                text="Abort",
+                command=self.close,
+            ),
+        )
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        btn_add = self.add_cmp("btn_add", Button(
-            self.root,
-            text="Add",
-            command=self.add,
-            state=DISABLED,
-        ))
+        btn_add = self.add_cmp(
+            "btn_add",
+            Button(
+                self.root,
+                text="Add",
+                command=self.add,
+                state=DISABLED,
+            ),
+        )
         btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_add, TooltipDict["btn_add_sube"])
 

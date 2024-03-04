@@ -1241,8 +1241,8 @@ class Database:
         assert len(res) > 0
         assert len(res[0]) > 0
         return res[0][PERSON_NAME]
-    
-    def get_pnames(self, ids: list[int]) -> str:
+
+    def get_pnames(self, ids: list[int]) -> list[str]:
         """Returns the name of the participant that has the given id."""
         res = self.get("persons", ("pid", list(set(ids))))
         assert len(res) > 0

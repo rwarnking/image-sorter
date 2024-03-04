@@ -68,10 +68,11 @@ class ModifyParticipantBox(BaseBox):
         lbl_p_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         self.sv_p_name = StringVar()
         self.sv_p_name.set(self.name)
-        self.sv_p_name.trace("w", self.validate_input)
-        cb_part_person = self.add_cmp("cb_part_person", Combobox(
-            self.root, textvariable=self.sv_p_name, validate="key", validatecommand=vcmd
-        ))
+        self.sv_p_name.trace_add("write", self.validate_input)
+        cb_part_person = self.add_cmp(
+            "cb_part_person",
+            Combobox(self.root, textvariable=self.sv_p_name, validate="key", validatecommand=vcmd),
+        )
         # List of available persons
         cb_part_person["values"] = list_persons
         # Place the widget
@@ -100,20 +101,26 @@ class ModifyParticipantBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = self.add_cmp("btn_abort", Button(
-            self.root,
-            text="Abort",
-            command=self.close,
-        ))
+        btn_abort = self.add_cmp(
+            "btn_abort",
+            Button(
+                self.root,
+                text="Abort",
+                command=self.close,
+            ),
+        )
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        btn_add = self.add_cmp("btn_add", Button(
-            self.root,
-            text="Add",
-            command=self.add,
-            state="disabled",
-        ))
+        btn_add = self.add_cmp(
+            "btn_add",
+            Button(
+                self.root,
+                text="Add",
+                command=self.add,
+                state="disabled",
+            ),
+        )
         btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_add, TooltipDict["btn_add_part"])
 

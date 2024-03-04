@@ -68,6 +68,9 @@ TooltipDict = {
     "ent_p_name": "Enter or modify the name of the person.",
     "btn_add_psn": "Add this person to the database.",
     "btn_update_psn": "Update this persons name.",
+    # Prev / Next gantt chart page
+    "btn_nextp": "Show next page of artists.",
+    "btn_prevp": "Show previous page of artists.",
     # Misc
     "btn_abort": "Close this window and return to the previous one \
         \nwithout applying any changes.",

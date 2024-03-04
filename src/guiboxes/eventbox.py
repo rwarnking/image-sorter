@@ -67,12 +67,13 @@ class ModifyEventBox(BaseBox):
         self.sv_e_title = StringVar()
         self.sv_e_title.set(self.title)
         # TODO replace all occurances of trace with trace_add if possible
-        self.sv_e_title.trace("w", self.validate_input)
+        self.sv_e_title.trace_add("write", self.validate_input)
         lbl_e_title = Label(self.root, text="Title: ")
         lbl_e_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        ent_e_title = self.add_cmp("ent_e_title", Entry(
-            self.root, textvariable=self.sv_e_title, validate="key", validatecommand=vcmd
-        ))
+        ent_e_title = self.add_cmp(
+            "ent_e_title",
+            Entry(self.root, textvariable=self.sv_e_title, validate="key", validatecommand=vcmd),
+        )
         ent_e_title.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -110,14 +111,13 @@ class ModifyEventBox(BaseBox):
         text_part_new = Text(frame_part_new, wrap="none")
         text_part_new.pack(fill="both", expand=True)
 
-        btn_add_part = self.add_cmp("btn_add_part", Button(
-            text_part_new, text="Add", command=self.clickAddParticipant, width=BTN_W
-        ))
+        btn_add_part = self.add_cmp(
+            "btn_add_part",
+            Button(text_part_new, text="Add", command=self.clickAddParticipant, width=BTN_W),
+        )
         text_part_new.window_create("end", window=btn_add_part)
         Hovertip(btn_add_part, TooltipDict["btn_add_part"])
-        btn_none = Button(
-            text_part_new, text="", width=BTN_W, background="white", state=DISABLED
-        )
+        btn_none = Button(text_part_new, text="", width=BTN_W, background="white", state=DISABLED)
         text_part_new.window_create("end", window=btn_none)
 
         text_part_new.insert("end", " ...")
@@ -164,14 +164,13 @@ class ModifyEventBox(BaseBox):
         text_sub_new = Text(frame_sub_new, wrap="none")
         text_sub_new.pack(fill="both", expand=True)
 
-        btn_add_sube = self.add_cmp("btn_add_sube", Button(
-            text_sub_new, text="Add", command=self.clickAddSubevent, width=BTN_W
-        ))
+        btn_add_sube = self.add_cmp(
+            "btn_add_sube",
+            Button(text_sub_new, text="Add", command=self.clickAddSubevent, width=BTN_W),
+        )
         text_sub_new.window_create("end", window=btn_add_sube)
         Hovertip(btn_add_sube, TooltipDict["btn_add_sube"])
-        btn_none = Button(
-            text_sub_new, text="", width=BTN_W, background="white", state=DISABLED
-        )
+        btn_none = Button(text_sub_new, text="", width=BTN_W, background="white", state=DISABLED)
         text_sub_new.window_create("end", window=btn_none)
 
         text_sub_new.insert("end", " ...")
@@ -208,22 +207,25 @@ class ModifyEventBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = self.add_cmp("btn_abort", Button(
-            self.root,
-            text="Abort",
-            command=self.close,
-        ))
+        btn_abort = self.add_cmp(
+            "btn_abort",
+            Button(self.root, text="Abort", command=self.close),
+        )
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
         # In update mode the button must not be disabled from the start,
         # because changes in the timecells can not be checked.
-        btn_add_event = self.add_cmp("btn_add_event", Button(
-            self.root,
-            text="Add" if len(event_data) < 4 else "Update",
-            command=self.add,
-            state=DISABLED,
-        ), DISABLED)
+        btn_add_event = self.add_cmp(
+            "btn_add_event",
+            Button(
+                self.root,
+                text="Add" if len(event_data) < 4 else "Update",
+                command=self.add,
+                state=DISABLED,
+            ),
+            DISABLED,
+        )
         btn_add_event.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_add_event, TooltipDict["btn_add_event"])
 

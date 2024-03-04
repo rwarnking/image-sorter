@@ -3,16 +3,37 @@ import os
 from datetime import datetime, time, timedelta
 from functools import partial
 from idlelib.tooltip import Hovertip
-from tkinter import DISABLED, END, RIGHT, Button, Frame, IntVar, Label, StringVar, Text, filedialog, messagebox
-from tkinter.ttk import Combobox, Scrollbar, Separator, Radiobutton
+from tkinter import (
+    DISABLED,
+    END,
+    RIGHT,
+    Button,
+    Frame,
+    IntVar,
+    Label,
+    StringVar,
+    Text,
+    filedialog,
+    messagebox,
+)
+from tkinter.ttk import Combobox, Radiobutton, Scrollbar, Separator
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
-from database import ARTIST_E_DATE, ARTIST_MAKE, ARTIST_MODEL, ARTIST_S_DATE, ARTIST_P_ID, EVENT_E_DATE, EVENT_S_DATE, EVENT_TITLE, Database
+from database import (
+    ARTIST_E_DATE,
+    ARTIST_MAKE,
+    ARTIST_MODEL,
+    ARTIST_P_ID,
+    ARTIST_S_DATE,
+    EVENT_E_DATE,
+    EVENT_S_DATE,
+    EVENT_TITLE,
+    Database,
+)
 from dateutil.relativedelta import relativedelta
-from ganttchart import GanttChart
 from debug_messages import InfoArray, InfoCodes
+from ganttchart import GanttChart
 from guiboxes.artistbox import ModifyArtistBox
 from guiboxes.basebox import (
     BTN_W,
@@ -88,11 +109,14 @@ class ModifyDBBox(BaseBox):
         # Saving and loading json #
         ###########################
         # Load events from file
-        btn_loadfile = self.add_cmp("btn_loadfile", Button(
-            self.root,
-            text="Load database from file",
-            command=lambda: self.browse_button_open(self.meta_info.sv_db_src),
-        ))
+        btn_loadfile = self.add_cmp(
+            "btn_loadfile",
+            Button(
+                self.root,
+                text="Load database from file",
+                command=lambda: self.browse_button_open(self.meta_info.sv_db_src),
+            ),
+        )
         btn_loadfile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_loadfile, TooltipDict["btn_loadfile"])
 
@@ -100,11 +124,14 @@ class ModifyDBBox(BaseBox):
         lbl_load.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         # Save events to file
-        btn_savefile = self.add_cmp("btn_savefile", Button(
-            self.root,
-            text="Save database to file",
-            command=lambda: self.browse_button_save(self.meta_info.sv_db_tgt),
-        ))
+        btn_savefile = self.add_cmp(
+            "btn_savefile",
+            Button(
+                self.root,
+                text="Save database to file",
+                command=lambda: self.browse_button_save(self.meta_info.sv_db_tgt),
+            ),
+        )
         btn_savefile.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_savefile, TooltipDict["btn_savefile"])
 
@@ -126,11 +153,14 @@ class ModifyDBBox(BaseBox):
             self.reset_all_cmps()
 
         # Reoder the currently loaded database
-        btn_reorder = self.add_cmp("btn_reorder", Button(
-            self.root,
-            text="Reorder currently loaded database by date",
-            command=lambda: reorder_button(),
-        ))
+        btn_reorder = self.add_cmp(
+            "btn_reorder",
+            Button(
+                self.root,
+                text="Reorder currently loaded database by date",
+                command=lambda: reorder_button(),
+            ),
+        )
         btn_reorder.grid(row=self.row(), column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_reorder, TooltipDict["btn_reorder"])
 
@@ -201,7 +231,9 @@ class ModifyDBBox(BaseBox):
         # Prevent typing a value
         self.cb_dbs["state"] = "readonly"
         # Place the widget
-        self.cb_dbs.grid(row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        self.cb_dbs.grid(
+            row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
         # Bind callback
         self.cb_dbs.bind("<<ComboboxSelected>>", combobox_select)
         Hovertip(self.cb_dbs, TooltipDict["cb_dbs"])
@@ -212,25 +244,23 @@ class ModifyDBBox(BaseBox):
         self.iv_artist_vis = IntVar()
         self.iv_artist_vis.set(ARTIST_TABLE)
 
-        self.rb_artist_table = Radiobutton(self.root,
+        self.rb_artist_table = Radiobutton(
+            self.root,
             text="Table",
             variable=self.iv_artist_vis,
             command=combobox_select,
             value=ARTIST_TABLE,
         )
-        self.rb_artist_table.grid(
-            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        self.rb_artist_table.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        self.rb_artist_gantt = Radiobutton(self.root,
+        self.rb_artist_gantt = Radiobutton(
+            self.root,
             text="Gantt",
             variable=self.iv_artist_vis,
             command=combobox_select,
             value=ARTIST_GANTT,
         )
-        self.rb_artist_gantt.grid(
-            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        self.rb_artist_gantt.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         self.rb_artist_table.grid_remove()
         self.rb_artist_gantt.grid_remove()
@@ -241,25 +271,23 @@ class ModifyDBBox(BaseBox):
         self.iv_artist_show = IntVar()
         self.iv_artist_show.set(ARTIST_CUR)
 
-        self.rb_artist_all = Radiobutton(self.root,
+        self.rb_artist_all = Radiobutton(
+            self.root,
             text="Show all",
             variable=self.iv_artist_show,
             command=lambda: self.updateGUI(self.cb_dbs.current()),
             value=ARTIST_ALL,
         )
-        self.rb_artist_all.grid(
-            row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        self.rb_artist_all.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        self.rb_artist_cur = Radiobutton(self.root,
+        self.rb_artist_cur = Radiobutton(
+            self.root,
             text="Show active",
             variable=self.iv_artist_show,
             command=lambda: self.updateGUI(self.cb_dbs.current()),
             value=ARTIST_CUR,
         )
-        self.rb_artist_cur.grid(
-            row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
-        )
+        self.rb_artist_cur.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
         self.rb_artist_all.grid_remove()
         self.rb_artist_cur.grid_remove()
@@ -286,7 +314,9 @@ class ModifyDBBox(BaseBox):
         self.text_db_add = Text(self.frame_db_add, wrap="none")
         self.text_db_add.pack(fill="both", expand=True)
 
-        btn_add = self.add_cmp("btn_add", Button(self.text_db_add, text="Add", command=self.clickAdd, width=BTN_W))
+        btn_add = self.add_cmp(
+            "btn_add", Button(self.text_db_add, text="Add", command=self.clickAdd, width=BTN_W)
+        )
         Hovertip(btn_add, TooltipDict["btn_add"])
         self.text_db_add.window_create("end", window=btn_add)
 
@@ -324,13 +354,16 @@ class ModifyDBBox(BaseBox):
         # https://tkcalendar.readthedocs.io/en/stable/_modules/tkcalendar/calendar_.html#Calendar
 
         # TODO self.cldr_db vs get_cmp
-        self.cldr_db = self.add_cmp("cldr_db", Calendar(
-            self.root,
-            tooltipdelay=100,
-            weekendbackground="white",
-            weekendforeground="black",
-            othermonthwebackground="gray93",
-        ))
+        self.cldr_db = self.add_cmp(
+            "cldr_db",
+            Calendar(
+                self.root,
+                tooltipdelay=100,
+                weekendbackground="white",
+                weekendforeground="black",
+                othermonthwebackground="gray93",
+            ),
+        )
         self.cldr_db.grid(
             row=row_idx_cal, column=0, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -382,27 +415,34 @@ class ModifyDBBox(BaseBox):
 
         self.gantt_chart = GanttChart(self.frame_gant)
 
-        btn_nextp = self.add_cmp("btn_nextp", Button(self.text_db_add, text=">", command=self.gantt_chart.next_page, width=BTN_W))
-        # TODO
-        # Hovertip(btn_nextp, TooltipDict["btn_nextp"])
+        btn_nextp = self.add_cmp(
+            "btn_nextp",
+            Button(self.text_db_add, text=">", command=self.gantt_chart.next_page, width=BTN_W),
+        )
+        Hovertip(btn_nextp, TooltipDict["btn_nextp"])
         btn_nextp.pack(side="right")
 
         lbl_page = Label(self.text_db_add, textvariable=self.gantt_chart.sv_gpage)
         lbl_page.pack(side="right")
 
-        btn_prevp = self.add_cmp("btn_prevp", Button(self.text_db_add, text="<", command=self.gantt_chart.prev_page, width=BTN_W))
-        # TODO
-        # Hovertip(btn_prevp, TooltipDict["btn_prevp"])
+        btn_prevp = self.add_cmp(
+            "btn_prevp",
+            Button(self.text_db_add, text="<", command=self.gantt_chart.prev_page, width=BTN_W),
+        )
+        Hovertip(btn_prevp, TooltipDict["btn_prevp"])
         btn_prevp.pack(side="right")
 
         #################################
         # Remove buttons and Info label #
         #################################
-        btn_clear_m = self.add_cmp("btn_clear_m", Button(
-            self.root,
-            text="Clear current month of selected table",
-            command=lambda: self.clickClearMonth(),
-        ))
+        btn_clear_m = self.add_cmp(
+            "btn_clear_m",
+            Button(
+                self.root,
+                text="Clear current month of selected table",
+                command=lambda: self.clickClearMonth(),
+            ),
+        )
         btn_clear_m.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_clear_m, TooltipDict["btn_clear_month"])
 
@@ -412,11 +452,14 @@ class ModifyDBBox(BaseBox):
             row=self.row_idx, column=0, columnspan=2, padx=PAD_X, pady=PAD_Y_LBL, sticky="W"
         )
 
-        btn_clear = self.add_cmp("btn_clear", Button(
-            self.root,
-            text="Clear selected table",
-            command=lambda: self.clickClear(),
-        ))
+        btn_clear = self.add_cmp(
+            "btn_clear",
+            Button(
+                self.root,
+                text="Clear selected table",
+                command=lambda: self.clickClear(),
+            ),
+        )
         btn_clear.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_clear, TooltipDict["btn_clear"])
 
@@ -426,14 +469,17 @@ class ModifyDBBox(BaseBox):
         ###############
         # Done button #
         ###############
-        btn_done = self.add_cmp("btn_done", Button(
-            self.root,
-            text="Done",
-            command=self.close,
-        ))
+        btn_done = self.add_cmp(
+            "btn_done",
+            Button(
+                self.root,
+                text="Done",
+                command=self.close,
+            ),
+        )
         btn_done.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_done, TooltipDict["btn_done"])
-        self.root.protocol('WM_DELETE_WINDOW', self.close)
+        self.root.protocol("WM_DELETE_WINDOW", self.close)
 
         center_window(self.root)
 
@@ -625,8 +671,8 @@ class ModifyDBBox(BaseBox):
                 self.updateGanttChart(lst_content)
                 return
         else:
-            print("ERROR")# TODO
-            # lst_content = self.db.get_all(table)
+            # TODO
+            print("ERROR")
 
         self.updateListFrame(table_id, lst_content)
 
@@ -657,20 +703,32 @@ class ModifyDBBox(BaseBox):
         for i, e in enumerate(list_table_content):
             btn_mod_name = f"mod_{i}"
             btn_del_name = f"del_{i}"
-            btn_mod = self.add_cmp(btn_mod_name, Button(
-                self.text_db_list, text="Mod", command=partial(self.clickModify, e), width=BTN_W
-            ))
+            btn_mod = self.add_cmp(
+                btn_mod_name,
+                Button(
+                    self.text_db_list,
+                    text="Mod",
+                    command=partial(self.clickModify, e),
+                    width=BTN_W,
+                ),
+            )
             Hovertip(btn_mod, TooltipDict["btn_mod"])
             self.text_db_list.window_create("end", window=btn_mod)
 
-            btn_del = self.add_cmp(btn_del_name, Button(
-                self.text_db_list, text="Del", command=partial(self.clickDelete, e), width=BTN_W
-            ))
+            btn_del = self.add_cmp(
+                btn_del_name,
+                Button(
+                    self.text_db_list,
+                    text="Del",
+                    command=partial(self.clickDelete, e),
+                    width=BTN_W,
+                ),
+            )
             Hovertip(btn_del, TooltipDict["btn_del"])
             self.text_db_list.window_create("end", window=btn_del)
 
             # Special case because the artist contains a person id
-            if table_id == C_ARTISTS: # TODO or table_id == C_ARTISTS_GANTT:
+            if table_id == C_ARTISTS:
                 first_idx = e.index(SEPARATOR)
                 second_idx = e.index(SEPARATOR, first_idx + 1)
                 num = int(e[first_idx + 3 : second_idx])
@@ -821,8 +879,8 @@ class ModifyDBBox(BaseBox):
 
         return first_day, last_day
 
-    # TODO is this stell needed?
+    # TODO is this still needed?
     def close(self):
         """Function for closing the box."""
-        plt.close('all')
+        plt.close("all")
         super().close()

@@ -72,10 +72,11 @@ class ModifyArtistBox(BaseBox):
         lbl_a_name.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
         self.sv_a_name = StringVar()
         self.sv_a_name.set(self.name)
-        self.sv_a_name.trace("w", self.validate_input)
-        cb_a_person = self.add_cmp("cb_a_person", Combobox(
-            self.root, textvariable=self.sv_a_name, validate="key", validatecommand=vcmd
-        ))
+        self.sv_a_name.trace_add("write", self.validate_input)
+        cb_a_person = self.add_cmp(
+            "cb_a_person",
+            Combobox(self.root, textvariable=self.sv_a_name, validate="key", validatecommand=vcmd),
+        )
         # Write file signatures
         cb_a_person["values"] = list_persons
         # Place the widget
@@ -87,12 +88,13 @@ class ModifyArtistBox(BaseBox):
         # Make input field
         self.sv_a_make = StringVar()
         self.sv_a_make.set(self.make)
-        self.sv_a_make.trace("w", self.validate_input)
+        self.sv_a_make.trace_add("write", self.validate_input)
         lbl_a_make = Label(self.root, text="Make: ")
         lbl_a_make.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_a_make = self.add_cmp("ent_a_make", Entry(
-            self.root, textvariable=self.sv_a_make, validate="key", validatecommand=vcmd
-        ))
+        ent_a_make = self.add_cmp(
+            "ent_a_make",
+            Entry(self.root, textvariable=self.sv_a_make, validate="key", validatecommand=vcmd),
+        )
         ent_a_make.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -101,12 +103,13 @@ class ModifyArtistBox(BaseBox):
         # Model input field
         self.sv_a_model = StringVar()
         self.sv_a_model.set(self.model)
-        self.sv_a_model.trace("w", self.validate_input)
+        self.sv_a_model.trace_add("write", self.validate_input)
         lbl_a_model = Label(self.root, text="Model: ")
         lbl_a_model.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
-        ent_a_model = self.add_cmp("ent_a_model", Entry(
-            self.root, textvariable=self.sv_a_model, validate="key", validatecommand=vcmd
-        ))
+        ent_a_model = self.add_cmp(
+            "ent_a_model",
+            Entry(self.root, textvariable=self.sv_a_model, validate="key", validatecommand=vcmd),
+        )
         ent_a_model.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
@@ -145,24 +148,28 @@ class ModifyArtistBox(BaseBox):
         #########################
         # Add and abort buttons #
         #########################
-        btn_abort = self.add_cmp("btn_abort", Button(
-            self.root,
-            text="Abort",
-            command=self.close,
-        ))
+        btn_abort = self.add_cmp(
+            "btn_abort",
+            Button(
+                self.root,
+                text="Abort",
+                command=self.close,
+            ),
+        )
         btn_abort.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
         Hovertip(btn_abort, TooltipDict["btn_abort"])
 
-        btn_add = self.add_cmp("btn_add", Button(
-            self.root,
-            text="Add" if len(artist_data) < 7 else "Update",
-            command=self.add,
-            state=DISABLED,
-        ))
-        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
-        Hovertip(
-            btn_add, TooltipDict["btn_add_art" if len(artist_data) < 7 else "btn_update_art"]
+        btn_add = self.add_cmp(
+            "btn_add",
+            Button(
+                self.root,
+                text="Add" if len(artist_data) < 7 else "Update",
+                command=self.add,
+                state=DISABLED,
+            ),
         )
+        btn_add.grid(row=self.row(), column=3, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        Hovertip(btn_add, TooltipDict["btn_add_art" if len(artist_data) < 7 else "btn_update_art"])
 
         center_window(self.root)
 
