@@ -40,6 +40,8 @@ TooltipDict = {
         \nEverthing is loaded directly after file selection.",
     "btn_reorder": "Reorder all tables of the currently loaded database by date.",
     "cb_dbs": "Select a table from the database to inspect and modify.",
+    "cb_artist_data": "Choose how much data should be presented.",
+    "cb_artist_vis": "Choose how the data should be presented.",
     "btn_add": "Add one element to the selected table.",
     "btn_del": "Delete the element in this row.",
     "btn_mod": "Modify the element in this row.",

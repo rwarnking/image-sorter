@@ -9,14 +9,13 @@ from tkinter import (
     RIGHT,
     Button,
     Frame,
-    IntVar,
     Label,
     StringVar,
     Text,
     filedialog,
     messagebox,
 )
-from tkinter.ttk import Combobox, Radiobutton, Scrollbar, Separator
+from tkinter.ttk import Combobox, Scrollbar, Separator
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -72,8 +71,8 @@ LST_DBS = [
 ARTIST_TABLE = 0
 ARTIST_GANTT = 1
 
-ARTIST_ALL = 0
-ARTIST_CUR = 1
+ARTIST_CUR = 0
+ARTIST_ALL = 1
 
 
 class ModifyDBBox(BaseBox):
@@ -177,12 +176,14 @@ class ModifyDBBox(BaseBox):
 
         def combobox_select(_=None):
             table_id = self.cb_dbs.current()
+
+            self.btn_nextp.pack_forget()
+            self.btn_prevp.pack_forget()
+            self.lbl_page.pack_forget()
             if table_id == C_EVENTS:
                 self.frame_gant.grid_remove()
-                self.rb_artist_table.grid_remove()
-                self.rb_artist_gantt.grid_remove()
-                self.rb_artist_all.grid_remove()
-                self.rb_artist_cur.grid_remove()
+                self.cb_artist_vis.grid_remove()
+                self.cb_artist_data.grid_remove()
                 bd = self.cldr_db.__getitem__("borderwidth")
                 self.cldr_db._cal_frame.pack(fill="both", expand=True, padx=bd, pady=bd)
                 self.cldr_db.grid()
@@ -190,28 +191,32 @@ class ModifyDBBox(BaseBox):
                 self.get_cmp("btn_clear_m").grid()
             elif table_id == C_ARTISTS:
                 self.get_cmp("btn_clear_m").grid_remove()
-                self.cldr_db._cal_frame.pack_forget()
-                self.cldr_db.grid()
-                # self.frame_db_list.grid()
-                self.rb_artist_table.grid()
-                self.rb_artist_gantt.grid()
 
-                if self.iv_artist_vis.get() == ARTIST_TABLE:
+                self.cb_artist_vis.grid()
+                self.cb_artist_data.grid()
+                artist_vis_id = self.cb_artist_vis.current()
+                if artist_vis_id == ARTIST_TABLE:
                     self.frame_gant.grid_remove()
                     self.frame_db_list.grid()
-                elif self.iv_artist_vis.get() == ARTIST_GANTT:
+                elif artist_vis_id == ARTIST_GANTT:
                     self.frame_db_list.grid_remove()
                     self.frame_gant.grid()
-                    self.rb_artist_all.grid()
-                    self.rb_artist_cur.grid()
+                    self.btn_nextp.pack(side="right")
+                    self.lbl_page.pack(side="right")
+                    self.btn_prevp.pack(side="right")
+
+                artist_data_id = self.cb_artist_data.current()
+                if artist_data_id == ARTIST_CUR:
+                    self.cldr_db._cal_frame.pack_forget()
+                    self.cldr_db.grid()
+                elif artist_data_id == ARTIST_ALL:
+                    self.cldr_db.grid_remove()
 
             else:
                 self.cldr_db.grid_remove()
                 self.frame_gant.grid_remove()
-                self.rb_artist_table.grid_remove()
-                self.rb_artist_gantt.grid_remove()
-                self.rb_artist_all.grid_remove()
-                self.rb_artist_cur.grid_remove()
+                self.cb_artist_vis.grid_remove()
+                self.cb_artist_data.grid_remove()
                 self.get_cmp("btn_clear_m").grid_remove()
                 self.frame_db_list.grid()
             self.lbl_info.config(text=InfoArray[InfoCodes.NO_INFO])
@@ -222,10 +227,9 @@ class ModifyDBBox(BaseBox):
             "artists",
             "persons",
         ]
-        # TODO sv_db_select
-        db_select = StringVar()
-        db_select.set(list_dbs[0])
-        self.cb_dbs = self.add_cmp("cb_dbs", Combobox(self.root, textvariable=db_select))
+        sv_db_select = StringVar()
+        sv_db_select.set(list_dbs[0])
+        self.cb_dbs = self.add_cmp("cb_dbs", Combobox(self.root, textvariable=sv_db_select))
         # Write artist values from database
         self.cb_dbs["values"] = list_dbs
         # Prevent typing a value
@@ -241,56 +245,49 @@ class ModifyDBBox(BaseBox):
         ##########################################
         # Select gantt or table view for artists #
         ##########################################
-        self.iv_artist_vis = IntVar()
-        self.iv_artist_vis.set(ARTIST_TABLE)
-
-        self.rb_artist_table = Radiobutton(
-            self.root,
-            text="Table",
-            variable=self.iv_artist_vis,
-            command=combobox_select,
-            value=ARTIST_TABLE,
+        list_avis = [
+            "table",
+            "gant chart",
+        ]
+        sv_avis_select = StringVar()
+        sv_avis_select.set(list_avis[0])
+        self.cb_artist_vis = self.add_cmp(
+            "cb_artist_vis", Combobox(self.root, textvariable=sv_avis_select)
         )
-        self.rb_artist_table.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
-        self.rb_artist_gantt = Radiobutton(
-            self.root,
-            text="Gantt",
-            variable=self.iv_artist_vis,
-            command=combobox_select,
-            value=ARTIST_GANTT,
+        # Write artist values from database
+        self.cb_artist_vis["values"] = list_avis
+        # Prevent typing a value
+        self.cb_artist_vis["state"] = "readonly"
+        # Place the widget
+        self.cb_artist_vis.grid(
+            row=self.row_idx, column=1, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
-        self.rb_artist_gantt.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
+        # Bind callback
+        self.cb_artist_vis.bind("<<ComboboxSelected>>", combobox_select)
+        Hovertip(self.cb_artist_vis, TooltipDict["cb_artist_vis"])
+        self.cb_artist_vis.grid_remove()
 
-        self.rb_artist_table.grid_remove()
-        self.rb_artist_gantt.grid_remove()
-
-        ##########################################
-        # Select gantt or table view for artists #
-        ##########################################
-        self.iv_artist_show = IntVar()
-        self.iv_artist_show.set(ARTIST_CUR)
-
-        self.rb_artist_all = Radiobutton(
-            self.root,
-            text="Show all",
-            variable=self.iv_artist_show,
-            command=lambda: self.updateGUI(self.cb_dbs.current()),
-            value=ARTIST_ALL,
+        list_adata = [
+            "till current date",
+            "all",
+        ]
+        sv_adata_select = StringVar()
+        sv_adata_select.set(list_adata[0])
+        self.cb_artist_data = self.add_cmp(
+            "cb_artist_data", Combobox(self.root, textvariable=sv_adata_select)
         )
-        self.rb_artist_all.grid(row=self.row_idx, column=1, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
-        self.rb_artist_cur = Radiobutton(
-            self.root,
-            text="Show active",
-            variable=self.iv_artist_show,
-            command=lambda: self.updateGUI(self.cb_dbs.current()),
-            value=ARTIST_CUR,
+        # Write artist values from database
+        self.cb_artist_data["values"] = list_adata
+        # Prevent typing a value
+        self.cb_artist_data["state"] = "readonly"
+        # Place the widget
+        self.cb_artist_data.grid(
+            row=self.row(), column=2, columnspan=1, padx=PAD_X, pady=PAD_Y, sticky="EW"
         )
-        self.rb_artist_cur.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="EW")
-
-        self.rb_artist_all.grid_remove()
-        self.rb_artist_cur.grid_remove()
+        # Bind callback
+        self.cb_artist_data.bind("<<ComboboxSelected>>", combobox_select)
+        Hovertip(self.cb_artist_data, TooltipDict["cb_artist_data"])
+        self.cb_artist_data.grid_remove()
 
         #################
         # Calendar view #
@@ -415,22 +412,19 @@ class ModifyDBBox(BaseBox):
 
         self.gantt_chart = GanttChart(self.frame_gant)
 
-        btn_nextp = self.add_cmp(
+        self.btn_nextp = self.add_cmp(
             "btn_nextp",
             Button(self.text_db_add, text=">", command=self.gantt_chart.next_page, width=BTN_W),
         )
-        Hovertip(btn_nextp, TooltipDict["btn_nextp"])
-        btn_nextp.pack(side="right")
+        Hovertip(self.btn_nextp, TooltipDict["btn_nextp"])
 
-        lbl_page = Label(self.text_db_add, textvariable=self.gantt_chart.sv_gpage)
-        lbl_page.pack(side="right")
+        self.lbl_page = Label(self.text_db_add, textvariable=self.gantt_chart.sv_gpage)
 
-        btn_prevp = self.add_cmp(
+        self.btn_prevp = self.add_cmp(
             "btn_prevp",
             Button(self.text_db_add, text="<", command=self.gantt_chart.prev_page, width=BTN_W),
         )
-        Hovertip(btn_prevp, TooltipDict["btn_prevp"])
-        btn_prevp.pack(side="right")
+        Hovertip(self.btn_prevp, TooltipDict["btn_prevp"])
 
         #################################
         # Remove buttons and Info label #
@@ -666,8 +660,17 @@ class ModifyDBBox(BaseBox):
         elif table_id == C_PERSONS:
             lst_content = self.getPersons()
         elif table_id == C_ARTISTS:
-            lst_content = self.getArtists()
-            if self.iv_artist_vis.get() == ARTIST_GANTT:
+            artist_data_id = self.cb_artist_data.current()
+            if artist_data_id == ARTIST_CUR:
+                lst_content = self.getArtists()
+            elif artist_data_id == ARTIST_ALL:
+                lst_content = self.db.get_all("artists")
+            else:
+                # TODO
+                print("ERROR")
+
+            artist_vis_id = self.cb_artist_vis.current()
+            if artist_vis_id == ARTIST_GANTT:
                 self.updateGanttChart(lst_content)
                 return
         else:
@@ -772,16 +775,9 @@ class ModifyDBBox(BaseBox):
                 )
 
     def updateGanttChart(self, lst_artists):
-        if self.iv_artist_show.get() == ARTIST_ALL:
-            data_src = self.db.get_all("artists")
-        elif self.iv_artist_show.get() == ARTIST_CUR:
-            data_src = lst_artists
-        else:
-            # TODO
-            print("ERROR")
-
         # https://stackoverflow.com/questions/19339/transpose-unzip-function-inverse-of-zip
-        components = list(zip(*data_src))
+        components = list(zip(*lst_artists))
+        # TODO index out of range when lst_artists is empty
         infos = [f"{x[0]} {x[1]}" for x in zip(components[ARTIST_MAKE], components[ARTIST_MODEL])]
         start_dates = components[ARTIST_S_DATE]
         end_dates = components[ARTIST_E_DATE]

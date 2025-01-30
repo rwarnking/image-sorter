@@ -66,7 +66,6 @@ class ModifyEventBox(BaseBox):
         ####################
         self.sv_e_title = StringVar()
         self.sv_e_title.set(self.title)
-        # TODO replace all occurances of trace with trace_add if possible
         self.sv_e_title.trace_add("write", self.validate_input)
         lbl_e_title = Label(self.root, text="Title: ")
         lbl_e_title.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="EW")
