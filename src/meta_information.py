@@ -15,20 +15,27 @@ class MetaInformation:
         self.estimated_time_per_file_ms = 100
         self.estimated_time_ms = 0
 
+        # row 1
+        self.recursive = IntVar()
+        self.recursive.set(1)
+        self.process_unmatched = IntVar()
+        self.process_unmatched.set(1)
+        self.process_samename = IntVar()
+        self.process_samename.set(1)
+        # row 2
+        self.require_artist = IntVar()
+        self.require_artist.set(1)
         self.modify_meta = IntVar()
         self.modify_meta.set(1)
         self.overwrite_meta = IntVar()
         self.overwrite_meta.set(1)
-        self.recursive = IntVar()
-        self.recursive.set(1)
+        # row 3
+        self.copy_creation_date = IntVar()
+        self.copy_creation_date.set(1)
+        # row 4
         self.copy_files = IntVar()
         self.copy_files.set(1)
-        self.process_unmatched = IntVar()
-        self.process_unmatched.set(1)
-        self.require_artist = IntVar()
-        self.require_artist.set(1)
-        self.process_samename = IntVar()
-        self.process_samename.set(1)
+
         self.dont_ask_again_fnum = BooleanVar()
         self.dont_ask_again_fnum.set(False)
         self.dont_ask_again_thumb = BooleanVar()
@@ -46,6 +53,11 @@ class MetaInformation:
 
         self.event_selection = StringVar()
         self.artist_selection = StringVar()
+
+        self.sv_ctime = StringVar()
+        self.sv_ctime.set(self.get_copy_cdate_options()[0])
+        self.sv_mtime = StringVar()
+        self.sv_mtime.set(self.get_copy_mdate_options()[1])
 
         self.text_queue = queue.Queue()
 
@@ -140,6 +152,26 @@ class MetaInformation:
             "%Y_[%m_%d",
             "",
             "%Y%m%d",
+        ]
+    
+    def get_copy_cdate_options(self):
+        """
+        Returns a list of options how to copy the creation date.
+        """
+        return [
+            "Date of original image taken",
+            "Date of original file creation",
+            "Today, now",
+        ]
+    
+    def get_copy_mdate_options(self):
+        """
+        Returns a list of options how to copy the modify date.
+        """
+        return [
+            "Date of original image taken",
+            "Date of original file modification",
+            "Today, now",
         ]
 
     def update_estimated_time(self, filecount: int):

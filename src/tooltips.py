@@ -28,6 +28,10 @@ TooltipDict = {
         \nIf enabled information like title & artist are added to the metadata.",
     "cb_overmeta": "Enable or disable overwriting metadata.\
         \nIf enabled metadata information is overwriten in case it is already present.",
+    "cb_ctime_select": "Selection for how to set the creation date.\
+        \nThis should only be changed when you know what you are doing.",
+    "cb_mtime_select": "Selection for how to set the modification date.\
+        \nThis should only be changed when you know what you are doing.",
     "rbtn_copyfile": "If selected the images are copied.",
     "rbtn_movefile": "If selected the images are moved.",
     # Main application: last section

@@ -297,6 +297,44 @@ class MainApp:
         cb_overmeta.grid(row=self.row(), column=2, padx=PAD_X, pady=PAD_Y, sticky="W")
         Hovertip(cb_overmeta, TooltipDict["cb_overmeta"])
 
+        # Select how the creation and modification date should be selected.
+        # By default the creation date is the date at which the image was taken,
+        # while the modification date is copied from the original.
+        list_ctime_choices = self.meta_info.get_copy_cdate_options()
+        lbl = Label(window, text="Select creation date for output image:")
+        lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        cb_ctime_select = Combobox(window, textvariable=self.meta_info.sv_ctime)
+        # Write file signatures
+        cb_ctime_select["values"] = list_ctime_choices
+        # Prevent typing a value
+        cb_ctime_select["state"] = "readonly"
+        # Place the widget
+        cb_ctime_select.grid(
+            row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+        # Assign width
+        cb_ctime_select["width"] = len(max(list_ctime_choices, key=len))
+        Hovertip(cb_ctime_select, TooltipDict["cb_ctime_select"])
+
+        list_mtime_choices = self.meta_info.get_copy_mdate_options()
+        lbl = Label(window, text="Select modification date for output image:")
+        lbl.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
+
+        cb_ctime_select = Combobox(window, textvariable=self.meta_info.sv_mtime)
+        # Write file signatures
+        cb_ctime_select["values"] = list_mtime_choices
+        # Prevent typing a value
+        cb_ctime_select["state"] = "readonly"
+        # Place the widget
+        cb_ctime_select.grid(
+            row=self.row(), column=1, columnspan=2, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+        # Assign width
+        cb_ctime_select["width"] = len(max(list_mtime_choices, key=len))
+        Hovertip(cb_ctime_select, TooltipDict["cb_mtime_select"])
+        
+        # Radiobuttons for move or copy
         rbtn_copy = Radiobutton(
             window, text="Copy files", variable=self.meta_info.copy_files, value=1
         )

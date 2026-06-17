@@ -2,9 +2,11 @@ import datetime
 import os
 import re
 import shutil
+import pathlib
 from os.path import isfile, join
 from tkinter import messagebox
 from typing import Any, Union
+from win32_setctime import setctime
 
 import piexif
 from database import Database
@@ -13,6 +15,7 @@ from guiboxes.messagebox import MessageBox
 from guiboxes.selectionbox import SelectionBox
 from helper import test_time_frame_outside
 from meta_information import MetaInformation
+
 
 META = 1
 NAME = 2
@@ -44,12 +47,14 @@ class Sorter:
         # These variables are duplicates of the metadata vars.
         # This is done to improve the performance since these get() functions can get expensive
         # and should therefore not be called for each processed file
-        self.copy_files = self.meta_info.copy_files.get()
         self.process_unmatched = self.meta_info.process_unmatched.get()
-        self.require_artist = self.meta_info.require_artist.get()
         self.process_samename = self.meta_info.process_samename.get()
+        self.require_artist = self.meta_info.require_artist.get()
         self.modify_meta = self.meta_info.modify_meta.get()
         self.overwrite_meta = self.meta_info.overwrite_meta.get()
+        self.copy_ctime_select = self.meta_info.sv_ctime.get()
+        self.copy_mtime_select = self.meta_info.sv_mtime.get()
+        self.copy_files = self.meta_info.copy_files.get()
 
         self.in_signature = self.meta_info.in_signature.get()
         self.file_signature = self.meta_info.file_signature.get()
@@ -142,7 +147,7 @@ class Sorter:
             ##################
             # JPG processing #
             ##################
-            if f_ext == ".jpg":
+            if f_ext == ".jpg" or f_ext == ".jpeg":
                 # Get all available file information from metadata
                 a_name1, a_make, a_model = self.get_img_artist(src_dir, f_name_cpl_old)
                 # Afterwards get event data
@@ -237,7 +242,7 @@ class Sorter:
         # Move or copy file #
         #####################
         tgt_dir = join(tgt_dir, event_dir)
-        self.move_or_copy_image(tgt_dir, src_dir, f_name_cpl_old, f_name_cpl_new)
+        self.move_or_copy_image(tgt_dir, src_dir, f_name_cpl_old, f_name_cpl_new, f_date)
 
         ####################################
         # Move or copy similar named files #
@@ -252,7 +257,7 @@ class Sorter:
                 # If the file has the same name but is a different file and is not a .jpg
                 if tmp_name == f_name_old.lower() and tmp_ext != ".jpg" and tmp_ext != f_ext:
                     count += 1
-                    self.move_or_copy_image(tgt_dir, src_dir, file, f_name_new + tmp_ext)
+                    self.move_or_copy_image(tgt_dir, src_dir, file, f_name_new + tmp_ext, f_date)
                     self.filelist[file_idx + idx + 1] = None
 
         assert not (self.process_samename == 1 and self.file_signature == "Foldername_Number")
@@ -261,13 +266,45 @@ class Sorter:
         # Modify metadata #
         ###################
         # Only modifies the file in the new folder not the original
-        if self.modify_meta > 0 and f_ext == ".jpg":
+        if self.modify_meta > 0 and (f_ext == ".jpg" or f_ext == ".jpeg"):
             meta_fields = [
                 {"dict": "0th", "key": piexif.ImageIFD.ImageDescription, "value": e_title},
                 {"dict": "0th", "key": piexif.ImageIFD.Artist, "value": a_name2},
                 {"dict": "Exif", "key": piexif.ExifIFD.DateTimeOriginal, "value": f_date},
+                {"dict": "Exif", "key": piexif.ExifIFD.DateTimeDigitized, "value": f_date},
             ]
+
             self.modify_metadata_piexif(join(tgt_dir, f_name_cpl_new), meta_fields)
+
+        # dates of file copy
+        atime_new = os.path.getatime(join(tgt_dir, f_name_cpl_new))
+        ctime_new = os.path.getctime(join(tgt_dir, f_name_cpl_new))
+        mtime_new = os.path.getmtime(join(tgt_dir, f_name_cpl_new))
+
+        ctime_options = self.meta_info.get_copy_cdate_options()
+        # Take original image creation time
+        if self.copy_ctime_select == ctime_options[0] and f_date:
+            ctime_new = f_date.timestamp()
+        # Take original file creation time since no image creation time exists
+        elif self.copy_ctime_select == ctime_options[0] and not f_date:
+            ctime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
+        # Take original file creation time
+        elif self.copy_ctime_select == ctime_options[1]:
+            ctime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
+            
+        mtime_options = self.meta_info.get_copy_mdate_options()
+        # Take original time of image taken
+        if self.copy_mtime_select == mtime_options[0] and f_date:
+            mtime_new = f_date.timestamp()
+        # Take original file creation time since no image creation time exists
+        elif self.copy_mtime_select == mtime_options[0] and not f_date:
+            mtime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
+        # Take original time of file modification
+        elif self.copy_mtime_select == mtime_options[1]:
+            mtime_new = os.path.getmtime(join(src_dir, f_name_cpl_old))
+
+        setctime(join(tgt_dir, f_name_cpl_new), ctime_new, follow_symlinks=True)
+        os.utime(join(tgt_dir, f_name_cpl_new), (atime_new, mtime_new))
 
         return count
 
@@ -453,7 +490,7 @@ class Sorter:
         return (new_name, new_name_ext)
 
     def move_or_copy_image(
-        self, event_dir: str, src_dir: str, name_cpl_old: str, name_cpl_new: str
+        self, event_dir: str, src_dir: str, name_cpl_old: str, name_cpl_new: str, f_date: datetime.datetime = None
     ):
         """Depending on the settings move or copy the given file with the new filename."""
         assert isfile(join(src_dir, name_cpl_old))
@@ -475,7 +512,7 @@ class Sorter:
 
     def get_img_artist(self, src_dir: str, f_name: str):
         """Collect and return the image artist information."""
-        assert f_name.endswith(".jpg")
+        assert f_name.endswith(".jpg") or f_name.endswith(".jpeg")
         try:
             exif_dict = piexif.load(join(src_dir, f_name))
             # If present get the artist from metadata
@@ -523,7 +560,7 @@ class Sorter:
     def get_img_date_by_metadata(self, source_dir: str, file: str, file_extension: str):
         """Parse the image date from the exif metadata of the given file."""
         # Check if the file has metadata that can be parsed
-        if file_extension == ".jpg":
+        if file_extension == ".jpg" or file_extension == ".jpeg":
             try:
                 exif_dict = piexif.load(join(source_dir, file))
                 # https://www.ffsf.de/threads/exif-datetimeoriginal-oder-datetimedigitized.9913/
@@ -641,7 +678,7 @@ class Sorter:
     # https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
     def get_new_filename(self, event_dir: str, date: datetime.datetime):
         """
-        Create a filename using the given and date.
+        Create a filename using the given string and date.
         Uses get_supported_file_signatures to switch between different signatures.
         """
         filename = ""
@@ -709,6 +746,9 @@ class Sorter:
                 v = v.strftime("%Y:%m:%d %H:%M:%S")
                 # Convert to binary
                 v = v.encode("ascii")
+            # Special case: GPS
+            elif isinstance(v, dict) and k == None:
+                pass
             else:
                 assert isinstance(v, str)
 
@@ -721,7 +761,10 @@ class Sorter:
             ):
                 v = v.encode("utf-16le")
 
-            if (
+            # TODO improve this
+            if k == None:
+                exif_dict[d] = v
+            elif (
                 self.overwrite_meta > 0
                 or k not in exif_dict[d]
                 or len((exif_dict[d][k]).decode("ascii")) < 1

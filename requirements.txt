@@ -16,5 +16,6 @@ python-dateutil
 setuptools>=51.3.3
 six
 tkcalendar>=1.6.1
+win32_setctime
 XlsxWriter
 zipp
