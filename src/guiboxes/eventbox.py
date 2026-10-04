@@ -8,9 +8,9 @@ from database import Database
 from dateutils import TimeFrameSelector
 from debug_messages import WarningArray, WarningCodes
 from guiboxes.basebox import BTN_W, LINE_H, PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, WINDOW_W, BaseBox
+from guiboxes.gpsbox import ModifyGPSBox
 from guiboxes.participantbox import ModifyParticipantBox
 from guiboxes.subeventbox import ModifySubeventBox
-from guiboxes.gpsbox import ModifyGPSBox
 from helper import center_window, limit_input, test_time_frame_outside, test_time_frame_swap
 from tooltips import TooltipDict
 
@@ -390,7 +390,14 @@ class ModifyEventBox(BaseBox):
             s_date_se = datetime.fromisoformat(elem_gps_data[1])
             e_date_se = datetime.fromisoformat(elem_gps_data[2])
 
-            self.db.insert_gpscoord(self.e_id, elem_gps_data[0], s_date_se, e_date_se, float(elem_gps_data[3]), float(elem_gps_data[4]))
+            self.db.insert_gpscoord(
+                self.e_id,
+                elem_gps_data[0],
+                s_date_se,
+                e_date_se,
+                float(elem_gps_data[3]),
+                float(elem_gps_data[4]),
+            )
 
         self.changed = True
         self.close()

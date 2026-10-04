@@ -1,5 +1,4 @@
 import re
-
 from datetime import datetime
 from fractions import Fraction
 from tkinter import Tk, Toplevel, messagebox
@@ -51,9 +50,11 @@ def limit_input(S: str):
     """Returns true if the input character is a whitespace, -, _, a number or a letter."""
     return str.isalnum(S) or str.isspace(S) or S == "-" or S == "_" or S == "&"
 
+
 def limit_input_float(input: str):
     """Returns true if the input is a float"""
     return re.fullmatch(r"\d*(\.\d*)?", input) is not None
+
 
 def test_time_frame(
     frame_start: datetime,
@@ -97,6 +98,7 @@ def test_time_frame_swap(test_frame_start: datetime, test_frame_end: datetime):
         return WarningCodes.WARNING_DATE_SWAP
     return None
 
+
 # https://stackoverflow.com/questions/77015464/
 def deg_to_dms(decimal_coordinate, cardinal_directions):
     """
@@ -122,6 +124,7 @@ def deg_to_dms(decimal_coordinate, cardinal_directions):
     seconds = Fraction((decimal_minutes - minutes) * 60).limit_denominator(100)
     return degrees, minutes, seconds, compass_direction
 
+
 def dms_to_exif_format(dms_degrees, dms_minutes, dms_seconds):
     """
     This function converts DMS (degrees, minutes and seconds) to values that can
@@ -136,6 +139,9 @@ def dms_to_exif_format(dms_degrees, dms_minutes, dms_seconds):
     exif_format = (
         (dms_degrees, 1),
         (dms_minutes, 1),
-        (int(dms_seconds.limit_denominator(100).numerator), int(dms_seconds.limit_denominator(100).denominator))
+        (
+            int(dms_seconds.limit_denominator(100).numerator),
+            int(dms_seconds.limit_denominator(100).denominator),
+        ),
     )
     return exif_format

@@ -31,14 +31,14 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # Get last tag
       # https://github.com/marketplace/actions/get-latest-tag
       - name: Get previous tag
         id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v2"
         with:
           fallback: 0.0.1
       # Create new tag
@@ -97,14 +97,14 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
       # Get last tag
       # https://github.com/marketplace/actions/get-latest-tag
       - name: Get previous tag
         id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        uses: "WyriHaximus/github-action-get-previous-tag@v2"
       # Check if changelog file exists
       - name: Check file existence
         if: ${{ needs.create_tag.outputs.output1 == '1' }}
@@ -154,9 +154,9 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7
       - name: Build
         run: |
           pip install -r requirements.txt
@@ -186,9 +186,9 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v7
       - name: Build
         run: |
           pip install -r requirements.txt
@@ -218,7 +218,7 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
       - name: Build
         run: |
           pip install -r requirements.txt

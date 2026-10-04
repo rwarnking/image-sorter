@@ -64,6 +64,8 @@
             }
         }
     ],
+    "gpscoords": [
+    ],
     "participants": [ 
         {
             "paid": 1,

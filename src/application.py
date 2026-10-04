@@ -333,7 +333,7 @@ class MainApp:
         # Assign width
         cb_ctime_select["width"] = len(max(list_mtime_choices, key=len))
         Hovertip(cb_ctime_select, TooltipDict["cb_mtime_select"])
-        
+
         # Radiobuttons for move or copy
         rbtn_copy = Radiobutton(
             window, text="Copy files", variable=self.meta_info.copy_files, value=1

@@ -7,7 +7,13 @@ from database import Database
 from dateutils import TimeFrameSelector
 from debug_messages import WarningArray, WarningCodes
 from guiboxes.basebox import PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, BaseBox
-from helper import center_window, limit_input, limit_input_float, test_time_frame, test_time_frame_swap
+from helper import (
+    center_window,
+    limit_input,
+    limit_input_float,
+    test_time_frame,
+    test_time_frame_swap,
+)
 from tooltips import TooltipDict
 
 
@@ -96,7 +102,12 @@ class ModifyGPSBox(BaseBox):
         lbl_gps_latitude.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
         ent_gps_latitude = self.add_cmp(
             "ent_gps_latitude",
-            Entry(self.root, textvariable=self.sv_gps_latitude, validate="key", validatecommand=vcmd_f),
+            Entry(
+                self.root,
+                textvariable=self.sv_gps_latitude,
+                validate="key",
+                validatecommand=vcmd_f,
+            ),
         )
         ent_gps_latitude.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -110,7 +121,12 @@ class ModifyGPSBox(BaseBox):
         lbl_gps_longitude.grid(row=self.row_idx, column=0, padx=PAD_X, pady=PAD_Y, sticky="W")
         ent_gps_longitude = self.add_cmp(
             "ent_gps_longitude",
-            Entry(self.root, textvariable=self.sv_gps_longitude, validate="key", validatecommand=vcmd_f),
+            Entry(
+                self.root,
+                textvariable=self.sv_gps_longitude,
+                validate="key",
+                validatecommand=vcmd_f,
+            ),
         )
         ent_gps_longitude.grid(
             row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
@@ -197,6 +213,10 @@ class ModifyGPSBox(BaseBox):
         start_date = self.get_cmp("tfs_gps").get_start_date()
         end_date = self.get_cmp("tfs_gps").get_end_date()
 
-        self.gps = f"{self.sv_gps_title.get()}{SEPARATOR}{start_date}{SEPARATOR}{end_date}{SEPARATOR}{self.sv_gps_latitude.get()}{SEPARATOR}{self.sv_gps_longitude.get()}"
+        self.gps = f"{self.sv_gps_title.get()}\
+            {SEPARATOR}{start_date}\
+            {SEPARATOR}{end_date}\
+            {SEPARATOR}{self.sv_gps_latitude.get()}\
+            {SEPARATOR}{self.sv_gps_longitude.get()}"
         self.changed = True
         self.close()

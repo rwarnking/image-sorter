@@ -564,6 +564,9 @@ class ModifyDBBox(BaseBox):
             box = ModifyArtistBox("Add artist", self.db, date)
         elif table_id == C_PERSONS:
             box = ModifyPersonBox("Add person", self.db)
+        # TODO throw error
+        else:
+            return
 
         if box.changed:
             self.updateGUI(table_id)
@@ -585,6 +588,9 @@ class ModifyDBBox(BaseBox):
             box = ModifyArtistBox("Modify artist", self.db, elem)
         elif table_id == C_PERSONS:
             box = ModifyPersonBox("Modify person", self.db, elem)
+        # TODO throw error
+        else:
+            return
 
         if box.changed:
             self.updateGUI(table_id)
@@ -610,6 +616,9 @@ class ModifyDBBox(BaseBox):
         elif table_id == C_PERSONS:
             elm_data = elem.split(SEPARATOR)
             info = self.db.delete_person(elm_data[1])
+        # TODO throw error
+        else:
+            return
 
         self.updateGUI(table_id)
         self.lbl_info.config(text=InfoArray[info], fg="#0a0" if info < 9 else "#a00")

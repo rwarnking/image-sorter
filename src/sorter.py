@@ -2,11 +2,10 @@ import datetime
 import os
 import re
 import shutil
-import pathlib
+import sys
 from os.path import isfile, join
 from tkinter import messagebox
 from typing import Any, Union
-from win32_setctime import setctime
 
 import piexif
 from database import Database
@@ -15,7 +14,7 @@ from guiboxes.messagebox import MessageBox
 from guiboxes.selectionbox import SelectionBox
 from helper import deg_to_dms, dms_to_exif_format, test_time_frame_outside
 from meta_information import MetaInformation
-
+from win32_setctime import setctime
 
 META = 1
 NAME = 2
@@ -238,11 +237,37 @@ class Sorter:
         else:
             f_name_new, f_name_cpl_new = f_name_old, f_name_cpl_old
 
+        #####################################
+        # Get datetime of the original file #
+        #####################################
+        # Must be done before moving the file
+        ctime_options = self.meta_info.get_copy_cdate_options()
+        # Take original image creation time
+        if self.copy_ctime_select == ctime_options[0] and f_date:
+            ctime_new = f_date.timestamp()
+        # Take original file creation time since no image creation time exists
+        elif self.copy_ctime_select == ctime_options[0] and not f_date:
+            ctime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
+        # Take original file creation time
+        elif self.copy_ctime_select == ctime_options[1]:
+            ctime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
+
+        mtime_options = self.meta_info.get_copy_mdate_options()
+        # Take original time of image taken
+        if self.copy_mtime_select == mtime_options[0] and f_date:
+            mtime_new = f_date.timestamp()
+        # Take original file creation time since no image creation time exists
+        elif self.copy_mtime_select == mtime_options[0] and not f_date:
+            mtime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
+        # Take original time of file modification
+        elif self.copy_mtime_select == mtime_options[1]:
+            mtime_new = os.path.getmtime(join(src_dir, f_name_cpl_old))
+
         #####################
         # Move or copy file #
         #####################
         tgt_dir = join(tgt_dir, event_dir)
-        self.move_or_copy_image(tgt_dir, src_dir, f_name_cpl_old, f_name_cpl_new, f_date)
+        self.move_or_copy_image(tgt_dir, src_dir, f_name_cpl_old, f_name_cpl_new)
 
         ####################################
         # Move or copy similar named files #
@@ -257,7 +282,7 @@ class Sorter:
                 # If the file has the same name but is a different file and is not a .jpg
                 if tmp_name == f_name_old.lower() and tmp_ext != ".jpg" and tmp_ext != f_ext:
                     count += 1
-                    self.move_or_copy_image(tgt_dir, src_dir, file, f_name_new + tmp_ext, f_date)
+                    self.move_or_copy_image(tgt_dir, src_dir, file, f_name_new + tmp_ext)
                     self.filelist[file_idx + idx + 1] = None
 
         assert not (self.process_samename == 1 and self.file_signature == "Foldername_Number")
@@ -275,55 +300,45 @@ class Sorter:
                 {"dict": "Exif", "key": piexif.ExifIFD.DateTimeDigitized, "value": f_date},
             ]
 
-            if gps_coord := self.get_gpscoord_by_dateid(f_date, e_id):                
-                # converts the latitude and longitude coordinates to DMS
-                latitude_dms = deg_to_dms(gps_coord[3], ["S", "N"])
-                longitude_dms = deg_to_dms(gps_coord[4], ["W", "E"])
+            if e_id and f_date:
+                if gps_coord := self.get_gpscoord_by_dateid(f_date, e_id):
+                    # converts the latitude and longitude coordinates to DMS
+                    latitude_dms = deg_to_dms(gps_coord[3], ["S", "N"])
+                    longitude_dms = deg_to_dms(gps_coord[4], ["W", "E"])
 
-                # convert the DMS values to EXIF values
-                exif_latitude = dms_to_exif_format(latitude_dms[0], latitude_dms[1], latitude_dms[2])
-                exif_longitude = dms_to_exif_format(longitude_dms[0], longitude_dms[1], longitude_dms[2])
+                    # convert the DMS values to EXIF values
+                    exif_latitude = dms_to_exif_format(
+                        latitude_dms[0], latitude_dms[1], latitude_dms[2]
+                    )
+                    exif_longitude = dms_to_exif_format(
+                        longitude_dms[0], longitude_dms[1], longitude_dms[2]
+                    )
 
-                meta_fields.append(
-                    {"dict": "GPS", "key": None, "value": {
-                        piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
-                        piexif.GPSIFD.GPSLatitude: exif_latitude,
-                        piexif.GPSIFD.GPSLatitudeRef: latitude_dms[3],
-                        piexif.GPSIFD.GPSLongitude: exif_longitude,
-                        piexif.GPSIFD.GPSLongitudeRef: longitude_dms[3]
-                    }},
-                )
+                    meta_fields.append(
+                        {
+                            "dict": "GPS",
+                            "key": None,
+                            "value": {
+                                piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
+                                piexif.GPSIFD.GPSLatitude: exif_latitude,
+                                piexif.GPSIFD.GPSLatitudeRef: latitude_dms[3],
+                                piexif.GPSIFD.GPSLongitude: exif_longitude,
+                                piexif.GPSIFD.GPSLongitudeRef: longitude_dms[3],
+                            },
+                        },
+                    )
 
             self.modify_metadata_piexif(join(tgt_dir, f_name_cpl_new), meta_fields)
 
-        # dates of file copy
+        ################################
+        # Get datetime of the new file #
+        ################################
         atime_new = os.path.getatime(join(tgt_dir, f_name_cpl_new))
         ctime_new = os.path.getctime(join(tgt_dir, f_name_cpl_new))
         mtime_new = os.path.getmtime(join(tgt_dir, f_name_cpl_new))
 
-        ctime_options = self.meta_info.get_copy_cdate_options()
-        # Take original image creation time
-        if self.copy_ctime_select == ctime_options[0] and f_date:
-            ctime_new = f_date.timestamp()
-        # Take original file creation time since no image creation time exists
-        elif self.copy_ctime_select == ctime_options[0] and not f_date:
-            ctime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
-        # Take original file creation time
-        elif self.copy_ctime_select == ctime_options[1]:
-            ctime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
-            
-        mtime_options = self.meta_info.get_copy_mdate_options()
-        # Take original time of image taken
-        if self.copy_mtime_select == mtime_options[0] and f_date:
-            mtime_new = f_date.timestamp()
-        # Take original file creation time since no image creation time exists
-        elif self.copy_mtime_select == mtime_options[0] and not f_date:
-            mtime_new = os.path.getctime(join(src_dir, f_name_cpl_old))
-        # Take original time of file modification
-        elif self.copy_mtime_select == mtime_options[1]:
-            mtime_new = os.path.getmtime(join(src_dir, f_name_cpl_old))
-
-        setctime(join(tgt_dir, f_name_cpl_new), ctime_new, follow_symlinks=True)
+        if sys.platform == "win32":
+            setctime(join(tgt_dir, f_name_cpl_new), ctime_new, follow_symlinks=True)
         os.utime(join(tgt_dir, f_name_cpl_new), (atime_new, mtime_new))
 
         return count
@@ -526,7 +541,11 @@ class Sorter:
         return (new_name, new_name_ext)
 
     def move_or_copy_image(
-        self, event_dir: str, src_dir: str, name_cpl_old: str, name_cpl_new: str, f_date: datetime.datetime = None
+        self,
+        event_dir: str,
+        src_dir: str,
+        name_cpl_old: str,
+        name_cpl_new: str,
     ):
         """Depending on the settings move or copy the given file with the new filename."""
         assert isfile(join(src_dir, name_cpl_old))
@@ -643,10 +662,8 @@ class Sorter:
                 try:
                     return datetime.datetime.strptime(match, strptime + file_extension)
                 except ValueError:
-                    self.meta_info.text_queue.put(
-                        f"Time data not readable for file: \
-                            {file}, {strptime}, {file_extension}.\n"
-                    )
+                    self.meta_info.text_queue.put(f"Time data not readable for file: \
+                        {file}, {strptime}, {file_extension}.\n")
                     return None
 
         # If this is reached no matching signature was found
@@ -783,7 +800,7 @@ class Sorter:
                 # Convert to binary
                 v = v.encode("ascii")
             # Special case: GPS
-            elif isinstance(v, dict) and k == None:
+            elif isinstance(v, dict) and k is None:
                 pass
             else:
                 assert isinstance(v, str)
@@ -798,7 +815,7 @@ class Sorter:
                 v = v.encode("utf-16le")
 
             # TODO improve this
-            if k == None:
+            if k is None:
                 exif_dict[d] = v
             elif (
                 self.overwrite_meta > 0

@@ -109,52 +109,43 @@ class Database:
 
     def create_tables(self):
         """Creates tables for events, subevents, persons, artists & participants."""
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS events( \
+        self.conn.execute("CREATE TABLE IF NOT EXISTS events( \
             eid INTEGER PRIMARY KEY ASC, \
-            title STRING, start_date TIMESTAMP, end_date TIMESTAMP)"
-        )
+            title STRING, start_date TIMESTAMP, end_date TIMESTAMP)")
 
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS subevents( \
+        self.conn.execute("CREATE TABLE IF NOT EXISTS subevents( \
             seid INTEGER PRIMARY KEY ASC, \
             event_id INT NOT NULL, \
             title STRING, start_date TIMESTAMP, end_date TIMESTAMP, \
             FOREIGN KEY (event_id) \
-                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)"
-        )
+                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)")
 
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS gpscoords( \
+        self.conn.execute("CREATE TABLE IF NOT EXISTS gpscoords( \
             gpsid INTEGER PRIMARY KEY ASC, \
             event_id INT NOT NULL, \
-            title STRING, start_date TIMESTAMP, end_date TIMESTAMP, latitude FLOAT, longitude FLOAT, \
+            title STRING, start_date TIMESTAMP, end_date TIMESTAMP, \
+            latitude FLOAT, longitude FLOAT, \
             FOREIGN KEY (event_id) \
-                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)"
-        )
+                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)")
 
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS persons (pid INTEGER PRIMARY KEY ASC, name STRING)"
         )
 
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS artists(\
+        self.conn.execute("CREATE TABLE IF NOT EXISTS artists(\
             aid INTEGER PRIMARY KEY ASC, \
             person_id INT, make TEXT, model TEXT, \
             start_date TIMESTAMP, end_date TIMESTAMP, time_shift TEXT, \
-            FOREIGN KEY (person_id) REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)"
-        )
+            FOREIGN KEY (person_id) REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)")
 
-        self.conn.execute(
-            "CREATE TABLE IF NOT EXISTS participants (\
+        self.conn.execute("CREATE TABLE IF NOT EXISTS participants (\
             paid INTEGER PRIMARY KEY ASC, \
             person_id INT NOT NULL, event_id INT NOT NULL, \
             start_date TIMESTAMP, end_date TIMESTAMP, \
             FOREIGN KEY (event_id) \
                 REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE, \
             FOREIGN KEY (person_id) \
-                REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)"
-        )
+                REFERENCES persons (pid) ON DELETE CASCADE ON UPDATE CASCADE)")
 
     def load_from_json(self, file: str):
         """
@@ -701,7 +692,7 @@ class Database:
         self.clean("gpscoords")
         for gpscoord in gpscoords:
             err |= (
-                self.insert_subevent(
+                self.insert_gpscoord(
                     gpscoord[GPS_E_ID],
                     gpscoord[GPS_TITLE],
                     gpscoord[GPS_S_DATE],
@@ -1617,7 +1608,14 @@ class Database:
     # GPS coords related
     ###############################################################################################
     def validate_gpscoord(
-        self, event_id: int, title: str, start_date: datetime, end_date: datetime, latitude: float, longitude: float, gpsid: int = 1
+        self,
+        event_id: int,
+        title: str,
+        start_date: datetime,
+        end_date: datetime,
+        latitude: float,
+        longitude: float,
+        gpsid: int = 1,
     ):
         """
         Validation function to test and guarantee, that the given parameter are valid and match
@@ -1654,13 +1652,26 @@ class Database:
 
         event = self.get("events", ("eid", event_id))[0]
         if test_time_frame_outside(event[2], event[3], start_date, end_date) is not None:
-            return wbox(f"GPS coordinate ({gpsid}, {title}): Timeframe does not match parent event.")
+            return wbox(
+                f"GPS coordinate ({gpsid}, {title}): Timeframe does not match parent event."
+            )
 
         return InfoCodes.VAL_SUCCESS
 
-    def insert_gpscoord(self, event_id: int, title: str, start_date: datetime, end_date: datetime, latitude: float, longitude: float):
+    def insert_gpscoord(
+        self,
+        event_id: int,
+        title: str,
+        start_date: datetime,
+        end_date: datetime,
+        latitude: float,
+        longitude: float,
+    ):
         """Add a GPS coordinate to the database table using the given data."""
-        if self.validate_gpscoord(event_id, title, start_date, end_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+        if (
+            self.validate_gpscoord(event_id, title, start_date, end_date, latitude, longitude)
+            == InfoCodes.VAL_ERROR
+        ):
             return InfoCodes.ADD_ERROR
 
         return self.insert(
@@ -1674,13 +1685,23 @@ class Database:
         )
 
     def insert_gpscoord_with_id(
-        self, seid: int, event_id: int, title: str, start_date: datetime, end_date: datetime, latitude: float, longitude: float
+        self,
+        seid: int,
+        event_id: int,
+        title: str,
+        start_date: datetime,
+        end_date: datetime,
+        latitude: float,
+        longitude: float,
     ):
         """
         Add a GPS coodindate to the database table using the given data and a specific ID.
         Only use this function if it is import to have a specific ID.
         """
-        if self.validate_gpscoord(event_id, title, start_date, end_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+        if (
+            self.validate_gpscoord(event_id, title, start_date, end_date, latitude, longitude)
+            == InfoCodes.VAL_ERROR
+        ):
             return InfoCodes.ADD_ERROR
 
         return self.insert_with_id(
@@ -1713,9 +1734,15 @@ class Database:
         Wrapper function to update a GPS coordinate. The given arguments specify the attributes
         of the GPS coordinate that shall be updated and how its new values look like.
         """
-        if self.validate_gpscoord(event_id, title, s_date, e_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+        if (
+            self.validate_gpscoord(event_id, title, s_date, e_date, latitude, longitude)
+            == InfoCodes.VAL_ERROR
+        ):
             return InfoCodes.MOD_ERROR
-        if self.validate_gpscoord(event_id, n_title, n_s_date, n_e_date, n_latitude, n_longitude) == InfoCodes.VAL_ERROR:
+        if (
+            self.validate_gpscoord(event_id, n_title, n_s_date, n_e_date, n_latitude, n_longitude)
+            == InfoCodes.VAL_ERROR
+        ):
             return InfoCodes.MOD_ERROR
 
         return self.update(
@@ -1728,12 +1755,23 @@ class Database:
             ("longitude", longitude, n_longitude),
         )
 
-    def delete_gpscoord(self, event_id: int, title: str, s_date: datetime, e_date: datetime, latitude: float, longitude: float):
+    def delete_gpscoord(
+        self,
+        event_id: int,
+        title: str,
+        s_date: datetime,
+        e_date: datetime,
+        latitude: float,
+        longitude: float,
+    ):
         """
         OBACHT: unused function
         Delete the specified GPS coordinate.
         """
-        if self.validate_gpscoord(event_id, title, s_date, e_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+        if (
+            self.validate_gpscoord(event_id, title, s_date, e_date, latitude, longitude)
+            == InfoCodes.VAL_ERROR
+        ):
             return InfoCodes.DEL_ERROR
 
         return self.delete(

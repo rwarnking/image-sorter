@@ -153,7 +153,7 @@ class MetaInformation:
             "",
             "%Y%m%d",
         ]
-    
+
     def get_copy_cdate_options(self):
         """
         Returns a list of options how to copy the creation date.
@@ -163,7 +163,7 @@ class MetaInformation:
             "Date of original file creation",
             "Today, now",
         ]
-    
+
     def get_copy_mdate_options(self):
         """
         Returns a list of options how to copy the modify date.
