@@ -58,11 +58,17 @@ TooltipDict = {
     "btn_del_part": "Delete this participant from the event.",
     "btn_add_sube": "Add a subevent to the event.",
     "btn_del_sube": "Delete this subevent from the event.",
+    "btn_add_gps": "Add a GPS coordinate to the event.",
+    "btn_del_gps": "Delete a GPS coordinate from the event.",
     "btn_add_event": "Add or update this event to the event table and the database.",
     # Add/Mod participant window
     "cb_part_person": "Enter or select the person that is the participant.",
     # Add/Mod subevent window
     "ent_se_title": "Enter the title of the subevent.",
+    # Add/Mod gps coordinate window
+    "ent_gps_title": "Enter the title of the gps coordinate.",
+    "ent_gps_lat": "Enter the latitude of the gps coordinate.",
+    "ent_gps_lon": "Enter the longitude of the gps coordinate.",
     # Add/Mod artist window
     "cb_a_person": "Enter or select the person that is the artist.",
     "ent_a_make": "Set the camera make of the artist.",

@@ -27,6 +27,13 @@ SEVENT_E_ID = 1
 SEVENT_TITLE = 2
 SEVENT_S_DATE = 3
 SEVENT_E_DATE = 4
+GPS_ID = 0
+GPS_E_ID = 1
+GPS_TITLE = 2
+GPS_S_DATE = 3
+GPS_E_DATE = 4
+GPS_LAT = 5
+GPS_LON = 6
 PART_ID = 0
 PART_P_ID = 1
 PART_E_ID = 2
@@ -67,6 +74,15 @@ COLUMN_NAMES = {
         "start_date",
         "end_date",
     ],
+    "gpscoords": [
+        "gpsid",
+        "event_id",
+        "title",
+        "start_date",
+        "end_date",
+        "latitude",
+        "longitude",
+    ],
 }
 
 
@@ -104,6 +120,15 @@ class Database:
             seid INTEGER PRIMARY KEY ASC, \
             event_id INT NOT NULL, \
             title STRING, start_date TIMESTAMP, end_date TIMESTAMP, \
+            FOREIGN KEY (event_id) \
+                REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)"
+        )
+
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS gpscoords( \
+            gpsid INTEGER PRIMARY KEY ASC, \
+            event_id INT NOT NULL, \
+            title STRING, start_date TIMESTAMP, end_date TIMESTAMP, latitude FLOAT, longitude FLOAT, \
             FOREIGN KEY (event_id) \
                 REFERENCES events (eid) ON DELETE CASCADE ON UPDATE CASCADE)"
         )
@@ -179,6 +204,20 @@ class Database:
                         subevent["title"],
                         datetime.fromisoformat(subevent["start"]["date"]),
                         datetime.fromisoformat(subevent["end"]["date"]),
+                    )
+                    == InfoCodes.ADD_ERROR
+                )
+
+            for gpscoord in data["gpscoords"]:
+                err |= (
+                    self.insert_gpscoord_with_id(
+                        gpscoord["gpsid"],
+                        gpscoord["event_id"],
+                        gpscoord["title"],
+                        datetime.fromisoformat(gpscoord["start"]["date"]),
+                        datetime.fromisoformat(gpscoord["end"]["date"]),
+                        gpscoord["latitude"],
+                        gpscoord["longitude"],
                     )
                     == InfoCodes.ADD_ERROR
                 )
@@ -260,6 +299,21 @@ class Database:
                 == InfoCodes.ADD_ERROR
             )
 
+        gpscoords_df = workbook["GPScoords"]
+        for gpscoord in gpscoords_df.iter_rows(min_row=2):
+            err |= (
+                self.insert_gpscoord_with_id(
+                    gpscoord[GPS_ID].value,
+                    gpscoord[GPS_E_ID].value,
+                    gpscoord[GPS_TITLE].value,
+                    datetime.fromisoformat(gpscoord[GPS_S_DATE].value),
+                    datetime.fromisoformat(gpscoord[GPS_E_DATE].value),
+                    gpscoord[GPS_LAT].value,
+                    gpscoord[GPS_LON].value,
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
         parts_df = workbook["Participants"]
         for participant in parts_df.iter_rows(min_row=2):
             err |= (
@@ -316,6 +370,24 @@ class Database:
                     "end": {
                         "date": str(elem[SEVENT_E_DATE]),
                     },
+                }
+            )
+
+        data = self.get_all("gpscoords")
+        for elem in data:
+            json_data["gpscoords"].append(
+                {
+                    "gpsid": elem[GPS_ID],
+                    "event_id": elem[GPS_E_ID],
+                    "name": elem[GPS_TITLE],
+                    "start": {
+                        "date": str(elem[GPS_S_DATE]),
+                    },
+                    "end": {
+                        "date": str(elem[GPS_E_DATE]),
+                    },
+                    "latitude": elem[GPS_LAT],
+                    "longitude": elem[GPS_LON],
                 }
             )
 
@@ -418,6 +490,33 @@ class Database:
             worksheet.write_string(row, SEVENT_E_DATE, str(elem[SEVENT_E_DATE]))
             row += 1
 
+        ###################
+        # GPS Coordinates #
+        ###################
+        worksheet = workbook.add_worksheet("GPScoords")
+
+        # Write some data headers.
+        worksheet.write("A1", COLUMN_NAMES["gps"][GPS_ID])
+        worksheet.write("B1", COLUMN_NAMES["gps"][GPS_E_ID])
+        worksheet.write("C1", COLUMN_NAMES["gps"][GPS_TITLE])
+        worksheet.write("D1", COLUMN_NAMES["gps"][GPS_S_DATE])
+        worksheet.write("E1", COLUMN_NAMES["gps"][GPS_E_DATE])
+        worksheet.write("F1", COLUMN_NAMES["gps"][GPS_LAT])
+        worksheet.write("G1", COLUMN_NAMES["gps"][GPS_LON])
+
+        row = 1
+        # Iterate over the data and write it out row by row.
+        data = self.get_all("gpscoords")
+        for elem in data:
+            worksheet.write_number(row, GPS_ID, elem[GPS_ID])
+            worksheet.write_number(row, GPS_E_ID, elem[GPS_E_ID])
+            worksheet.write_string(row, GPS_TITLE, elem[GPS_TITLE])
+            worksheet.write_string(row, GPS_S_DATE, str(elem[GPS_S_DATE]))
+            worksheet.write_string(row, GPS_E_DATE, str(elem[GPS_E_DATE]))
+            worksheet.write_string(row, GPS_LAT, elem[GPS_LAT])
+            worksheet.write_string(row, GPS_LON, elem[GPS_LON])
+            row += 1
+
         ################
         # Participants #
         ################
@@ -501,6 +600,7 @@ class Database:
         artists = self.get_all("artists")
         events = self.get_all("events")
         subevents = self.get_all("subevents")
+        gpscoords = self.get_all("gpscoords")
         participants = self.get_all("participants")
 
         ###################################################
@@ -584,6 +684,35 @@ class Database:
             )
 
         ###################################################
+        for idx, gpscoord in enumerate(gpscoords):
+            tmp = None
+            for i, dic in enumerate(events):
+                if dic[EVENT_ID] == gpscoord[GPS_E_ID]:
+                    tmp = i + 1
+            # TODO
+            if not tmp:
+                raise ValueError
+
+            conv = list(gpscoord)
+            conv[GPS_E_ID] = tmp
+            gpscoords[idx] = conv
+
+        gpscoords.sort(key=lambda x: (x[GPS_E_ID], x[GPS_S_DATE]))
+        self.clean("gpscoords")
+        for gpscoord in gpscoords:
+            err |= (
+                self.insert_subevent(
+                    gpscoord[GPS_E_ID],
+                    gpscoord[GPS_TITLE],
+                    gpscoord[GPS_S_DATE],
+                    gpscoord[GPS_E_DATE],
+                    gpscoord[GPS_LAT],
+                    gpscoord[GPS_LON],
+                )
+                == InfoCodes.ADD_ERROR
+            )
+
+        ###################################################
         for idx, participant in enumerate(participants):
             tmp1 = None
             for i, dic in enumerate(persons):
@@ -631,6 +760,7 @@ class Database:
         self.clean("persons")
         self.clean("participants")
         self.clean("subevents")
+        self.clean("gpscoords")
 
         return InfoCodes.CLEAN_ALL_SUCCESS
 
@@ -1482,6 +1612,142 @@ class Database:
 
     def print_subevents(self):
         self.print_table("subevents")
+
+    ###############################################################################################
+    # GPS coords related
+    ###############################################################################################
+    def validate_gpscoord(
+        self, event_id: int, title: str, start_date: datetime, end_date: datetime, latitude: float, longitude: float, gpsid: int = 1
+    ):
+        """
+        Validation function to test and guarantee, that the given parameter are valid and match
+        the expected input for a GPS coordinate.
+        """
+        if not isinstance(gpsid, int):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): SE-ID is not an int.")
+        if gpsid < 1:
+            return wbox(f"GPS coordinate ({gpsid}, {title}): SE-ID smaller than 1.")
+        if not isinstance(event_id, int):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): E-ID is not an int.")
+        if event_id < 1:
+            return wbox(f"GPS coordinate ({gpsid}, {title}): E-ID smaller than 1.")
+        if not self.has("events", ("eid", event_id)):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Could not find event with ID.")
+
+        if not isinstance(title, str):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Title is not of type string.")
+        if title == "":
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Title is an empty string.")
+
+        if not isinstance(start_date, datetime):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Start date is not of type datetime.")
+        if not isinstance(end_date, datetime):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): End date is not of type datetime.")
+        if start_date > end_date:
+            return wbox(f"GPS coordinate ({gpsid}, {title}): End date begins before start date.")
+
+        if not isinstance(latitude, float):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Latitude is not of type float.")
+
+        if not isinstance(longitude, float):
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Longitude is not of type float.")
+
+        event = self.get("events", ("eid", event_id))[0]
+        if test_time_frame_outside(event[2], event[3], start_date, end_date) is not None:
+            return wbox(f"GPS coordinate ({gpsid}, {title}): Timeframe does not match parent event.")
+
+        return InfoCodes.VAL_SUCCESS
+
+    def insert_gpscoord(self, event_id: int, title: str, start_date: datetime, end_date: datetime, latitude: float, longitude: float):
+        """Add a GPS coordinate to the database table using the given data."""
+        if self.validate_gpscoord(event_id, title, start_date, end_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+            return InfoCodes.ADD_ERROR
+
+        return self.insert(
+            "gpscoords",
+            ("event_id", event_id),
+            ("title", title),
+            ("start_date", start_date),
+            ("end_date", end_date),
+            ("latitude", latitude),
+            ("longitude", longitude),
+        )
+
+    def insert_gpscoord_with_id(
+        self, seid: int, event_id: int, title: str, start_date: datetime, end_date: datetime, latitude: float, longitude: float
+    ):
+        """
+        Add a GPS coodindate to the database table using the given data and a specific ID.
+        Only use this function if it is import to have a specific ID.
+        """
+        if self.validate_gpscoord(event_id, title, start_date, end_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+            return InfoCodes.ADD_ERROR
+
+        return self.insert_with_id(
+            "gpscoords",
+            ("seid", seid),
+            ("event_id", event_id),
+            ("title", title),
+            ("start_date", start_date),
+            ("end_date", end_date),
+            ("latitude", latitude),
+            ("longitude", longitude),
+        )
+
+    def update_gpscoord(
+        self,
+        event_id: int,
+        title: str,
+        s_date: datetime,
+        e_date: datetime,
+        latitude: float,
+        longitude: float,
+        n_title: str,
+        n_s_date: datetime,
+        n_e_date: datetime,
+        n_latitude: float,
+        n_longitude: float,
+    ):
+        """
+        OBACHT: unused function
+        Wrapper function to update a GPS coordinate. The given arguments specify the attributes
+        of the GPS coordinate that shall be updated and how its new values look like.
+        """
+        if self.validate_gpscoord(event_id, title, s_date, e_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+            return InfoCodes.MOD_ERROR
+        if self.validate_gpscoord(event_id, n_title, n_s_date, n_e_date, n_latitude, n_longitude) == InfoCodes.VAL_ERROR:
+            return InfoCodes.MOD_ERROR
+
+        return self.update(
+            "gpscoords",
+            ("event_id", event_id, event_id),
+            ("title", title, n_title),
+            ("start_date", s_date, n_s_date),
+            ("end_date", e_date, n_e_date),
+            ("latitude", latitude, n_latitude),
+            ("longitude", longitude, n_longitude),
+        )
+
+    def delete_gpscoord(self, event_id: int, title: str, s_date: datetime, e_date: datetime, latitude: float, longitude: float):
+        """
+        OBACHT: unused function
+        Delete the specified GPS coordinate.
+        """
+        if self.validate_gpscoord(event_id, title, s_date, e_date, latitude, longitude) == InfoCodes.VAL_ERROR:
+            return InfoCodes.DEL_ERROR
+
+        return self.delete(
+            "gpscoords",
+            ("event_id", event_id),
+            ("title", title),
+            ("start_date", s_date),
+            ("end_date", e_date),
+            ("latitude", latitude),
+            ("longitude", longitude),
+        )
+
+    def print_gpscoords(self):
+        self.print_table("gpscoords")
 
     ###############################################################################################
     # Participant related

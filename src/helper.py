@@ -1,4 +1,7 @@
+import re
+
 from datetime import datetime
+from fractions import Fraction
 from tkinter import Tk, Toplevel, messagebox
 
 from debug_messages import InfoCodes, WarningCodes
@@ -48,6 +51,9 @@ def limit_input(S: str):
     """Returns true if the input character is a whitespace, -, _, a number or a letter."""
     return str.isalnum(S) or str.isspace(S) or S == "-" or S == "_" or S == "&"
 
+def limit_input_float(input: str):
+    """Returns true if the input is a float"""
+    return re.fullmatch(r"\d*(\.\d*)?", input) is not None
 
 def test_time_frame(
     frame_start: datetime,
@@ -90,3 +96,46 @@ def test_time_frame_swap(test_frame_start: datetime, test_frame_end: datetime):
     if test_frame_end < test_frame_start:
         return WarningCodes.WARNING_DATE_SWAP
     return None
+
+# https://stackoverflow.com/questions/77015464/
+def deg_to_dms(decimal_coordinate, cardinal_directions):
+    """
+    This function converts decimal coordinates into the
+    DMS (degrees, minutes and seconds) format.
+    It also determines the cardinal direction of the coordinates.
+
+    :param decimal_coordinate: the decimal coordinates, such as 34.0522
+    :param cardinal_directions: the locations of the decimal coordinate,
+    such as ["S", "N"] or ["W", "E"]
+    :return: degrees, minutes, seconds and compass_direction
+    :rtype: int, int, float, string
+    """
+    if decimal_coordinate < 0:
+        compass_direction = cardinal_directions[0]
+    elif decimal_coordinate > 0:
+        compass_direction = cardinal_directions[1]
+    else:
+        compass_direction = ""
+    degrees = int(abs(decimal_coordinate))
+    decimal_minutes = (abs(decimal_coordinate) - degrees) * 60
+    minutes = int(decimal_minutes)
+    seconds = Fraction((decimal_minutes - minutes) * 60).limit_denominator(100)
+    return degrees, minutes, seconds, compass_direction
+
+def dms_to_exif_format(dms_degrees, dms_minutes, dms_seconds):
+    """
+    This function converts DMS (degrees, minutes and seconds) to values that can
+    be used with the EXIF (Exchangeable Image File Format).
+
+    :param dms_degrees: int value for degrees
+    :param dms_minutes: int value for minutes
+    :param dms_seconds: fractions.Fraction value for seconds
+    :return: EXIF values for the provided DMS values
+    :rtype: nested tuple
+    """
+    exif_format = (
+        (dms_degrees, 1),
+        (dms_minutes, 1),
+        (int(dms_seconds.limit_denominator(100).numerator), int(dms_seconds.limit_denominator(100).denominator))
+    )
+    return exif_format

@@ -13,7 +13,7 @@ from database import Database
 from guiboxes.basebox import SEPARATOR
 from guiboxes.messagebox import MessageBox
 from guiboxes.selectionbox import SelectionBox
-from helper import test_time_frame_outside
+from helper import deg_to_dms, dms_to_exif_format, test_time_frame_outside
 from meta_information import MetaInformation
 
 
@@ -267,12 +267,32 @@ class Sorter:
         ###################
         # Only modifies the file in the new folder not the original
         if self.modify_meta > 0 and (f_ext == ".jpg" or f_ext == ".jpeg"):
+
             meta_fields = [
                 {"dict": "0th", "key": piexif.ImageIFD.ImageDescription, "value": e_title},
                 {"dict": "0th", "key": piexif.ImageIFD.Artist, "value": a_name2},
                 {"dict": "Exif", "key": piexif.ExifIFD.DateTimeOriginal, "value": f_date},
                 {"dict": "Exif", "key": piexif.ExifIFD.DateTimeDigitized, "value": f_date},
             ]
+
+            if gps_coord := self.get_gpscoord_by_dateid(f_date, e_id):                
+                # converts the latitude and longitude coordinates to DMS
+                latitude_dms = deg_to_dms(gps_coord[3], ["S", "N"])
+                longitude_dms = deg_to_dms(gps_coord[4], ["W", "E"])
+
+                # convert the DMS values to EXIF values
+                exif_latitude = dms_to_exif_format(latitude_dms[0], latitude_dms[1], latitude_dms[2])
+                exif_longitude = dms_to_exif_format(longitude_dms[0], longitude_dms[1], longitude_dms[2])
+
+                meta_fields.append(
+                    {"dict": "GPS", "key": None, "value": {
+                        piexif.GPSIFD.GPSVersionID: (2, 0, 0, 0),
+                        piexif.GPSIFD.GPSLatitude: exif_latitude,
+                        piexif.GPSIFD.GPSLatitudeRef: latitude_dms[3],
+                        piexif.GPSIFD.GPSLongitude: exif_longitude,
+                        piexif.GPSIFD.GPSLongitudeRef: longitude_dms[3]
+                    }},
+                )
 
             self.modify_metadata_piexif(join(tgt_dir, f_name_cpl_new), meta_fields)
 
@@ -348,6 +368,22 @@ class Sorter:
         if len(lst_subevent) == 1:
             # Order: se_title, se_start, se_end
             return lst_subevent[0][2:5]
+        else:
+            return None
+
+    # Get GPS coordinate if present
+    def get_gpscoord_by_dateid(
+        self, date: datetime.datetime, e_id: int
+    ) -> Union[None, tuple[str, datetime.datetime, datetime.datetime, float, float]]:
+        """If present returns gps information as a tuple for the given date and event id."""
+        # There can only be one GPS coordinate so there is no need to manually select it
+        lst_gps = self.db.get_by_date("gpscoords", date, ("event_id", e_id))
+        assert len(lst_gps) < 2
+
+        # Overwrite result if gps coordinate exists
+        if len(lst_gps) == 1:
+            # Order: gps_title, gps_start, gps_end, gps_lat, gps_lon
+            return lst_gps[0][2:7]
         else:
             return None
 

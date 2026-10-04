@@ -10,6 +10,7 @@ from debug_messages import WarningArray, WarningCodes
 from guiboxes.basebox import BTN_W, LINE_H, PAD_X, PAD_Y, PAD_Y_LBL, SEPARATOR, WINDOW_W, BaseBox
 from guiboxes.participantbox import ModifyParticipantBox
 from guiboxes.subeventbox import ModifySubeventBox
+from guiboxes.gpsbox import ModifyGPSBox
 from helper import center_window, limit_input, test_time_frame_outside, test_time_frame_swap
 from tooltips import TooltipDict
 
@@ -94,9 +95,9 @@ class ModifyEventBox(BaseBox):
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
 
-        #########
-        # Participant List Input
-        #########
+        ###############################
+        # Add header for participants #
+        ###############################
         lbl_e_parts = Label(self.root, text="List of Participants:")
         lbl_e_parts.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
 
@@ -147,9 +148,9 @@ class ModifyEventBox(BaseBox):
 
         self.updateParticipantListFrame()
 
-        #################
-        # Subevent list #
-        #################
+        ############################
+        # Add header for subevents #
+        ############################
         lbl_e_sub = Label(self.root, text="List of Subevents:")
         lbl_e_sub.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
 
@@ -199,6 +200,59 @@ class ModifyEventBox(BaseBox):
             ]
 
         self.updateSubeventListFrame()
+
+        ##################################
+        # Add header for GPS coordinates #
+        ##################################
+        lbl_e_gps = Label(self.root, text="List of GPS coordinates:")
+        lbl_e_gps.grid(row=self.row(), column=1, padx=PAD_X, pady=PAD_Y_LBL, sticky="W")
+
+        # Subevent Frame and Text
+        frame_gps_new = Frame(self.root, width=TEVENT_W, height=LINE_H, bg="white")
+        frame_gps_new.pack_propagate(False)
+        frame_gps_new.grid(
+            row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        text_gps_new = Text(frame_gps_new, wrap="none")
+        text_gps_new.pack(fill="both", expand=True)
+
+        btn_add_gps = self.add_cmp(
+            "btn_add_gps",
+            Button(text_gps_new, text="Add", command=self.clickAddGPS, width=BTN_W),
+        )
+        text_gps_new.window_create("end", window=btn_add_gps)
+        Hovertip(btn_add_gps, TooltipDict["btn_add_gps"])
+        btn_none = Button(text_gps_new, text="", width=BTN_W, background="white", state=DISABLED)
+        text_gps_new.window_create("end", window=btn_none)
+
+        text_gps_new.insert("end", " ...")
+
+        #########
+        # GPS coordinates List Frame
+        #########
+        frame_gps_list = Frame(self.root, width=TEVENT_W, height=TEVENT_H, bg="white")
+        frame_gps_list.pack_propagate(False)
+        frame_gps_list.grid(
+            row=self.row(), column=1, columnspan=3, padx=PAD_X, pady=PAD_Y, sticky="EW"
+        )
+
+        # Word wrap
+        # https://stackoverflow.com/questions/19029157/
+        self.text_gps_list = Text(frame_gps_list, wrap="none")
+        sb_gps_list = Scrollbar(frame_gps_list, command=self.text_gps_list.yview)
+        sb_gps_list.pack(side=RIGHT, fill="y")
+        self.text_gps_list.configure(yscrollcommand=sb_gps_list.set)
+        self.text_gps_list.pack(fill="both", expand=True)
+
+        self.list_new_gps_coords: list[str] = []
+        if self.e_id is not None:
+            self.list_new_gps_coords = [
+                f"{x[2]} | {x[3]} | {x[4]} | {x[5]} | {x[6]}"
+                for x in self.db.get("gpscoords", ("event_id", self.e_id))
+            ]
+
+        self.updateGPSListFrame()
 
         separator = Separator(self.root, orient="horizontal")
         separator.grid(row=self.row(), column=0, columnspan=4, padx=PAD_X, pady=PAD_Y, sticky="EW")
@@ -309,6 +363,7 @@ class ModifyEventBox(BaseBox):
         # Delete all participants and subevents of the event
         self.db.delete("participants", ("event_id", self.e_id))
         self.db.delete("subevents", ("event_id", self.e_id))
+        self.db.delete("gpscoords", ("event_id", self.e_id))
 
         # Now add all participants that are in the list
         for p in self.list_new_participants:
@@ -328,6 +383,14 @@ class ModifyEventBox(BaseBox):
             e_date_se = datetime.fromisoformat(elem_se_data[2])
 
             self.db.insert_subevent(self.e_id, elem_se_data[0], s_date_se, e_date_se)
+
+        # Now add all gps coordinates that are in the list
+        for se in self.list_new_gps_coords:
+            elem_gps_data = se.split(SEPARATOR)
+            s_date_se = datetime.fromisoformat(elem_gps_data[1])
+            e_date_se = datetime.fromisoformat(elem_gps_data[2])
+
+            self.db.insert_gpscoord(self.e_id, elem_gps_data[0], s_date_se, e_date_se, float(elem_gps_data[3]), float(elem_gps_data[4]))
 
         self.changed = True
         self.close()
@@ -384,6 +447,32 @@ class ModifyEventBox(BaseBox):
 
         self.text_sub_list.update()
 
+    def updateGPSListFrame(self):
+        """
+        Update the text field listing all subevents using the subevent list.
+        How to create a scrollable list of buttons in Tkinter:
+        https://stackoverflow.com/questions/68288119/
+        How to pass arguments to a Button command in Tkinter:
+        https://stackoverflow.com/questions/6920302/
+        """
+        # Clear all content in the text area
+        self.text_gps_list.delete("1.0", END)
+
+        # Creating label for each artist/event/...
+        for i, e in enumerate(self.list_new_gps_coords):
+            btn_del_gps = Button(
+                self.text_gps_list,
+                text="Del",
+                command=partial(self.clickDeleteGPS, e),
+                width=BTN_W,
+            )
+            Hovertip(btn_del_gps, TooltipDict["btn_del_gps"])
+            self.text_gps_list.window_create("end", window=btn_del_gps)
+
+            self.text_gps_list.insert("end", " " + e + "\n")
+
+        self.text_gps_list.update()
+
     def clickAddParticipant(self):
         """Function for adding a participant."""
         self.disable_all_cmps()
@@ -418,6 +507,25 @@ class ModifyEventBox(BaseBox):
             self.validate_input()
         self.reset_all_cmps()
 
+    def clickAddGPS(self):
+        """Function for adding a gps coordinate."""
+        self.disable_all_cmps()
+        start_date = self.get_cmp("tfs_event").get_start_date()
+        end_date = self.get_cmp("tfs_event").get_end_date()
+
+        box = ModifyGPSBox(
+            "Add GPS coordinate", self.db, self.list_new_gps_coords, start_date, end_date
+        )
+        if box.changed:
+            self.list_new_gps_coords.append(box.gps)
+            self.list_new_gps_coords.sort(
+                key=lambda x: x[x.find(SEPARATOR) + len(SEPARATOR) : x.rfind(SEPARATOR)]
+            )
+
+            self.updateGPSListFrame()
+            self.validate_input()
+        self.reset_all_cmps()
+
     def clickDeleteParticipant(self, participant: str):
         """Function for deleting a participant."""
         self.list_new_participants.remove(participant)
@@ -428,4 +536,10 @@ class ModifyEventBox(BaseBox):
         """Function for deleting a subevent."""
         self.list_new_subevents.remove(subevent)
         self.updateSubeventListFrame()
+        self.validate_input()
+
+    def clickDeleteGPS(self, gps: str):
+        """Function for deleting a gps coordinate."""
+        self.list_new_gps_coords.remove(gps)
+        self.updateGPSListFrame()
         self.validate_input()
